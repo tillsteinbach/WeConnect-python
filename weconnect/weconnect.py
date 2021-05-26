@@ -119,7 +119,7 @@ class WeConnect(AddressableObject):
             except ValueError as err:  # pragma: no cover
                 logging.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
 
-    def __login(self):
+    def __login(self):  # noqa: C901
         tryLoginUrl = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
             '&redirect_uri=weconnect://authenticated'

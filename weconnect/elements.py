@@ -29,7 +29,7 @@ class Vehicle(AddressableObject):
 
         self.update(fromDict)
 
-    def update(
+    def update(  # noqa: C901
         self,
         fromDict=None
     ):
@@ -227,7 +227,8 @@ class GenericStatus(AddressableObject):
             self.carCapturedTimestamp.enabled = False
 
         for key, value in {key: value for key, value in fromDict.items()
-                           if key not in (['carCapturedTimestamp'] + ignoreAttributes)}.items():   # pylint: disable=C0325
+                           if key not in (['carCapturedTimestamp'] + ignoreAttributes)   # pylint: disable=C0325
+                           }.items():
             logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
@@ -246,7 +247,7 @@ class AccessStatus(GenericStatus):
         self.windows = AddressableDict(localAddress='windows', parent=self)
         super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=None):
+    def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         logging.debug('Create access status from dict')
 
