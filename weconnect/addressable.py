@@ -2,22 +2,23 @@ from datetime import datetime
 from enum import Enum, Flag, auto
 from typing import Dict
 
+
 class AddressableLeaf(object):
     def __init__(
-            self,
-            localAddress,
-            parent,
-        ):
-            self.__enabled = False
-            self.__address = localAddress
-            self.__parent = parent
-            self.__observers = set()
-            self.lastChange = None
-            self.lastUpdateFromServer = None
-            self.lastUpdateFromCar = None
-    
+        self,
+        localAddress,
+        parent,
+    ):
+        self.__enabled = False
+        self.__address = localAddress
+        self.__parent = parent
+        self.__observers = set()
+        self.lastChange = None
+        self.lastUpdateFromServer = None
+        self.lastUpdateFromCar = None
+
     def addObserver(self, observer, flag):
-        self.__observers.add((observer,flag))
+        self.__observers.add((observer, flag))
 
     def getObservers(self, flags):
         observers = set()
@@ -27,16 +28,16 @@ class AddressableLeaf(object):
         if self.__parent is not None:
             observers |= self.__parent.getObservers(flags)
         return observers
-    
+
     def notify(self, flags):
         observers = self.getObservers(flags)
         for observer in observers:
             observer(object=self, flags=flags)
-    
+
     @property
     def enabled(self):
         return self.__enabled
-    
+
     @enabled.setter
     def enabled(self, setEnabled):
         if setEnabled and not self.__enabled:
@@ -60,21 +61,21 @@ class AddressableLeaf(object):
     @parent.setter
     def parent(self, newParent):
         self.__parent = newParent
-    
+
     def getLocalAddress(self):
         return self.__address
-    
+
     def getGlobalAddress(self):
         if self.__parent is not None:
             return f'{self.__parent.getGlobalAddress()}/{self.__address}'
         else:
             return self.getLocalAddress()
-    
+
     def getByAddressString(self, addressString):
         if addressString == self.getLocalAddress():
             return self
         return False
-    
+
     class ObserverEvent(Flag):
         ENABLED = auto()
         DISABLED = auto()
@@ -83,19 +84,20 @@ class AddressableLeaf(object):
         UPDATED_FROM_CAR = auto()
         ALL = ENABLED | DISABLED | VALUE_CHANGED | UPDATED_FROM_SERVER | UPDATED_FROM_CAR
 
+
 class AddressableAttribute(AddressableLeaf):
     def __init__(
         self,
         localAddress,
         parent,
         value,
-        lastUpdateFromCar = None
+        lastUpdateFromCar=None
     ):
         super().__init__(localAddress, parent)
         self.__value = None
         if value is not None:
             self.setValueWithCarTime(value, lastUpdateFromCar)
-    
+
     @property
     def value(self):
         return self.__value
@@ -103,7 +105,7 @@ class AddressableAttribute(AddressableLeaf):
     @value.setter
     def value(self, newValue):
         self.setValueWithCarTime(newValue, lastUpdateFromCar=None)
-    
+
     def setValueWithCarTime(self, newValue, lastUpdateFromCar):
         valueChanged = newValue != self.__value
         self.__value = newValue
@@ -116,24 +118,25 @@ class AddressableAttribute(AddressableLeaf):
             flags = AddressableLeaf.ObserverEvent.VALUE_CHANGED | AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER
         else:
             flags = AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER
-        
+
         if lastUpdateFromCar is not None and lastUpdateFromCar != self.lastUpdateFromCar:
             self.lastUpdateFromCar = lastUpdateFromCar
             flags |= AddressableLeaf.ObserverEvent.UPDATED_FROM_CAR
-        
+
         if flags is not None:
             self.notify(flags)
-    
+
     def isLeaf(self):
         return True
-    
+
     def getLeafChildren(self):
-            return [self.getGlobalAddress()]
-    
+        return [self.getGlobalAddress()]
+
     def __str__(self):
         if isinstance(self.value, Enum):
             return str(self.value.value)
         return str(self.value)
+
 
 class AddressableObject(AddressableLeaf):
     def __init__(
@@ -143,7 +146,7 @@ class AddressableObject(AddressableLeaf):
     ):
         super().__init__(localAddress, parent)
         self.__children = dict()
-    
+
     def isLeaf(self):
         return not self.__children
 
@@ -161,11 +164,11 @@ class AddressableObject(AddressableLeaf):
             for child in self.__children.values():
                 children += child.getLeafChildren()
             return children
-    
+
     def getByAddressString(self, addressString):
-        if not '/' in addressString:
+        if '/' not in addressString:
             return super().getByAddressString(addressString)
-        
+
         localAddress, _, childPath = addressString.partition('/')
         if not super().getByAddressString(localAddress):
             return False
@@ -173,6 +176,7 @@ class AddressableObject(AddressableLeaf):
         if childAddress in self.__children:
             return self.__children[childAddress].getByAddressString(childPath)
         return False
+
 
 class AddressableDict(AddressableObject, Dict):
     def __init__(self, localAddress, parent):
