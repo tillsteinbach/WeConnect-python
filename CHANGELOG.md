@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] (Available through Edge Tag)
+## [Unreleased]
 ## [0.1.1] - 2021-05-26
 Minor fix in observer interface
 
