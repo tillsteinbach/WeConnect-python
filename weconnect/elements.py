@@ -227,7 +227,7 @@ class GenericStatus(AddressableObject):
             self.carCapturedTimestamp.enabled = False
 
         for key, value in {key: value for key, value in fromDict.items()
-                           if key not in (['carCapturedTimestamp'] + ignoreAttributes)}.items():
+                           if key not in (['carCapturedTimestamp'] + ignoreAttributes)}.items():   # pylint: disable=C0325
             logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
@@ -748,8 +748,8 @@ class ClimatizationSettings(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.targetTemperature_C.enabled:
-            string += f'\tTarget Temperature: {self.targetTemperature_C.value} °C '
-            f'({self.targetTemperature_K.value}°K) \n'
+            string += f'\tTarget Temperature: {self.targetTemperature_C.value} °C ' \
+                f'({self.targetTemperature_K.value}°K) \n'
         if self.climatisationWithoutExternalPower.enabled:
             string += f'\tClimatization without external Power: {self.climatisationWithoutExternalPower.value}\n'
         if self.climatizationAtUnlock.enabled:
@@ -792,7 +792,7 @@ class WindowHeatingStatus(GenericStatus):
             for windowName in [windowName for windowName in self.windows.keys()
                                if windowName not in [window['windowLocation']
                                for window in fromDict['windowHeatingStatus'] if 'windowLocation' in window]]:
-                del self.doors[windowName]
+                del self.windows[windowName]
         else:
             self.windows.clear()
             self.windows.enabled = False
@@ -1102,7 +1102,7 @@ class ClimatizationTimer(GenericStatus):
             for timerId in [timerId for timerId in self.timers.keys()
                             if timerId not in [timer['id']
                             for timer in fromDict['timers'] if 'id' in timer]]:
-                del self.capabilities[timerId]
+                del self.timers[timerId]
         else:
             self.timers.clear()
             self.timers.enabled = False
