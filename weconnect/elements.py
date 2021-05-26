@@ -67,7 +67,7 @@ class Vehicle(AddressableObject):
                             self.capabilities[capDict['id']].update(fromDict=capDict)
                         else:
                             self.capabilities[capDict['id']] = GenericCapability(
-                                id=capDict['id'], parent=self.capabilities, fromDict=capDict)
+                                capabilityId=capDict['id'], parent=self.capabilities, fromDict=capDict)
                 for capabilityId in [capabilityId for capabilityId in self.capabilities.keys()
                                      if capabilityId not in [capability['id']
                                      for capability in fromDict['capabilities'] if 'id' in capability]]:
@@ -118,11 +118,11 @@ class Vehicle(AddressableObject):
                         self.statuses[key].update(fromDict=data['data'][key])
                     else:
                         self.statuses[key] = className(
-                            parent=self.statuses, id=key, fromDict=data['data'][key])
+                            parent=self.statuses, statusId=key, fromDict=data['data'][key])
 
             for key, value in {key: value for key, value in data['data'].items()
                                if key not in keyClassMap.keys()}.items():
-                # TODO GenericStatus(parent=self.statuses, id=statusId, fromDict=statusDict)
+                # TODO GenericStatus(parent=self.statuses, statusId=statusId, fromDict=statusDict)
                 logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
@@ -135,7 +135,7 @@ class Vehicle(AddressableObject):
                     self.statuses['parkingPosition'].update(fromDict=data['data'])
                 else:
                     self.statuses['parkingPosition'] = ParkingPosition(
-                        parent=self.statuses, id='parkingPosition', fromDict=data['data'])
+                        parent=self.statuses, statusId='parkingPosition', fromDict=data['data'])
             return
         if 'parkingPosition' in self.statuses:
             del self.statuses['parkingPosition']
@@ -159,11 +159,11 @@ class Vehicle(AddressableObject):
 class GenericCapability(AddressableObject):
     def __init__(
         self,
-        id,
+        capabilityId,
         parent,
         fromDict=None
     ):
-        super().__init__(localAddress=id, parent=parent)
+        super().__init__(localAddress=capabilityId, parent=parent)
         self.id = AddressableAttribute(localAddress='id', parent=self, value=None)
         self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
         self.expirationDate = AddressableAttribute(localAddress='expirationDate', parent=self, value=None)
@@ -207,17 +207,18 @@ class GenericStatus(AddressableObject):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         super().__init__(localAddress=None, parent=parent)
-        self.id = id
+        self.id = statusId
         self.address = self.id
         self.carCapturedTimestamp = AddressableAttribute(localAddress='carCapturedTimestamp', parent=self, value=None)
         if fromDict is not None:
             self.update(fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create status from dict')
 
         if 'carCapturedTimestamp' in fromDict:
@@ -237,15 +238,16 @@ class AccessStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None)
         self.doors = AddressableDict(localAddress='doors', parent=self)
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create access status from dict')
 
         if 'overallStatus' in fromDict:
@@ -399,15 +401,16 @@ class BatteryStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.currentSOC_pct = AddressableAttribute(localAddress='currentSOC_pct', parent=self, value=None)
         self.cruisingRangeElectric_km = AddressableAttribute(
             localAddress='cruisingRangeElectric_km', value=None, parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create battery status from dict')
 
         if 'currentSOC_pct' in fromDict:
@@ -436,7 +439,7 @@ class ChargingStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.remainingChargingTimeToComplete_min = AddressableAttribute(
@@ -444,9 +447,10 @@ class ChargingStatus(GenericStatus):
         self.chargingState = AddressableAttribute(localAddress='chargingState', value=None, parent=self)
         self.chargePower_kW = AddressableAttribute(localAddress='chargePower_kW', value=None, parent=self)
         self.chargeRate_kmph = AddressableAttribute(localAddress='chargeRate_kmph', value=None, parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Charging status from dict')
 
         if 'remainingChargingTimeToComplete_min' in fromDict:
@@ -504,16 +508,17 @@ class ChargingSettings(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.maxChargeCurrentAC = AddressableAttribute(localAddress='maxChargeCurrentAC', parent=self, value=None)
         self.autoUnlockPlugWhenCharged = AddressableAttribute(
             localAddress='autoUnlockPlugWhenCharged', value=None, parent=self)
         self.targetSOC_pct = AddressableAttribute(localAddress='targetSOC_pct', value=None, parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Charging settings from dict')
 
         if 'maxChargeCurrentAC' in fromDict:
@@ -562,14 +567,15 @@ class PlugStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.plugConnectionState = AddressableAttribute(localAddress='plugConnectionState', parent=self, value=None)
         self.plugLockState = AddressableAttribute(localAddress='plugLockState', value=None, parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Plug status from dict')
 
         if 'plugConnectionState' in fromDict:
@@ -616,15 +622,16 @@ class ClimatizationStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.remainingClimatisationTime_min = AddressableAttribute(
             localAddress='remainingClimatisationTime_min', parent=self, value=None)
         self.climatisationState = AddressableAttribute(localAddress='climatisationState', value=None, parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Climatization status from dict')
 
         if 'remainingClimatisationTime_min' in fromDict:
@@ -663,7 +670,7 @@ class ClimatizationSettings(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.targetTemperature_K = AddressableAttribute(localAddress='targetTemperature_K', parent=self, value=None)
@@ -676,9 +683,10 @@ class ClimatizationSettings(GenericStatus):
         self.zoneFrontRightEnabled = AddressableAttribute(localAddress='zoneFrontRightEnabled', parent=self, value=None)
         self.zoneRearLeftEnabled = AddressableAttribute(localAddress='zoneRearLeftEnabled', parent=self, value=None)
         self.zoneRearRightEnabled = AddressableAttribute(localAddress='zoneRearRightEnabled', parent=self, value=None)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Climatization settings from dict')
 
         if 'targetTemperature_K' in fromDict:
@@ -763,13 +771,14 @@ class WindowHeatingStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create window heating status from dict')
 
         if 'windowHeatingStatus' in fromDict:
@@ -843,13 +852,14 @@ class LightsStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.lights = AddressableDict(localAddress='lights', parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create light status from dict')
 
         if 'lights' in fromDict:
@@ -919,16 +929,17 @@ class RangeStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.carType = AddressableAttribute(localAddress='carType', parent=self, value=None)
         self.primaryEngine = RangeStatus.Engine(localAddress='primaryEngine', parent=self)
         self.secondaryEngine = RangeStatus.Engine(localAddress='secondaryEngine', parent=self)
         self.totalRange_km = AddressableAttribute(localAddress='totalRange_km', parent=self, value=None)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Climatization settings from dict')
 
         if 'carType' in fromDict:
@@ -1029,13 +1040,14 @@ class CapabilityStatus(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create light status from dict')
 
         if 'capabilities' in fromDict:
@@ -1045,7 +1057,7 @@ class CapabilityStatus(GenericStatus):
                         self.capabilities[capDict['id']].update(fromDict=capDict)
                     else:
                         self.capabilities[capDict['id']] = GenericCapability(
-                            id=capDict['id'], fromDict=capDict, parent=self.capabilities)
+                            capabilityId=capDict['id'], fromDict=capDict, parent=self.capabilities)
             for capabilityId in [capabilityId for capabilityId in self.capabilities.keys()
                                  if capabilityId not in [capability['id']
                                  for capability in fromDict['capabilities'] if 'id' in capability]]:
@@ -1068,14 +1080,15 @@ class ClimatizationTimer(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.timers = AddressableDict(localAddress='timers', parent=self)
         self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create climatization timer from dict')
 
         if 'timers' in fromDict:
@@ -1206,14 +1219,15 @@ class ParkingPosition(GenericStatus):
     def __init__(
         self,
         parent,
-        id,
+        statusId,
         fromDict=None
     ):
         self.latitude = AddressableAttribute(localAddress='latitude', parent=self, value=None)
         self.longitude = AddressableAttribute(localAddress='longitude', parent=self, value=None)
-        super().__init__(parent, id, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict)
 
-    def update(self, fromDict, ignoreAttributes=[]):
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
         logging.debug('Create Climatization status from dict')
 
         if 'latitude' in fromDict:

@@ -1,12 +1,13 @@
 import string
 import random
-import requests
 import re
 import logging
 import threading
 import json
 from datetime import datetime, timedelta
 from urllib import parse
+
+import requests
 
 from .elements import Vehicle
 from .addressable import AddressableObject, AddressableDict

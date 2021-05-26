@@ -125,7 +125,7 @@ class AddressableAttribute(AddressableLeaf):
         if flags is not None:
             self.notify(flags)
 
-    def isLeaf(self):
+    def isLeaf(self):  # pylint: disable=R0201
         return True
 
     def getLeafChildren(self):
