@@ -40,8 +40,10 @@ class WeConnect(AddressableObject):
             'accept-language': 'de-de',
         },
         "loginHeaders": {
-            'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.185 Mobile Safari/537.36',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3',
+            'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
+                          'Chrome/74.0.3729.185 Mobile Safari/537.36',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
+                      'application/signed-exchange;v=b3',
             'accept-language': 'en-US,en;q=0.9',
             'accept-encoding': 'gzip, deflate',
             'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
@@ -84,7 +86,8 @@ class WeConnect(AddressableObject):
                 else:
                     logging.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
 
-                if 'refreshToken' in tokens and all(key in tokens['refreshToken'] for key in ('type', 'token', 'expires')):
+                if 'refreshToken' in tokens and all(key in tokens['refreshToken']
+                                                    for key in ('type', 'token', 'expires')):
                     self.__rToken['type'] = tokens['refreshToken']['type']
                     self.__rToken['token'] = tokens['refreshToken']['token']
                     self.__rToken['expires'] = datetime.fromisoformat(tokens['refreshToken']['expires'])
@@ -116,15 +119,17 @@ class WeConnect(AddressableObject):
                 logging.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
 
     def __login(self):
-        tryLoginUrl = 'https://login.apps.emea.vwapps.io/authorize?nonce=' + ''.join(random.choices(
-            string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16)) + '&redirect_uri=weconnect://authenticated'
+        tryLoginUrl = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
+            f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
+            '&redirect_uri=weconnect://authenticated'
 
         tryLoginResponse = self.__session.get(tryLoginUrl, allow_redirects=False)
         loginUrl = tryLoginResponse.headers['Location']
 
         loginResponse = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
 
-        formRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>(?P<formContent>.+)</form>'
+        formRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+            '(?P<formContent>.+)</form>'
         match = re.search(formRegex, loginResponse.text, flags=re.DOTALL)
         target = match.groupdict()['formAction']
 

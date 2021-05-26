@@ -3,7 +3,7 @@ from enum import Enum, Flag, auto
 from typing import Dict
 
 
-class AddressableLeaf(object):
+class AddressableLeaf():
     def __init__(
         self,
         localAddress,
@@ -68,8 +68,7 @@ class AddressableLeaf(object):
     def getGlobalAddress(self):
         if self.__parent is not None:
             return f'{self.__parent.getGlobalAddress()}/{self.__address}'
-        else:
-            return self.getLocalAddress()
+        return self.getLocalAddress()
 
     def getByAddressString(self, addressString):
         if addressString == self.getLocalAddress():
@@ -159,11 +158,11 @@ class AddressableObject(AddressableLeaf):
     def getLeafChildren(self):
         if self.isLeaf():
             return [self.getGlobalAddress()]
-        else:
-            children = [self.getGlobalAddress()]
-            for child in self.__children.values():
-                children += child.getLeafChildren()
-            return children
+
+        children = [self.getGlobalAddress()]
+        for child in self.__children.values():
+            children += child.getLeafChildren()
+        return children
 
     def getByAddressString(self, addressString):
         if '/' not in addressString:
@@ -179,9 +178,6 @@ class AddressableObject(AddressableLeaf):
 
 
 class AddressableDict(AddressableObject, Dict):
-    def __init__(self, localAddress, parent):
-        super().__init__(localAddress, parent)
-
     def __setitem__(self, key, item):
         self.addChild(item)
         super().setdefault(key, item)

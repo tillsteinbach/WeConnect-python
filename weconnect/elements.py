@@ -89,7 +89,7 @@ class Vehicle(AddressableObject):
                                               'nickname',
                                               'capabilities',
                                               'images']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + value)
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         self.__updateStatus()
         # self.test()
@@ -123,7 +123,7 @@ class Vehicle(AddressableObject):
             for key, value in {key: value for key, value in data['data'].items()
                                if key not in keyClassMap.keys()}.items():
                 # TODO GenericStatus(parent=self.statuses, id=statusId, fromDict=statusDict)
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
         statusResponse = self.__session.get(url, allow_redirects=False)
@@ -196,7 +196,7 @@ class GenericCapability(AddressableObject):
 
         for key, value in {key: value for key, value in fromDict.items()
                            if key not in ['id', 'status', 'expirationDate', 'userDisablingAllowed']}.items():
-            logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+            logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
         return f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value} ' \
@@ -227,7 +227,7 @@ class GenericStatus(AddressableObject):
 
         for key, value in {key: value for key, value in fromDict.items()
                            if key not in (['carCapturedTimestamp'] + ignoreAttributes)}.items():
-            logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+            logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
         return f'[{self.id}] (last captured {self.carCapturedTimestamp.value})'
@@ -335,7 +335,7 @@ class AccessStatus(GenericStatus):
                 self.openState.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.openState.value.value}, {self.lockState.value.value}'
@@ -383,7 +383,7 @@ class AccessStatus(GenericStatus):
                 self.openState.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.openState.value.value}'
@@ -828,7 +828,7 @@ class WindowHeatingStatus(GenericStatus):
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['windowLocation', 'windowHeatingState']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.windowHeatingState.value.value}'
@@ -904,7 +904,7 @@ class LightsStatus(GenericStatus):
                 self.status.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.status.value.value}'
@@ -1009,7 +1009,7 @@ class RangeStatus(GenericStatus):
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['type', 'currentSOC_pct', 'remainingRange_km']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'
@@ -1148,7 +1148,7 @@ class ClimatizationTimer(GenericStatus):
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['id', 'enabled', 'recurringTimer']}.items():
-                logging.warning(self.getGlobalAddress() + ': Unknown attribute ' + key + ' with value ' + str(value))
+                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             string = f'{self.id}: Enabled: {self.timerEnabled.value}'
@@ -1192,8 +1192,7 @@ class ClimatizationTimer(GenericStatus):
 
                 for key, value in {key: value for key, value in fromDict.items()
                                    if key not in ['startTime', 'recurringOn']}.items():
-                    logging.warning(self.getGlobalAddress() + ': Unknown attribute '
-                                    + key + ' with value ' + str(value))
+                    logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
                 string = f'{self.startTime.value.strftime("%H:%M")} on '
