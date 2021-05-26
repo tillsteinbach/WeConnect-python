@@ -32,7 +32,7 @@ class AddressableLeaf():
     def notify(self, flags):
         observers = self.getObservers(flags)
         for observer in observers:
-            observer(object=self, flags=flags)
+            observer(element=self, flags=flags)
 
     @property
     def enabled(self):
