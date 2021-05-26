@@ -1,5 +1,5 @@
 from datetime import datetime
-from enum import Flag, auto
+from enum import Enum, Flag, auto
 from typing import Dict
 
 class AddressableLeaf(object):
@@ -131,6 +131,8 @@ class AddressableAttribute(AddressableLeaf):
             return [self.getGlobalAddress()]
     
     def __str__(self):
+        if isinstance(self.value, Enum):
+            return str(self.value.value)
         return str(self.value)
 
 class AddressableObject(AddressableLeaf):
