@@ -143,7 +143,7 @@ class WeConnect(AddressableObject):
             '&redirect_uri=weconnect://authenticated'
 
         tryLoginResponse = self.__session.get(tryLoginUrl, allow_redirects=False)
-        if tryLoginResponse.status_code != requests.codes.see_other: # pylint: disable=E1101
+        if tryLoginResponse.status_code != requests.codes.see_other:  # pylint: disable=E1101
             raise APICompatibilityError('Forwarding to login page expected (status code 303),'
                                         f' but got status code {tryLoginResponse.status_code}')
         if 'Location' not in tryLoginResponse.headers:
@@ -153,7 +153,7 @@ class WeConnect(AddressableObject):
 
         # Retrieve login page
         loginResponse = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
-        if loginResponse.status_code != requests.codes.ok: # pylint: disable=E1101
+        if loginResponse.status_code != requests.codes.ok:  # pylint: disable=E1101
             raise APICompatibilityError('Retrieving login page was not successfull,'
                                         f' status code: {loginResponse.status_code}')
 
@@ -186,7 +186,7 @@ class WeConnect(AddressableObject):
 
         # Post form content and retrieve credentials page
         login2Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
-        if login2Response.status_code != requests.codes.ok: # pylint: disable=E1101
+        if login2Response.status_code != requests.codes.ok:  # pylint: disable=E1101
             raise APICompatibilityError('Retrieving credentials page was not successfull,'
                                         f' status code: {login2Response.status_code}')
 
@@ -213,7 +213,7 @@ class WeConnect(AddressableObject):
 
         # Post form content and retrieve userId in forwarding Location
         login3Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
-        if login3Response.status_code != requests.codes.found: # pylint: disable=E1101
+        if login3Response.status_code != requests.codes.found:  # pylint: disable=E1101
             raise APICompatibilityError('Forwarding expected (status code 302),'
                                         f' but got status code {login3Response.status_code}')
         if 'Location' not in login3Response.headers:
@@ -291,7 +291,7 @@ class WeConnect(AddressableObject):
         url = 'https://login.apps.emea.vwapps.io/refresh/v1'
 
         refreshResponse = self.__session.get(url, allow_redirects=False, auth=BearerAuth(self.__rToken['token']))
-        if refreshResponse.status_code == requests.codes.ok: # pylint: disable=E1101
+        if refreshResponse.status_code == requests.codes.ok:  # pylint: disable=E1101
             data = refreshResponse.json()
             if 'accessToken' in data:
                 self.__aToken['type'] = 'Bearer'
@@ -335,7 +335,7 @@ class WeConnect(AddressableObject):
             data = self.__cache[url]
         else:
             vehiclesResponse = self.__session.get(url, allow_redirects=False)
-            if vehiclesResponse.status_code == requests.codes.ok: # pylint: disable=E1101
+            if vehiclesResponse.status_code == requests.codes.ok:  # pylint: disable=E1101
                 data = vehiclesResponse.json()
             else:
                 raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
