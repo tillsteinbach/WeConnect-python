@@ -7,6 +7,8 @@ from .util import robustTimeParse
 
 from .addressable import AddressableObject, AddressableAttribute, AddressableDict
 
+LOG = logging.getLogger("weconnect")
+
 
 class Vehicle(AddressableObject):
     def __init__(
@@ -14,9 +16,11 @@ class Vehicle(AddressableObject):
         vin,
         session,
         parent,
-        fromDict
+        fromDict,
+        cache=None,
     ):
         self.__session = session
+        self.__cache = cache
         super().__init__(localAddress=vin, parent=parent)
         self.vin = AddressableAttribute(localAddress='vin', parent=self, value=None)
         self.role = AddressableAttribute(localAddress='role', parent=self, value=None)
@@ -34,7 +38,7 @@ class Vehicle(AddressableObject):
         fromDict=None
     ):
         if fromDict is not None:
-            logging.debug('Create vehicle from dict')
+            LOG.debug('Create vehicle from dict')
             if 'vin' in fromDict:
                 self.vin.value = fromDict['vin']
             else:
@@ -89,16 +93,20 @@ class Vehicle(AddressableObject):
                                               'nickname',
                                               'capabilities',
                                               'images']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         self.__updateStatus()
         # self.test()
 
-    def __updateStatus(self):
+    def __updateStatus(self):  # noqa: C901
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
-        statusResponse = self.__session.get(url, allow_redirects=False)
-        data = statusResponse.json()
-        if data['data']:
+        if url in self.__cache:
+            data = self.__cache[url]
+        else:
+            statusResponse = self.__session.get(url, allow_redirects=False)
+            data = statusResponse.json()
+            self.__cache[url] = data
+        if 'data' in data and data['data']:
             keyClassMap = {'accessStatus': AccessStatus,
                            'batteryStatus': BatteryStatus,
                            'chargingStatus': ChargingStatus,
@@ -110,7 +118,8 @@ class Vehicle(AddressableObject):
                            'lightsStatus': LightsStatus,
                            'rangeStatus': RangeStatus,
                            'capabilityStatus': CapabilityStatus,
-                           'climatisationTimer': ClimatizationTimer
+                           'climatisationTimer': ClimatizationTimer,
+                           'climatisationRequestStatus': ClimatisationRequestStatus,
                            }
             for key, className in keyClassMap.items():
                 if key in data['data']:
@@ -123,13 +132,18 @@ class Vehicle(AddressableObject):
             for key, value in {key: value for key, value in data['data'].items()
                                if key not in keyClassMap.keys()}.items():
                 # TODO GenericStatus(parent=self.statuses, statusId=statusId, fromDict=statusDict)
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
+        data = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        statusResponse = self.__session.get(url, allow_redirects=False)
-        if statusResponse.status_code == 200:
-            data = statusResponse.json()
-
+        if url in self.__cache:
+            data = self.__cache[url]
+        else:
+            statusResponse = self.__session.get(url, allow_redirects=False)
+            if statusResponse.status_code == 200:
+                data = statusResponse.json()
+                self.__cache[url] = data
+        if data is not None:
             if 'data' in data:
                 if 'parkingPosition' in self.statuses:
                     self.statuses['parkingPosition'].update(fromDict=data['data'])
@@ -172,7 +186,7 @@ class GenericCapability(AddressableObject):
             self.update(fromDict=fromDict)
 
     def update(self, fromDict):
-        logging.debug('Update capability from dict')
+        LOG.debug('Update capability from dict')
 
         if 'id' in fromDict:
             self.id.value = fromDict['id']
@@ -196,7 +210,7 @@ class GenericCapability(AddressableObject):
 
         for key, value in {key: value for key, value in fromDict.items()
                            if key not in ['id', 'status', 'expirationDate', 'userDisablingAllowed']}.items():
-            logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+            LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
         return f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value} ' \
@@ -219,7 +233,7 @@ class GenericStatus(AddressableObject):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create status from dict')
+        LOG.debug('Create status from dict')
 
         if 'carCapturedTimestamp' in fromDict:
             self.carCapturedTimestamp.value = robustTimeParse(fromDict['carCapturedTimestamp'])
@@ -229,7 +243,7 @@ class GenericStatus(AddressableObject):
         for key, value in {key: value for key, value in fromDict.items()
                            if key not in (['carCapturedTimestamp'] + ignoreAttributes)   # pylint: disable=C0325
                            }.items():
-            logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+            LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
         return f'[{self.id}] (last captured {self.carCapturedTimestamp.value})'
@@ -249,7 +263,7 @@ class AccessStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create access status from dict')
+        LOG.debug('Create access status from dict')
 
         if 'overallStatus' in fromDict:
             self.overallStatus.value = fromDict['overallStatus']
@@ -311,13 +325,13 @@ class AccessStatus(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create door from dict')
+            LOG.debug('Create door from dict')
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
                 self.address = self.id
             else:
-                logging.error('Door is missing name attribute')
+                LOG.error('Door is missing name attribute')
 
             if 'status' in fromDict:
                 if 'locked' in fromDict['status']:
@@ -338,7 +352,7 @@ class AccessStatus(GenericStatus):
                 self.openState.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.openState.value.value}, {self.lockState.value.value}'
@@ -365,13 +379,13 @@ class AccessStatus(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create window from dict')
+            LOG.debug('Create window from dict')
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
                 self.address = self.id
             else:
-                logging.error('Window is missing name attribute')
+                LOG.error('Window is missing name attribute')
 
             if 'status' in fromDict:
                 if 'open' in fromDict['status']:
@@ -386,7 +400,7 @@ class AccessStatus(GenericStatus):
                 self.openState.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.openState.value.value}'
@@ -412,7 +426,7 @@ class BatteryStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create battery status from dict')
+        LOG.debug('Create battery status from dict')
 
         if 'currentSOC_pct' in fromDict:
             self.currentSOC_pct.value = int(fromDict['currentSOC_pct'])
@@ -452,7 +466,7 @@ class ChargingStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Charging status from dict')
+        LOG.debug('Create Charging status from dict')
 
         if 'remainingChargingTimeToComplete_min' in fromDict:
             self.remainingChargingTimeToComplete_min.value = int(fromDict['remainingChargingTimeToComplete_min'])
@@ -464,6 +478,8 @@ class ChargingStatus(GenericStatus):
                 self.chargingState.value = ChargingStatus.ChargingState(fromDict['chargingState'])
             except ValueError:
                 self.chargingState.value = ChargingStatus.ChargingState.UNKNOWN
+                LOG.warning('An unsupported chargingState: %s was provided,'
+                            ' please report this as a bug', fromDict['chargingState'])
         else:
             self.chargingState.enabled = False
 
@@ -520,7 +536,7 @@ class ChargingSettings(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Charging settings from dict')
+        LOG.debug('Create Charging settings from dict')
 
         if 'maxChargeCurrentAC' in fromDict:
             self.maxChargeCurrentAC.value = fromDict['maxChargeCurrentAC']
@@ -533,6 +549,8 @@ class ChargingSettings(GenericStatus):
                     fromDict['autoUnlockPlugWhenCharged'])
             except ValueError:
                 self.autoUnlockPlugWhenCharged.value = ChargingSettings.UnlockPlugState.UNKNOWN
+                LOG.warning('An unsupported autoUnlockPlugWhenCharged: %s was provided,'
+                            ' please report this as a bug', fromDict['autoUnlockPlugWhenCharged'])
         else:
             self.autoUnlockPlugWhenCharged.enabled = False
 
@@ -577,13 +595,15 @@ class PlugStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Plug status from dict')
+        LOG.debug('Create Plug status from dict')
 
         if 'plugConnectionState' in fromDict:
             try:
                 self.plugConnectionState.value = PlugStatus.PlugConnectionState(fromDict['plugConnectionState'])
             except ValueError:
                 self.plugConnectionState.value = PlugStatus.PlugConnectionState.UNKNOWN
+                LOG.warning('An unsupported plugConnectionState: %s was provided,'
+                            ' please report this as a bug', fromDict['plugConnectionState'])
         else:
             self.plugConnectionState.enabled = False
 
@@ -592,6 +612,8 @@ class PlugStatus(GenericStatus):
                 self.plugLockState.value = PlugStatus.PlugLockState(fromDict['plugLockState'])
             except ValueError:
                 self.plugLockState.value = PlugStatus.PlugLockState.UNKNOWN
+                LOG.warning('An unsupported plugLockState: %s was provided,'
+                            ' please report this as a bug', fromDict['plugLockState'])
         else:
             self.plugLockState.enabled = False
 
@@ -633,7 +655,7 @@ class ClimatizationStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Climatization status from dict')
+        LOG.debug('Create Climatization status from dict')
 
         if 'remainingClimatisationTime_min' in fromDict:
             self.remainingClimatisationTime_min.value = int(fromDict['remainingClimatisationTime_min'])
@@ -645,6 +667,8 @@ class ClimatizationStatus(GenericStatus):
                 self.climatisationState.value = ClimatizationStatus.ClimatizationState(fromDict['climatisationState'])
             except ValueError:
                 self.climatisationState.value = ClimatizationStatus.ClimatizationState.UNKNOWN
+                LOG.warning('An unsupported climatisationState: %s was provided,'
+                            ' please report this as a bug', fromDict['climatisationState'])
         else:
             self.climatisationState.enabled = False
 
@@ -688,7 +712,7 @@ class ClimatizationSettings(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Climatization settings from dict')
+        LOG.debug('Create Climatization settings from dict')
 
         if 'targetTemperature_K' in fromDict:
             self.targetTemperature_K.value = float(fromDict['targetTemperature_K'])
@@ -780,7 +804,7 @@ class WindowHeatingStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create window heating status from dict')
+        LOG.debug('Create window heating status from dict')
 
         if 'windowHeatingStatus' in fromDict:
             for windowDict in fromDict['windowHeatingStatus']:
@@ -819,13 +843,13 @@ class WindowHeatingStatus(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create window from dict')
+            LOG.debug('Create window from dict')
 
             if 'windowLocation' in fromDict:
                 self.id = fromDict['windowLocation']
                 self.address = self.id
             else:
-                logging.error('Window is missing windowLocation attribute')
+                LOG.error('Window is missing windowLocation attribute')
 
             if 'windowHeatingState' in fromDict:
                 try:
@@ -833,12 +857,14 @@ class WindowHeatingStatus(GenericStatus):
                         fromDict['windowHeatingState'])
                 except ValueError:
                     self.windowHeatingState.value = WindowHeatingStatus.Window.WindowHeatingState.UNKNOWN
+                    LOG.warning('An unsupported windowHeatingState: %s was provided,'
+                                ' please report this as a bug', fromDict['windowHeatingState'])
             else:
                 self.windowHeatingState.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['windowLocation', 'windowHeatingState']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.windowHeatingState.value.value}'
@@ -861,7 +887,7 @@ class LightsStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create light status from dict')
+        LOG.debug('Create light status from dict')
 
         if 'lights' in fromDict:
             for lightDict in fromDict['lights']:
@@ -898,24 +924,26 @@ class LightsStatus(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create light from dict')
+            LOG.debug('Create light from dict')
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
                 self.address = self.id
             else:
-                logging.error('Light is missing name attribute')
+                LOG.error('Light is missing name attribute')
 
             if 'status' in fromDict:
                 try:
                     self.status.value = LightsStatus.Light.LightState(fromDict['status'])
                 except ValueError:
                     self.status.value = LightsStatus.Light.LightState.UNKNOWN
+                    LOG.warning('An unsupported status: %s was provided,'
+                                ' please report this as a bug', fromDict['status'])
             else:
                 self.status.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.id}: {self.status.value.value}'
@@ -941,13 +969,15 @@ class RangeStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Climatization settings from dict')
+        LOG.debug('Create Climatization settings from dict')
 
         if 'carType' in fromDict:
             try:
                 self.carType.value = RangeStatus.CarType(fromDict['carType'])
             except ValueError:
                 self.carType.value = RangeStatus.CarType.UNKNOWN
+                LOG.warning('An unsupported carType: %s was provided,'
+                            ' please report this as a bug', fromDict['carType'])
         else:
             self.carType.enabled = False
 
@@ -999,13 +1029,15 @@ class RangeStatus(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create Engine from dict')
+            LOG.debug('Create Engine from dict')
 
             if 'type' in fromDict:
                 try:
                     self.type.value = RangeStatus.Engine.EngineType(fromDict['type'])
                 except ValueError:
                     self.type.value = RangeStatus.Engine.EngineType.UNKNOWN
+                    LOG.warning('An unsupported type: %s was provided,'
+                                ' please report this as a bug', fromDict['type'])
             else:
                 self.type.enabled = False
 
@@ -1021,7 +1053,7 @@ class RangeStatus(GenericStatus):
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['type', 'currentSOC_pct', 'remainingRange_km']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'
@@ -1049,7 +1081,7 @@ class CapabilityStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create light status from dict')
+        LOG.debug('Create light status from dict')
 
         if 'capabilities' in fromDict:
             for capDict in fromDict['capabilities']:
@@ -1090,7 +1122,7 @@ class ClimatizationTimer(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create climatization timer from dict')
+        LOG.debug('Create climatization timer from dict')
 
         if 'timers' in fromDict:
             for climatizationTimerDict in fromDict['timers']:
@@ -1137,13 +1169,13 @@ class ClimatizationTimer(GenericStatus):
                 self.update(fromDict)
 
         def update(self, fromDict):
-            logging.debug('Create timer from dict')
+            LOG.debug('Create timer from dict')
 
             if 'id' in fromDict:
                 self.id = fromDict['id']
                 self.address = self.id
             else:
-                logging.error('Timer is missing id attribute')
+                LOG.error('Timer is missing id attribute')
 
             if 'enabled' in fromDict:
                 self.timerEnabled.value = bool(fromDict['enabled'])
@@ -1162,7 +1194,7 @@ class ClimatizationTimer(GenericStatus):
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['id', 'enabled', 'recurringTimer']}.items():
-                logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             string = f'{self.id}: Enabled: {self.timerEnabled.value}'
@@ -1184,7 +1216,7 @@ class ClimatizationTimer(GenericStatus):
                     self.update(fromDict)
 
             def update(self, fromDict):
-                logging.debug('Create recurring timer from dict')
+                LOG.debug('Create recurring timer from dict')
 
                 if 'startTime' in fromDict:
                     self.startTime.value = datetime.strptime(f'{fromDict["startTime"]}+00:00', '%H:%M%z')
@@ -1206,7 +1238,7 @@ class ClimatizationTimer(GenericStatus):
 
                 for key, value in {key: value for key, value in fromDict.items()
                                    if key not in ['startTime', 'recurringOn']}.items():
-                    logging.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+                    LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
                 string = f'{self.startTime.value.strftime("%H:%M")} on '
@@ -1229,7 +1261,7 @@ class ParkingPosition(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        logging.debug('Create Climatization status from dict')
+        LOG.debug('Create Climatization status from dict')
 
         if 'latitude' in fromDict:
             self.latitude.value = float(fromDict['latitude'])
@@ -1250,3 +1282,56 @@ class ParkingPosition(GenericStatus):
         if self.longitude.enabled:
             string += f'\tLongitude: {self.longitude.value}\n'
         return string
+
+
+class ClimatisationRequestStatus(GenericStatus):
+    def __init__(
+        self,
+        parent,
+        statusId,
+        fromDict=None
+    ):
+        self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
+        self.group = AddressableAttribute(localAddress='group', parent=self, value=None)
+        self.info = AddressableAttribute(localAddress='info', parent=self, value=None)
+        super().__init__(parent, statusId, fromDict=fromDict)
+
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
+        LOG.debug('Create Climatization Request status from dict')
+
+        if 'status' in fromDict:
+            try:
+                self.status.value = RangeStatus.Engine.EngineType(fromDict['status'])
+            except ValueError:
+                self.status.value = RangeStatus.Engine.EngineType.UNKNOWN
+                LOG.warning('An unsupported status: %s was provided,'
+                            ' please report this as a bug', fromDict['status'])
+        else:
+            self.status.enabled = False
+
+        if 'group' in fromDict:
+            self.group.value = int(fromDict['group'])
+        else:
+            self.group.enabled = False
+
+        if 'info' in fromDict:
+            self.info.value = int(fromDict['info'])
+        else:
+            self.info.enabled = False
+
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['status', 'group', 'info']))
+
+    def __str__(self):
+        string = super().__str__() + '\n'
+        if self.status.enabled:
+            string += f'\tStatus: {self.status.value.value}\n'
+        if self.group.enabled:
+            string += f'\tGroup: {self.group.value}\n'
+        if self.info.enabled:
+            string += f'\tInfo: {self.info.value}\n'
+        return string
+
+    class Status(Enum,):
+        POLLING_TIMEOUT = 'polling_timeout'
+        UNKNOWN = 'unknown open state'

@@ -12,6 +12,8 @@ import requests
 from .elements import Vehicle
 from .addressable import AddressableObject, AddressableDict
 
+LOG = logging.getLogger("weconnect")
+
 
 class BearerAuth(requests.auth.AuthBase):
     def __init__(self, token):
@@ -53,12 +55,13 @@ class WeConnect(AddressableObject):
         "refreshBeforeExpires": 30
     }
 
-    def __init__(
+    def __init__(  # noqa: C901
         self,
         username,
         password,
         tokenfile=None,
-        updateAfterLogin=True
+        updateAfterLogin=True,
+        loginOnInit=True,
     ):
         super().__init__(localAddress='', parent=None)
         self.username = username
@@ -70,6 +73,7 @@ class WeConnect(AddressableObject):
         self.__session = requests.Session()
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
+        self.__cache = dict()
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
 
@@ -85,7 +89,7 @@ class WeConnect(AddressableObject):
                     self.__token['expires'] = datetime.fromisoformat(tokens['idToken']['expires'])
                     self.__session.auth = BearerAuth(self.__token['token'])
                 else:
-                    logging.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
+                    LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
 
                 if 'refreshToken' in tokens and all(key in tokens['refreshToken']
                                                     for key in ('type', 'token', 'expires')):
@@ -93,124 +97,141 @@ class WeConnect(AddressableObject):
                     self.__rToken['token'] = tokens['refreshToken']['token']
                     self.__rToken['expires'] = datetime.fromisoformat(tokens['refreshToken']['expires'])
                 else:
-                    logging.info('Could not use refreshToken from file %s (does not contain a token)', self.tokenfile)
+                    LOG.info('Could not use refreshToken from file %s (does not contain a token)', self.tokenfile)
 
                 # Refresh tokens once
-                self.__refreshToken()
+                if loginOnInit:
+                    self.__refreshToken()
 
             except json.JSONDecodeError as err:
-                logging.info('Could not use token from file %s (%s)', tokenfile, err.msg)
+                LOG.info('Could not use token from file %s (%s)', tokenfile, err.msg)
             except FileNotFoundError as err:
-                logging.info('Could not use token from file %s (%s)', tokenfile, err)
+                LOG.info('Could not use token from file %s (%s)', tokenfile, err)
 
-        if self.__token['expires'] is None or self.__token['expires'] <= datetime.now():
-            self.__login()
-        else:
-            logging.info('Login not necessary, token still valid')
+        if loginOnInit:
+            if self.__token['expires'] is None or self.__token['expires'] <= datetime.now():
+                self.login()
+            else:
+                LOG.info('Login not necessary, token still valid')
+
         if updateAfterLogin:
             self.update()
 
-    def __del__(self):
+    def persistTokens(self):
         if self.tokenfile:
             try:
                 with open(self.tokenfile, 'w') as file:
                     json.dump({'idToken': self.__token, 'refreshToken': self.__rToken}, file, cls=DateTimeEncoder)
-                logging.info('Writing tookenfile %s', self.tokenfile)
+                LOG.info('Writing tokenfile %s', self.tokenfile)
             except ValueError as err:  # pragma: no cover
-                logging.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
+                LOG.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
 
-    def __login(self):  # noqa: C901
+    def persistCacheAsJson(self, filename):
+        with open(filename, 'w') as file:
+            json.dump(self.__cache, file)
+        LOG.info('Writing cachefile %s', filename)
+
+    def fillCacheFromJson(self, filename):
+        with open(filename, 'r') as file:
+            self.__cache = json.load(file)
+        LOG.info('Reading cachefile %s', filename)
+
+    def login(self):  # noqa: C901
+        # Try to access page to be redirected to login form
         tryLoginUrl = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
             '&redirect_uri=weconnect://authenticated'
 
         tryLoginResponse = self.__session.get(tryLoginUrl, allow_redirects=False)
+        if tryLoginResponse.status_code != requests.codes.see_other: # pylint: disable=E1101
+            raise APICompatibilityError('Forwarding to login page expected (status code 303),'
+                                        f' but got status code {tryLoginResponse.status_code}')
+        if 'Location' not in tryLoginResponse.headers:
+            raise APICompatibilityError('No url for forwarding in response headers')
+        # Login url is in response headers when response has status code see_others (303)
         loginUrl = tryLoginResponse.headers['Location']
 
+        # Retrieve login page
         loginResponse = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
+        if loginResponse.status_code != requests.codes.ok: # pylint: disable=E1101
+            raise APICompatibilityError('Retrieving login page was not successfull,'
+                                        f' status code: {loginResponse.status_code}')
 
+        # Find login form on page to obtain inputs
         formRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             '(?P<formContent>.+)</form>'
         match = re.search(formRegex, loginResponse.text, flags=re.DOTALL)
+        if match is None:
+            raise APICompatibilityError('No login email form found')
+        # retrieve target url from form
         target = match.groupdict()['formAction']
 
-        if not match or not match.groupdict()['formContent']:
-            logging.debug('loginResponse: %s', loginResponse.text)
-            logging.debug('loginResponse status_code: %d', loginResponse.status_code)
-            raise EnvironmentError(
-                "%s was not able to find emailPasswordForm"
-                % __name__
-            )
+        # Find all inputs and put those in formData dictionary
         inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
         formData = dict()
         for match in re.finditer(inputRegex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
                 formData[match.groupdict()['name']] = match.groupdict()['value']
+        if not all(x in ['_csrf', 'relayState', 'hmac', 'email'] for x in formData):
+            raise APICompatibilityError('Could not find all required input fields in login page')
 
+        # Set email to the provided username
         formData['email'] = self.username
 
-        # TODO: build from action
+        # build url from form action
         login2Url = 'https://identity.vwgroup.io' + target
 
         loginHeadersForm = self.DEFAULT_OPTIONS['loginHeaders']
         loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
 
+        # Post form content and retrieve credentials page
         login2Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
+        if login2Response.status_code != requests.codes.ok: # pylint: disable=E1101
+            raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                                        f' status code: {login2Response.status_code}')
 
+        # Find credentials form on page to obtain inputs
         formRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>(?P<formContent>.+)</form>'
         match = re.search(formRegex, login2Response.text, flags=re.DOTALL)
+        if match is None:
+            raise APICompatibilityError('No credentials form found')
+        # retrieve target url from form
         target = match.groupdict()['formAction']
 
-        if not match or not match.groupdict()['formContent']:
-            logging.debug('login2Response: %s', login2Response.text)
-            logging.debug('login2Response status_code: %d', login2Response.status_code)
-            raise EnvironmentError(
-                "%s was not able to find credentialsForm"
-                % __name__
-            )
+        # Find all inputs and put those in formData dictionary
         inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
         form2Data = dict()
         for match in re.finditer(inputRegex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
                 form2Data[match.groupdict()['name']] = match.groupdict()['value']
-
+        if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
+            raise APICompatibilityError('Could not find all required input fields in login page')
         form2Data['password'] = self.password
 
-        # TODO: build from action
+        # build url from form action
         login3Url = 'https://identity.vwgroup.io' + target
 
+        # Post form content and retrieve userId in forwarding Location
         login3Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
+        if login3Response.status_code != requests.codes.found: # pylint: disable=E1101
+            raise APICompatibilityError('Forwarding expected (status code 302),'
+                                        f' but got status code {login3Response.status_code}')
+        if 'Location' not in login3Response.headers:
+            raise APICompatibilityError('No url for forwarding in response headers')
 
-        if not login3Response.headers['Location']:
-            logging.debug('login3Response: %s', login3Response.text)
-            logging.debug('login3Response status_code: %d', login3Response.status_code)
-            raise EnvironmentError(
-                "%s response does not contain Location in Header"
-                % __name__
-            )
-
+        # Parse parametes from forwarding url
         params = dict(parse.parse_qsl(parse.urlsplit(login3Response.headers['Location']).query))
 
+        # Check if error
         if 'error' in params and params['error']:
-            logging.debug('login3Response status_code: %d', login3Response.status_code)
-            logging.debug('login3Response headers: %s', login3Response.headers)
-            logging.debug('login3Response: %s', login3Response.text)
-            raise EnvironmentError(
-                "%s response contains error parameter Location in Header:"
-                % __name__
-            )
+            raise AuthentificationError(f'Authentification error: {params["error"]}')
 
+        # Check for user id
         if 'userId' not in params or not params['userId']:
-            logging.debug('login3Response status_code: %d', login3Response.status_code)
-            logging.debug('login3Response headers: %s', login3Response.headers)
-            logging.debug('login3Response: %s', login3Response.text)
-            raise EnvironmentError(
-                "%s response contains no userId parameter in Location in Header:"
-                % __name__
-            )
-
+            raise APICompatibilityError('No user id provided')
         self.__userId = params['userId']
 
+        # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLogingUrl = login3Response.headers['Location']
         while True:
             afterLoginResponse = self.__session.get(
@@ -270,61 +291,85 @@ class WeConnect(AddressableObject):
         url = 'https://login.apps.emea.vwapps.io/refresh/v1'
 
         refreshResponse = self.__session.get(url, allow_redirects=False, auth=BearerAuth(self.__rToken['token']))
-        data = refreshResponse.json()
-        if 'accessToken' in data:
-            self.__aToken['type'] = 'Bearer'
-            self.__aToken['token'] = data['accessToken']
-            self.__aToken['expires'] = datetime.now() + timedelta(seconds=3600)
-        else:
-            logging.error('No id token received')
+        if refreshResponse.status_code == requests.codes.ok: # pylint: disable=E1101
+            data = refreshResponse.json()
+            if 'accessToken' in data:
+                self.__aToken['type'] = 'Bearer'
+                self.__aToken['token'] = data['accessToken']
+                self.__aToken['expires'] = datetime.now() + timedelta(seconds=3600)
+            else:
+                LOG.error('No id token received')
 
-        if 'idToken' in data:
-            self.__token['type'] = 'Bearer'
-            self.__token['token'] = data['idToken']
-            self.__token['expires'] = datetime.now() + timedelta(seconds=3600)
-            self.__session.auth = BearerAuth(self.__token['token'])
-        else:
-            logging.error('No id token received')
+            if 'idToken' in data:
+                self.__token['type'] = 'Bearer'
+                self.__token['token'] = data['idToken']
+                self.__token['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__session.auth = BearerAuth(self.__token['token'])
+            else:
+                LOG.error('No id token received')
 
-        if 'refreshToken' in data:
-            self.__rToken['type'] = 'Bearer'
-            self.__rToken['token'] = data['refreshToken']
-            self.__rToken['expires'] = datetime.now() + timedelta(seconds=3600)
-        else:
-            logging.error('No refresh token received')
+            if 'refreshToken' in data:
+                self.__rToken['type'] = 'Bearer'
+                self.__rToken['token'] = data['refreshToken']
+                self.__rToken['expires'] = datetime.now() + timedelta(seconds=3600)
+            else:
+                LOG.error('No refresh token received')
 
-        if self.__refreshTimer and self.__refreshTimer.is_alive():
-            self.__refreshTimer.cancel()
-        self.__refreshTimer = threading.Timer(3600 - 600, self.__refreshToken)
-        self.__refreshTimer.daemon = True
-        self.__refreshTimer.start()
-        logging.info('Token refreshed')
+            if self.__refreshTimer and self.__refreshTimer.is_alive():
+                self.__refreshTimer.cancel()
+            self.__refreshTimer = threading.Timer(3600 - 600, self.__refreshToken)
+            self.__refreshTimer.daemon = True
+            self.__refreshTimer.start()
+            LOG.info('Token refreshed')
+        else:
+            raise RetrievalError(f'Status Code from WeConnect server was: {refreshResponse.status_code}')
 
     @property
     def vehicles(self):
         return self.__vehicles
 
     def update(self):
+        data = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
+        if url in self.__cache:
+            data = self.__cache[url]
+        else:
+            vehiclesResponse = self.__session.get(url, allow_redirects=False)
+            if vehiclesResponse.status_code == requests.codes.ok: # pylint: disable=E1101
+                data = vehiclesResponse.json()
+            else:
+                raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
+        if data is not None:
+            if 'data' in data and data['data']:
+                vins = list()
+                for vehicleDict in data['data']:
+                    if 'vin' not in vehicleDict:
+                        break
+                    vin = vehicleDict['vin']
+                    vins.append(vin)
+                    if vin not in self.__vehicles:
+                        vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict,
+                                          cache=self.__cache)
+                        self.__vehicles[vin] = vehicle
+                    else:
+                        self.__vehicles[vin].update(fromDict=vehicleDict)
+                # delete those vins that are not anymore available
+                for vin in [vin for vin in vins if vin not in self.__vehicles]:
+                    del self.__vehicles[vin]
 
-        vehiclesResponse = self.__session.get(url, allow_redirects=False)
-        data = vehiclesResponse.json()
-
-        if data['data']:
-            vins = list()
-            for vehicleDict in data['data']:
-                if 'vin' not in vehicleDict:
-                    break
-                vin = vehicleDict['vin']
-                vins.append(vin)
-                if vin not in self.__vehicles:
-                    vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict)
-                    self.__vehicles[vin] = vehicle
-                else:
-                    self.__vehicles[vin].update(fromDict=vehicleDict)
-            # delete those vins that are not anymore available
-            for vin in [vin for vin in vins if vin not in self.__vehicles]:
-                del self.__vehicles[vin]
+                self.__cache[url] = data
 
     def getLeafChildren(self):
         return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()]
+
+
+class RetrievalError(Exception):
+    pass
+
+
+class AuthentificationError(Exception):
+    pass
+
+
+class APICompatibilityError(Exception):
+    pass
