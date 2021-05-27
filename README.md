@@ -14,6 +14,7 @@ Python API for the Volkswagen WeConnect Services. If you are not a developer and
 
 ## Projects in which the library is used
 - [WeConnect-cli](https://github.com/tillsteinbach/WeConnect-cli): A commandline interface to interact with WeConnect
+- [WeConnect-MQTT](https://github.com/tillsteinbach/WeConnect-mqtt): A MQTT Client that provides WeConnect data to the MQTT Broker of your choice (e.g. your home automation solution such as [ioBroker](https://www.iobroker.net), [FHEM](https://fhem.de) or [Home Assistant](https://www.home-assistant.io))
 
 ## Tested with
 - Volkswagen ID.3 Modelyear 2021
