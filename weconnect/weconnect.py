@@ -159,7 +159,7 @@ class WeConnect(AddressableObject):
 
         # Find login form on page to obtain inputs
         formRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
-            '(?P<formContent>.+)</form>'
+            r'(?P<formContent>.+?(?=</form>))</form>'
         match = re.search(formRegex, loginResponse.text, flags=re.DOTALL)
         if match is None:
             raise APICompatibilityError('No login email form found')
@@ -191,10 +191,23 @@ class WeConnect(AddressableObject):
                                         f' status code: {login2Response.status_code}')
 
         # Find credentials form on page to obtain inputs
-        formRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>(?P<formContent>.+)</form>'
+        formRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+            r'(?P<formContent>.+?(?=</form>))</form>'
         match = re.search(formRegex, login2Response.text, flags=re.DOTALL)
         if match is None:
-            raise APICompatibilityError('No credentials form found')
+            formErrorRegex = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
+                r'(?P<errorMessage>.+?(?=</span>))</span>.*</div>'
+            errorMatch = re.search(formErrorRegex, login2Response.text, flags=re.DOTALL)
+            if errorMatch is not None:
+                raise AuthentificationError(errorMatch.groupdict()['errorMessage'])
+            else:
+                accountNotFoundRegex = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
+                    r'(?P<errorMessage>.+?(?=</div>))</div>.*</div>.*</div>'
+                errorMatch = re.search(accountNotFoundRegex, login2Response.text, flags=re.DOTALL)
+                if errorMatch is not None:
+                    errorMessage = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
+                    raise AuthentificationError(errorMessage)
+                raise APICompatibilityError('No credentials form found')
         # retrieve target url from form
         target = match.groupdict()['formAction']
 
@@ -213,7 +226,8 @@ class WeConnect(AddressableObject):
 
         # Post form content and retrieve userId in forwarding Location
         login3Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
-        if login3Response.status_code != requests.codes.found:  # pylint: disable=E1101
+        if login3Response.status_code != requests.codes.found \
+                and login3Response.status_code != requests.codes.see_other:  # pylint: disable=E1101
             raise APICompatibilityError('Forwarding expected (status code 302),'
                                         f' but got status code {login3Response.status_code}')
         if 'Location' not in login3Response.headers:
@@ -224,7 +238,16 @@ class WeConnect(AddressableObject):
 
         # Check if error
         if 'error' in params and params['error']:
-            raise AuthentificationError(f'Authentification error: {params["error"]}')
+            errorMessages = {
+                'login.errors.password_invalid': 'Password is invalid',
+                'login.error.throttled': 'Login throttled, probably too many wrong logins. You have to wait some'
+                                         ' minutes until a new login attempt is possible'
+            }
+            if params['error'] in errorMessages.keys():
+                error = errorMessages[params['error']]
+            else:
+                error = params['error']
+            raise AuthentificationError(error)
 
         # Check for user id
         if 'userId' not in params or not params['userId']:
@@ -236,6 +259,9 @@ class WeConnect(AddressableObject):
         while True:
             afterLoginResponse = self.__session.get(
                 afterLogingUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+
+            if 'Location' not in afterLoginResponse.headers:
+                raise APICompatibilityError('No Location for forwarding in response headers')
 
             afterLogingUrl = afterLoginResponse.headers['Location']
 
