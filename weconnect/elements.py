@@ -213,8 +213,10 @@ class GenericCapability(AddressableObject):
             LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
-        return f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value} ' \
-            f'(expires {self.expirationDate.value})'
+        returnString = f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value}'
+        if self.expirationDate.enabled:
+            returnString += f' (expires {self.expirationDate.value.isoformat()})'
+        return returnString
 
 
 class GenericStatus(AddressableObject):
@@ -1153,7 +1155,8 @@ class ClimatizationTimer(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.timeInCar.enabled:
-            string += f'\tTime in Car: {self.timeInCar.value.isoformat()} (captured at {self.carCapturedTimestamp.value.isoformat()})\n'
+            string += f'\tTime in Car: {self.timeInCar.value.isoformat()}' \
+                f' (captured at {self.carCapturedTimestamp.value.isoformat()})\n'
         string += f'\tTimers: {len(self.timers)} items\n'
         for timer in self.timers.values():
             string += f'\t\t{timer}\n'
