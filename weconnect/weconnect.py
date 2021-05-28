@@ -4,7 +4,7 @@ import re
 import logging
 import threading
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib import parse
 
 import requests
@@ -109,7 +109,8 @@ class WeConnect(AddressableObject):
                 LOG.info('Could not use token from file %s (%s)', tokenfile, err)
 
         if loginOnInit:
-            if self.__token['expires'] is None or self.__token['expires'] <= datetime.now():
+            if self.__token['expires'] is None or self.__token['expires'] <= \
+                    datetime.utcnow().replace(tzinfo=timezone.utc):
                 self.login()
             else:
                 LOG.info('Login not necessary, token still valid')
@@ -274,7 +275,7 @@ class WeConnect(AddressableObject):
             self.__token = {
                 'type': params['token_type'],
                 'token': params['id_token'],
-                'expires': datetime.now() + timedelta(seconds=int(params['expires_in']))
+                'expires': datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=int(params['expires_in']))
             }
             if self.__token['type'].casefold() == 'Bearer'.casefold():
                 self.__session.auth = BearerAuth(self.__token['token'])
@@ -300,16 +301,16 @@ class WeConnect(AddressableObject):
             if 'idToken' in data:
                 self.__token['type'] = 'Bearer'
                 self.__token['token'] = data['idToken']
-                self.__token['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
                 self.__session.auth = BearerAuth(self.__token['token'])
             if 'accessToken' in data:
                 self.__aToken['type'] = 'Bearer'
                 self.__aToken['token'] = data['accessToken']
-                self.__aToken['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
             if 'refreshToken' in data:
                 self.__rToken['type'] = 'Bearer'
                 self.__rToken['token'] = data['refreshToken']
-                self.__rToken['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
 
             self.__refreshToken()
 
@@ -322,14 +323,14 @@ class WeConnect(AddressableObject):
             if 'accessToken' in data:
                 self.__aToken['type'] = 'Bearer'
                 self.__aToken['token'] = data['accessToken']
-                self.__aToken['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
             else:
                 LOG.error('No id token received')
 
             if 'idToken' in data:
                 self.__token['type'] = 'Bearer'
                 self.__token['token'] = data['idToken']
-                self.__token['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
                 self.__session.auth = BearerAuth(self.__token['token'])
             else:
                 LOG.error('No id token received')
@@ -337,7 +338,7 @@ class WeConnect(AddressableObject):
             if 'refreshToken' in data:
                 self.__rToken['type'] = 'Bearer'
                 self.__rToken['token'] = data['refreshToken']
-                self.__rToken['expires'] = datetime.now() + timedelta(seconds=3600)
+                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
             else:
                 LOG.error('No refresh token received')
 

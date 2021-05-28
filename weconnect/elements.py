@@ -246,7 +246,10 @@ class GenericStatus(AddressableObject):
             LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
-        return f'[{self.id}] (last captured {self.carCapturedTimestamp.value})'
+        returnString = f'[{self.id}]'
+        if self.carCapturedTimestamp.enabled:
+            returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'
+        return returnString
 
 
 class AccessStatus(GenericStatus):
@@ -1150,7 +1153,7 @@ class ClimatizationTimer(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.timeInCar.enabled:
-            string += f'\tTime in Car: {self.timeInCar.value} (captured at {self.carCapturedTimestamp.value})\n'
+            string += f'\tTime in Car: {self.timeInCar.value.isoformat()} (captured at {self.carCapturedTimestamp.value.isoformat()})\n'
         string += f'\tTimers: {len(self.timers)} items\n'
         for timer in self.timers.values():
             string += f'\t\t{timer}\n'

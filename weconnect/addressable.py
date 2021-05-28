@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, Flag, auto
 from typing import Dict
 
@@ -111,9 +111,9 @@ class AddressableAttribute(AddressableLeaf):
         flags = None
         if not self.enabled:
             self.enabled = True
-        self.lastUpdateFromServer = datetime.now()
+        self.lastUpdateFromServer = datetime.utcnow().replace(microsecond=0, tzinfo=timezone.utc)
         if valueChanged:
-            self.lastChange = datetime.now()
+            self.lastChange = datetime.utcnow().replace(microsecond=0, tzinfo=timezone.utc)
             flags = AddressableLeaf.ObserverEvent.VALUE_CHANGED | AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER
         else:
             flags = AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER
@@ -134,6 +134,8 @@ class AddressableAttribute(AddressableLeaf):
     def __str__(self):
         if isinstance(self.value, Enum):
             return str(self.value.value)
+        if isinstance(self.value, datetime):
+            return self.value.isoformat()
         return str(self.value)
 
 

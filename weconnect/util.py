@@ -8,4 +8,4 @@ def robustTimeParse(timeString):
         r'^(?P<start>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.)(?P<fractions>\d+)(?P<end>\+\d{2}:\d{2})$', timestring)
     if match:
         timestring = match.group('start') + match.group('fractions').ljust(6, "0") + match.group('end')
-    return datetime.fromisoformat(timestring)
+    return datetime.fromisoformat(timestring).replace(microsecond=0)
