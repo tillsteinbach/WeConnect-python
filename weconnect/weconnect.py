@@ -362,6 +362,12 @@ class WeConnect(AddressableObject):
     def getLeafChildren(self):
         return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()]
 
+    def __str__(self):
+        string = ''
+        for vin, vehicle in self.__vehicles.items():
+            string += f'Vehicle: {vin}\n{vehicle}\n'
+        return string
+
 
 class RetrievalError(Exception):
     pass

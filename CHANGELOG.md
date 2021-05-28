@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- Make weconnect object printable by __str__ method
+
 ## [0.2.0] - 2021-05-27
 ### Added
 - Possibility to persist tokens through the API
