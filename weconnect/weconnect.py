@@ -32,7 +32,7 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-class WeConnect(AddressableObject):
+class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attributes
     DEFAULT_OPTIONS = {
         "headers": {
             'accept': '*/*',
@@ -62,6 +62,7 @@ class WeConnect(AddressableObject):
         tokenfile=None,
         updateAfterLogin=True,
         loginOnInit=True,
+        fixAPI=True,
     ):
         super().__init__(localAddress='', parent=None)
         self.username = username
@@ -74,6 +75,7 @@ class WeConnect(AddressableObject):
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
         self.__cache = dict()
+        self.fixAPI = fixAPI
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
 
@@ -376,7 +378,7 @@ class WeConnect(AddressableObject):
                     vins.append(vin)
                     if vin not in self.__vehicles:
                         vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict,
-                                          cache=self.__cache)
+                                          cache=self.__cache, fixAPI=self.fixAPI)
                         self.__vehicles[vin] = vehicle
                     else:
                         self.__vehicles[vin].update(fromDict=vehicleDict)

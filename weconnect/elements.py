@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 
 
@@ -18,6 +18,7 @@ class Vehicle(AddressableObject):
         parent,
         fromDict,
         cache=None,
+        fixAPI=True,
     ):
         self.__session = session
         self.__cache = cache
@@ -30,6 +31,7 @@ class Vehicle(AddressableObject):
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
         self.statuses = AddressableDict(localAddress='status', parent=self)
         self.images = AddressableAttribute(localAddress='images', parent=self, value=None)
+        self.fixAPI = fixAPI
 
         self.update(fromDict)
 
@@ -71,7 +73,8 @@ class Vehicle(AddressableObject):
                             self.capabilities[capDict['id']].update(fromDict=capDict)
                         else:
                             self.capabilities[capDict['id']] = GenericCapability(
-                                capabilityId=capDict['id'], parent=self.capabilities, fromDict=capDict)
+                                capabilityId=capDict['id'], parent=self.capabilities, fromDict=capDict,
+                                fixAPI=self.fixAPI)
                 for capabilityId in [capabilityId for capabilityId in self.capabilities.keys()
                                      if capabilityId not in [capability['id']
                                      for capability in fromDict['capabilities'] if 'id' in capability]]:
@@ -127,7 +130,7 @@ class Vehicle(AddressableObject):
                         self.statuses[key].update(fromDict=data['data'][key])
                     else:
                         self.statuses[key] = className(
-                            parent=self.statuses, statusId=key, fromDict=data['data'][key])
+                            parent=self.statuses, statusId=key, fromDict=data['data'][key], fixAPI=self.fixAPI)
 
             for key, value in {key: value for key, value in data['data'].items()
                                if key not in keyClassMap.keys()}.items():
@@ -175,8 +178,10 @@ class GenericCapability(AddressableObject):
         self,
         capabilityId,
         parent,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
+        self.fixAPI = fixAPI
         super().__init__(localAddress=capabilityId, parent=parent)
         self.id = AddressableAttribute(localAddress='id', parent=self, value=None)
         self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
@@ -224,8 +229,10 @@ class GenericStatus(AddressableObject):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
+        self.fixAPI = fixAPI
         super().__init__(localAddress=None, parent=parent)
         self.id = statusId
         self.address = self.id
@@ -238,7 +245,22 @@ class GenericStatus(AddressableObject):
         LOG.debug('Create status from dict')
 
         if 'carCapturedTimestamp' in fromDict:
-            self.carCapturedTimestamp.value = robustTimeParse(fromDict['carCapturedTimestamp'])
+            carCapturedTimestamp = robustTimeParse(fromDict['carCapturedTimestamp'])
+            if self.fixAPI:
+                # Looks like for some cars the calculation of the carCapturedTimestamp does not account for the timezone
+                # Unfortunatly it is unknown what the timezone of the car is. So the best we can do is substract 30
+                # minutes as long as the timestamp is in the future. This will create false results when the query
+                # interval is large
+                fixed = timedelta(hours=0, minutes=0)
+                while carCapturedTimestamp > datetime.utcnow().replace(tzinfo=timezone.utc):
+                    carCapturedTimestamp -= timedelta(hours=0, minutes=30)
+                    fixed += timedelta(hours=0, minutes=30)
+                if fixed > timedelta(hours=0, minutes=0):
+                    LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Substracted %s to fix this.'
+                                ' This is a problem of the weconnect API and might be fixed in the future',
+                                self.getGlobalAddress(), timedelta(hours=0, minutes=0))
+
+            self.carCapturedTimestamp.value = carCapturedTimestamp
         else:
             self.carCapturedTimestamp.enabled = False
 
@@ -259,12 +281,13 @@ class AccessStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None)
         self.doors = AddressableDict(localAddress='doors', parent=self)
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
@@ -422,12 +445,13 @@ class BatteryStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True
     ):
         self.currentSOC_pct = AddressableAttribute(localAddress='currentSOC_pct', parent=self, value=None)
         self.cruisingRangeElectric_km = AddressableAttribute(
             localAddress='cruisingRangeElectric_km', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -460,14 +484,15 @@ class ChargingStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.remainingChargingTimeToComplete_min = AddressableAttribute(
             localAddress='remainingChargingTimeToComplete_min', parent=self, value=None)
         self.chargingState = AddressableAttribute(localAddress='chargingState', value=None, parent=self)
         self.chargePower_kW = AddressableAttribute(localAddress='chargePower_kW', value=None, parent=self)
         self.chargeRate_kmph = AddressableAttribute(localAddress='chargeRate_kmph', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -531,13 +556,14 @@ class ChargingSettings(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.maxChargeCurrentAC = AddressableAttribute(localAddress='maxChargeCurrentAC', parent=self, value=None)
         self.autoUnlockPlugWhenCharged = AddressableAttribute(
             localAddress='autoUnlockPlugWhenCharged', value=None, parent=self)
         self.targetSOC_pct = AddressableAttribute(localAddress='targetSOC_pct', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -592,11 +618,12 @@ class PlugStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.plugConnectionState = AddressableAttribute(localAddress='plugConnectionState', parent=self, value=None)
         self.plugLockState = AddressableAttribute(localAddress='plugLockState', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -651,12 +678,13 @@ class ClimatizationStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.remainingClimatisationTime_min = AddressableAttribute(
             localAddress='remainingClimatisationTime_min', parent=self, value=None)
         self.climatisationState = AddressableAttribute(localAddress='climatisationState', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -701,7 +729,8 @@ class ClimatizationSettings(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.targetTemperature_K = AddressableAttribute(localAddress='targetTemperature_K', parent=self, value=None)
         self.targetTemperature_C = AddressableAttribute(localAddress='targetTemperature_C', parent=self, value=None)
@@ -713,7 +742,7 @@ class ClimatizationSettings(GenericStatus):
         self.zoneFrontRightEnabled = AddressableAttribute(localAddress='zoneFrontRightEnabled', parent=self, value=None)
         self.zoneRearLeftEnabled = AddressableAttribute(localAddress='zoneRearLeftEnabled', parent=self, value=None)
         self.zoneRearRightEnabled = AddressableAttribute(localAddress='zoneRearRightEnabled', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -802,10 +831,11 @@ class WindowHeatingStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -885,10 +915,11 @@ class LightsStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.lights = AddressableDict(localAddress='lights', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -964,13 +995,14 @@ class RangeStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.carType = AddressableAttribute(localAddress='carType', parent=self, value=None)
         self.primaryEngine = RangeStatus.Engine(localAddress='primaryEngine', parent=self)
         self.secondaryEngine = RangeStatus.Engine(localAddress='secondaryEngine', parent=self)
         self.totalRange_km = AddressableAttribute(localAddress='totalRange_km', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1079,10 +1111,11 @@ class CapabilityStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1119,11 +1152,12 @@ class ClimatizationTimer(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.timers = AddressableDict(localAddress='timers', parent=self)
         self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1259,11 +1293,12 @@ class ParkingPosition(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True,
     ):
         self.latitude = AddressableAttribute(localAddress='latitude', parent=self, value=None)
         self.longitude = AddressableAttribute(localAddress='longitude', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1295,12 +1330,13 @@ class ClimatisationRequestStatus(GenericStatus):
         self,
         parent,
         statusId,
-        fromDict=None
+        fromDict=None,
+        fixAPI=True
     ):
         self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
         self.group = AddressableAttribute(localAddress='group', parent=self, value=None)
         self.info = AddressableAttribute(localAddress='info', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict)
+        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
