@@ -1,0 +1,38 @@
+{
+    "timers": [
+        {
+            "id": 1,
+            "enabled": false,
+            "recurringTimer": {
+                "startTime": "05:15",
+                "recurringOn": {
+                    "mondays": true,
+                    "tuesdays": true,
+                    "wednesdays": true,
+                    "thursdays": true,
+                    "fridays": true,
+                    "saturdays": false,
+                    "sundays": false
+                }
+            }
+        },
+        {
+            "id": 2,
+            "enabled": false,
+            "recurringTimer": {
+                "startTime": "22:00",
+                "recurringOn": {
+                    "mondays": false,
+                    "tuesdays": false,
+                    "wednesdays": false,
+                    "thursdays": false,
+                    "fridays": false,
+                    "saturdays": true,
+                    "sundays": true
+                }
+            }
+        }
+    ],
+    "carCapturedTimestamp": "2021-05-29T09:11:10.492Z",
+    "timeInCar": "2021-05-29T11:11:10+02:00"
+}
