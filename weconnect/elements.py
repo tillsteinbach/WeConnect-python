@@ -19,6 +19,7 @@ class Vehicle(AddressableObject):
         fromDict,
         cache=None,
         fixAPI=True,
+        fromCache=False,
     ):
         self.__session = session
         self.__cache = cache
@@ -33,11 +34,12 @@ class Vehicle(AddressableObject):
         self.images = AddressableAttribute(localAddress='images', parent=self, value=None)
         self.fixAPI = fixAPI
 
-        self.update(fromDict)
+        self.update(fromDict, fromCache=fromCache)
 
     def update(  # noqa: C901
         self,
-        fromDict=None
+        fromDict=None,
+        fromCache=False,
     ):
         if fromDict is not None:
             LOG.debug('Create vehicle from dict')
@@ -98,12 +100,12 @@ class Vehicle(AddressableObject):
                                               'images']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
-        self.__updateStatus()
+        self.__updateStatus(fromCache=fromCache)
         # self.test()
 
-    def __updateStatus(self):  # noqa: C901
+    def __updateStatus(self, fromCache=False):  # noqa: C901
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
-        if url in self.__cache:
+        if fromCache and url in self.__cache:
             data = self.__cache[url]
         else:
             statusResponse = self.__session.get(url, allow_redirects=False)
@@ -139,7 +141,7 @@ class Vehicle(AddressableObject):
 
         data = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        if url in self.__cache:
+        if fromCache and url in self.__cache:
             data = self.__cache[url]
         else:
             statusResponse = self.__session.get(url, allow_redirects=False)
@@ -254,11 +256,11 @@ class GenericStatus(AddressableObject):
                 fixed = timedelta(hours=0, minutes=0)
                 while carCapturedTimestamp > datetime.utcnow().replace(tzinfo=timezone.utc):
                     carCapturedTimestamp -= timedelta(hours=0, minutes=30)
-                    fixed += timedelta(hours=0, minutes=30)
+                    fixed -= timedelta(hours=0, minutes=30)
                 if fixed > timedelta(hours=0, minutes=0):
                     LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Substracted %s to fix this.'
                                 ' This is a problem of the weconnect API and might be fixed in the future',
-                                self.getGlobalAddress(), timedelta(hours=0, minutes=0))
+                                self.getGlobalAddress(), fixed)
 
             self.carCapturedTimestamp.value = carCapturedTimestamp
         else:

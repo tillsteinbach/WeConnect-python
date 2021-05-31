@@ -26,7 +26,7 @@ class AddressableLeaf():
             if flags & observerflags:
                 observers.add(observer)
         if self.__parent is not None:
-            observers |= self.__parent.getObservers(flags)
+            observers.update(self.__parent.getObservers(flags))
         return observers
 
     def notify(self, flags):

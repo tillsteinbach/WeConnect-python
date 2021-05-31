@@ -32,7 +32,7 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attributes
+class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes
     DEFAULT_OPTIONS = {
         "headers": {
             'accept': '*/*',
@@ -63,6 +63,7 @@ class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attribute
         updateAfterLogin=True,
         loginOnInit=True,
         fixAPI=True,
+        fromCache=False,
     ):
         super().__init__(localAddress='', parent=None)
         self.username = username
@@ -118,7 +119,7 @@ class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attribute
                 LOG.info('Login not necessary, token still valid')
 
         if updateAfterLogin:
-            self.update()
+            self.update(fromCache=fromCache)
 
     def persistTokens(self):
         if self.tokenfile:
@@ -357,15 +358,24 @@ class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attribute
     def vehicles(self):
         return self.__vehicles
 
-    def update(self):
+    def update(self, fromCache=False):  # noqa: C901
         data = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        if url in self.__cache:
+        if fromCache and url in self.__cache:
             data = self.__cache[url]
         else:
             vehiclesResponse = self.__session.get(url, allow_redirects=False)
             if vehiclesResponse.status_code == requests.codes['ok']:
                 data = vehiclesResponse.json()
+            elif vehiclesResponse.status_code == requests.codes['unauthorized']:
+                LOG.info('Server asks for new authorization')
+                self.login()
+                vehiclesResponse = self.__session.get(url, allow_redirects=False)
+                if vehiclesResponse.status_code == requests.codes['ok']:
+                    data = vehiclesResponse.json()
+                else:
+                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                         f' Status Code was: {vehiclesResponse.status_code}')
             else:
                 raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
         if data is not None:
@@ -378,10 +388,10 @@ class WeConnect(AddressableObject):# pylint: disable=too-many-instance-attribute
                     vins.append(vin)
                     if vin not in self.__vehicles:
                         vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict,
-                                          cache=self.__cache, fixAPI=self.fixAPI)
+                                          cache=self.__cache, fixAPI=self.fixAPI, fromCache=fromCache)
                         self.__vehicles[vin] = vehicle
                     else:
-                        self.__vehicles[vin].update(fromDict=vehicleDict)
+                        self.__vehicles[vin].update(fromDict=vehicleDict, fromCache=fromCache)
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
