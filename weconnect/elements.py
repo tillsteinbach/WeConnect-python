@@ -465,7 +465,12 @@ class BatteryStatus(GenericStatus):
             self.currentSOC_pct.enabled = False
 
         if 'cruisingRangeElectric_km' in fromDict:
-            self.cruisingRangeElectric_km.value = int(fromDict['cruisingRangeElectric_km'])
+            cruisingRangeElectric_km = int(fromDict['cruisingRangeElectric_km'])
+            if self.fixAPI and cruisingRangeElectric_km == 0x3FFF:
+                cruisingRangeElectric_km = None
+                LOG.warning('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
+                            ' of 16383 km.', self.getGlobalAddress())
+            self.cruisingRangeElectric_km.value = cruisingRangeElectric_km
         else:
             self.cruisingRangeElectric_km.enabled = False
 
@@ -477,7 +482,10 @@ class BatteryStatus(GenericStatus):
         if self.currentSOC_pct.enabled:
             string += f'\tCurrent SoC: {self.currentSOC_pct.value}%\n'
         if self.cruisingRangeElectric_km.enabled:
-            string += f'\tRange: {self.cruisingRangeElectric_km.value}km\n'
+            if self.cruisingRangeElectric_km.value is not None:
+                string += f'\tRange: {self.cruisingRangeElectric_km.value}km\n'
+            else:
+                string += f'\tRange: currently unknown\n'
         return string
 
 
