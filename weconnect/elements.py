@@ -485,7 +485,7 @@ class BatteryStatus(GenericStatus):
             if self.cruisingRangeElectric_km.value is not None:
                 string += f'\tRange: {self.cruisingRangeElectric_km.value}km\n'
             else:
-                string += f'\tRange: currently unknown\n'
+                string += '\tRange: currently unknown\n'
         return string
 
 
