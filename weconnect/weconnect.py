@@ -143,7 +143,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
 
-    def login(self):  # noqa: C901 # pylint: disable=R0914, R0912
+    def login(self):  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
         # Try to access page to be redirected to login form
         tryLoginUrl = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
@@ -260,8 +260,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if 'userId' not in params or not params['userId']:
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
-            else:
-                raise APICompatibilityError('No user id provided')
+            raise APICompatibilityError('No user id provided')
         self.__userId = params['userId']
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
