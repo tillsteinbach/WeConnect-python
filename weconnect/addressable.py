@@ -1,6 +1,9 @@
+import logging
 from datetime import datetime, timezone
 from enum import Enum, Flag, auto
 from typing import Dict
+
+LOG = logging.getLogger("weconnect")
 
 
 class AddressableLeaf():
@@ -19,6 +22,7 @@ class AddressableLeaf():
 
     def addObserver(self, observer, flag):
         self.__observers.add((observer, flag))
+        LOG.debug('%s: Observer added with flags: %s', self.getGlobalAddress(), flag)
 
     def getObservers(self, flags):
         observers = set()
@@ -33,6 +37,8 @@ class AddressableLeaf():
         observers = self.getObservers(flags)
         for observer in observers:
             observer(element=self, flags=flags)
+        LOG.debug('%s: Notify called with flags: %s for %d observers', str(self), flags, len(observers))
+        LOG.debug('%s: Notify called with flags: %s for %d observers', self.getGlobalAddress(), flags, len(observers))
 
     @property
     def enabled(self):
@@ -103,7 +109,7 @@ class AddressableAttribute(AddressableLeaf):
 
     @value.setter
     def value(self, newValue):
-        self.setValueWithCarTime(newValue, lastUpdateFromCar=None)
+        raise NotImplementedError('You cannot set this attribute. Set is not implemented')
 
     def setValueWithCarTime(self, newValue, lastUpdateFromCar):
         valueChanged = newValue != self.__value

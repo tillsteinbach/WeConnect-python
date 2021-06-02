@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed:
+- Various small API problems
+- Prepared for setters
+
 ## [0.3.1] - 2021-05-31
 ### Added
 - Handling of API error for electric range
