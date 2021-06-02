@@ -54,6 +54,9 @@ class Vehicle(AddressableObject):
 
             if 'enrollmentStatus' in fromDict:
                 self.enrollmentStatus.setValueWithCarTime(fromDict['enrollmentStatus'], lastUpdateFromCar=None)
+                if self.enrollmentStatus.value == 'GDC_MISSING':
+                    LOG.warning('WeConnect reported enrollmentStatus GDC_MISSING. This means you have to login at'
+                                ' myvolkswagen.de website and accept the terms and conditions')
             else:
                 self.enrollmentStatus.enabled = False
 
@@ -269,7 +272,7 @@ class GenericStatus(AddressableObject):
                                 ' This is a problem of the weconnect API and might be fixed in the future',
                                 self.getGlobalAddress(), fixed)
                 if carCapturedTimestamp == datetime(year=2000, month=1, day=1, hour=0, minute=0, second=0,
-                                                             tzinfo=timezone.utc):
+                                                    tzinfo=timezone.utc):
                     carCapturedTimestamp = None
 
             self.carCapturedTimestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None)
