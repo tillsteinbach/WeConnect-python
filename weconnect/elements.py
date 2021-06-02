@@ -19,6 +19,7 @@ class Vehicle(AddressableObject):
         fromDict,
         fixAPI=True,
         cache=None,
+        maxAge=None
     ):
         self.__session = session
         super().__init__(localAddress=vin, parent=parent)
@@ -32,13 +33,14 @@ class Vehicle(AddressableObject):
         self.images = AddressableAttribute(localAddress='images', parent=self, value=None)
         self.fixAPI = fixAPI
 
-        self.update(fromDict, cache=cache)
+        self.update(fromDict, cache=cache, maxAge=maxAge)
 
     def update(  # noqa: C901
         self,
         fromDict=None,
         cache=None,
-        updateCapabilities=True
+        maxAge=None,
+        updateCapabilities=True,
     ):
         if fromDict is not None:
             LOG.debug('Create /update vehicle')
@@ -102,18 +104,21 @@ class Vehicle(AddressableObject):
                                               'images']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
-        self.__updateStatus(cache=cache, updateCapabilities=updateCapabilities)
+        self.__updateStatus(cache=cache, maxAge=maxAge, updateCapabilities=updateCapabilities)
         # self.test()
 
-    def __updateStatus(self, cache=False, updateCapabilities=True):  # noqa: C901
+    def __updateStatus(self, cache=None, maxAge=None, updateCapabilities=True):  # noqa: C901
+        data = None
+        cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
-        if cache is not None and url in cache:
-            data = cache[url]
-        else:
+        if maxAge is not None and cache is not None and url in cache:
+            data, cacheDateString = cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=maxAge))):
             statusResponse = self.__session.get(url, allow_redirects=False)
             data = statusResponse.json()
             if cache is not None:
-                cache[url] = data
+                cache[url] = (data, datetime.utcnow())
         if 'data' in data and data['data']:
             keyClassMap = {'accessStatus': AccessStatus,
                            'batteryStatus': BatteryStatus,
@@ -147,15 +152,17 @@ class Vehicle(AddressableObject):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         data = None
+        cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        if cache is not None and url in cache:
-            data = cache[url]
-        else:
+        if maxAge is not None and cache is not None and url in cache:
+            data, cacheDateString = cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=maxAge))):
             statusResponse = self.__session.get(url, allow_redirects=False)
             if statusResponse.status_code == 200:
                 data = statusResponse.json()
                 if cache is not None:
-                    cache[url] = data
+                    cache[url] = (data, datetime.utcnow())
         if data is not None:
             if 'data' in data:
                 if 'parkingPosition' in self.statuses:

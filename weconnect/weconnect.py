@@ -62,8 +62,9 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         tokenfile=None,
         updateAfterLogin=True,
         loginOnInit=True,
+        refreshTokens=True,
         fixAPI=True,
-        fromCache=False,
+        maxAge=None,
     ):
         super().__init__(localAddress='', parent=None)
         self.username = username
@@ -77,6 +78,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
         self.__cache = dict()
         self.fixAPI = fixAPI
+        self.maxAge = maxAge
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
 
@@ -103,7 +105,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     LOG.info('Could not use refreshToken from file %s (does not contain a token)', self.tokenfile)
 
                 # Refresh tokens once
-                if loginOnInit:
+                if loginOnInit or refreshTokens:
                     self.__refreshToken()
 
             except json.JSONDecodeError as err:
@@ -119,7 +121,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 LOG.info('Login not necessary, token still valid')
 
         if updateAfterLogin:
-            self.update(fromCache=fromCache)
+            self.update()
 
     def persistTokens(self):
         if self.tokenfile:
@@ -132,10 +134,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def persistCacheAsJson(self, filename):
         with open(filename, 'w') as file:
-            json.dump(self.__cache, file)
+            json.dump(self.__cache, file, cls=DateTimeEncoder)
         LOG.info('Writing cachefile %s', filename)
 
-    def fillCacheFromJson(self, filename):
+    def fillCacheFromJson(self, filename, maxAge):
+        self.maxAge = maxAge
         with open(filename, 'r') as file:
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
@@ -255,7 +258,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         # Check for user id
         if 'userId' not in params or not params['userId']:
-            raise APICompatibilityError('No user id provided')
+            if 'updated' in params and params['updated'] == 'dataprivacy':
+                raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
+            else:
+                raise APICompatibilityError('No user id provided')
         self.__userId = params['userId']
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
@@ -358,12 +364,14 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self):
         return self.__vehicles
 
-    def update(self, fromCache=False, updateCapabilities=True):  # noqa: C901
+    def update(self, updateCapabilities=True):  # noqa: C901
         data = None
+        cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        if fromCache and url in self.__cache:
-            data = self.__cache[url]
-        else:
+        if self.maxAge is not None and url in self.__cache:
+            data, cacheDateString = self.__cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             vehiclesResponse = self.__session.get(url, allow_redirects=False)
             if vehiclesResponse.status_code == requests.codes['ok']:
                 data = vehiclesResponse.json()
@@ -388,16 +396,16 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     vins.append(vin)
                     if vin not in self.__vehicles:
                         vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict,
-                                          cache=self.__cache, fixAPI=self.fixAPI)
+                                          cache=self.__cache, maxAge=self.maxAge, fixAPI=self.fixAPI)
                         self.__vehicles[vin] = vehicle
                     else:
-                        self.__vehicles[vin].update(fromDict=vehicleDict, cache=self.__cache,
+                        self.__vehicles[vin].update(fromDict=vehicleDict, cache=self.__cache, maxAge=self.maxAge,
                                                     updateCapabilities=updateCapabilities)
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
 
-                self.__cache[url] = data
+                self.__cache[url] = (data, datetime.utcnow())
 
     def getLeafChildren(self):
         return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()]
