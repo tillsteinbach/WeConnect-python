@@ -680,7 +680,7 @@ class PlugStatus(GenericStatus):
                 self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState(fromDict['plugLockState']),
                                                        lastUpdateFromCar=None)
             except ValueError:
-                self.plugLockState.setValueWithCarTime(PlugStatus.PlugStatus.PlugLockState.UNKNOWN,
+                self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState.UNKNOWN,
                                                        lastUpdateFromCar=None)
                 LOG.warning('An unsupported plugLockState: %s was provided,'
                             ' please report this as a bug', fromDict['plugLockState'])
