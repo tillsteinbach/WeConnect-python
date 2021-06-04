@@ -11,6 +11,7 @@ import requests
 
 from .elements import Vehicle
 from .addressable import AddressableObject, AddressableDict
+from .errors import APICompatibilityError, AuthentificationError, RetrievalError
 
 LOG = logging.getLogger("weconnect")
 
@@ -123,6 +124,14 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if updateAfterLogin:
             self.update()
 
+    @property
+    def session(self):
+        return self.__session
+
+    @property
+    def cache(self):
+        return self.__cache
+
     def persistTokens(self):
         if self.tokenfile:
             try:
@@ -142,6 +151,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         with open(filename, 'r') as file:
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
+
+    def clearCache(self, maxAge):
+        self.maxAge = maxAge
+        self.__cache.clear()
+        LOG.info('Clearing cache')
 
     def login(self):  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
         # Try to access page to be redirected to login form
@@ -363,11 +377,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self):
         return self.__vehicles
 
-    def update(self, updateCapabilities=True):  # noqa: C901
+    def update(self, updateCapabilities=True, force=False):  # noqa: C901
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        if self.maxAge is not None and url in self.__cache:
+        if force or (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
@@ -394,17 +408,16 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     vin = vehicleDict['vin']
                     vins.append(vin)
                     if vin not in self.__vehicles:
-                        vehicle = Vehicle(vin=vin, session=self.__session, parent=self.__vehicles, fromDict=vehicleDict,
-                                          cache=self.__cache, maxAge=self.maxAge, fixAPI=self.fixAPI)
+                        vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict,
+                                          fixAPI=self.fixAPI)
                         self.__vehicles[vin] = vehicle
                     else:
-                        self.__vehicles[vin].update(fromDict=vehicleDict, cache=self.__cache, maxAge=self.maxAge,
-                                                    updateCapabilities=updateCapabilities)
+                        self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities)
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
 
-                self.__cache[url] = (data, datetime.utcnow())
+                self.__cache[url] = (data, str(datetime.utcnow()))
 
     def getLeafChildren(self):
         return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()]
@@ -414,15 +427,3 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         for vin, vehicle in self.__vehicles.items():
             returnString += f'Vehicle: {vin}\n{vehicle}\n'
         return returnString
-
-
-class RetrievalError(Exception):
-    pass
-
-
-class AuthentificationError(Exception):
-    pass
-
-
-class APICompatibilityError(Exception):
-    pass

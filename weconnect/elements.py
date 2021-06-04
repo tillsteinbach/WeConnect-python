@@ -1,11 +1,15 @@
 import logging
-from datetime import datetime, timedelta, timezone
+import json
 from enum import Enum
+from datetime import datetime, timedelta, timezone
 
+import requests
 
-from .util import robustTimeParse
+from .util import robustTimeParse, toBool
+from .addressable import AddressableLeaf, AddressableObject, AddressableAttribute, AddressableDict, AddressableList, \
+    ChangeableAttribute
+from .errors import ControlError, SetterError
 
-from .addressable import AddressableObject, AddressableAttribute, AddressableDict
 
 LOG = logging.getLogger("weconnect")
 
@@ -13,49 +17,49 @@ LOG = logging.getLogger("weconnect")
 class Vehicle(AddressableObject):
     def __init__(
         self,
+        weConnect,
         vin,
-        session,
         parent,
         fromDict,
         fixAPI=True,
-        cache=None,
-        maxAge=None
     ):
-        self.__session = session
+        self.weConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
-        self.vin = AddressableAttribute(localAddress='vin', parent=self, value=None)
-        self.role = AddressableAttribute(localAddress='role', parent=self, value=None)
-        self.enrollmentStatus = AddressableAttribute(localAddress='enrollmentStatus', parent=self, value=None)
-        self.model = AddressableAttribute(localAddress='model', parent=self, value=None)
-        self.nickname = AddressableAttribute(localAddress='nickname', parent=self, value=None)
+        self.vin = AddressableAttribute(localAddress='vin', parent=self, value=None, valueType=str)
+        self.role = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=str)
+        self.enrollmentStatus = AddressableAttribute(localAddress='enrollmentStatus', parent=self, value=None,
+                                                     valueType=str)
+        self.model = AddressableAttribute(localAddress='model', parent=self, value=None, valueType=str)
+        self.nickname = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
         self.statuses = AddressableDict(localAddress='status', parent=self)
-        self.images = AddressableAttribute(localAddress='images', parent=self, value=None)
+        self.images = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
+        self.controls = Controls(localAddress='controls', vehicle=self, parent=self)
         self.fixAPI = fixAPI
 
-        self.update(fromDict, cache=cache, maxAge=maxAge)
+        self.update(fromDict)
 
     def update(  # noqa: C901
         self,
         fromDict=None,
-        cache=None,
-        maxAge=None,
         updateCapabilities=True,
+        force=False,
     ):
         if fromDict is not None:
             LOG.debug('Create /update vehicle')
             if 'vin' in fromDict:
-                self.vin.setValueWithCarTime(fromDict['vin'], lastUpdateFromCar=None)
+                self.vin.setValueWithCarTime(fromDict['vin'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.vin.enabled = False
 
             if 'role' in fromDict:
-                self.role.setValueWithCarTime(fromDict['role'], lastUpdateFromCar=None)
+                self.role.setValueWithCarTime(fromDict['role'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.role.enabled = False
 
             if 'enrollmentStatus' in fromDict:
-                self.enrollmentStatus.setValueWithCarTime(fromDict['enrollmentStatus'], lastUpdateFromCar=None)
+                self.enrollmentStatus.setValueWithCarTime(fromDict['enrollmentStatus'], lastUpdateFromCar=None,
+                                                          fromServer=True)
                 if self.enrollmentStatus.value == 'GDC_MISSING':
                     LOG.warning('WeConnect reported enrollmentStatus GDC_MISSING. This means you have to login at'
                                 ' myvolkswagen.de website and accept the terms and conditions')
@@ -63,12 +67,12 @@ class Vehicle(AddressableObject):
                 self.enrollmentStatus.enabled = False
 
             if 'model' in fromDict:
-                self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None)
+                self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.model.enabled = False
 
             if 'nickname' in fromDict:
-                self.nickname.setValueWithCarTime(fromDict['nickname'], lastUpdateFromCar=None)
+                self.nickname.setValueWithCarTime(fromDict['nickname'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.nickname.enabled = False
 
@@ -90,7 +94,7 @@ class Vehicle(AddressableObject):
                 self.capabilities.enabled = False
 
             if 'images' in fromDict:
-                self.images.setValueWithCarTime(fromDict['images'], lastUpdateFromCar=None)
+                self.images.setValueWithCarTime(fromDict['images'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.images.enabled = False
 
@@ -104,36 +108,37 @@ class Vehicle(AddressableObject):
                                               'images']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
-        self.__updateStatus(cache=cache, maxAge=maxAge, updateCapabilities=updateCapabilities)
+        self.updateStatus(updateCapabilities=updateCapabilities, force=force)
         # self.test()
 
-    def __updateStatus(self, cache=None, maxAge=None, updateCapabilities=True):  # noqa: C901
+    def updateStatus(self, updateCapabilities=True, force=False):  # noqa: C901 # pylint: disable=too-many-branches
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
-        if maxAge is not None and cache is not None and url in cache:
-            data, cacheDateString = cache[url]
+        if force or (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
+            data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=maxAge))):
-            statusResponse = self.__session.get(url, allow_redirects=False)
+        if data is None or (cacheDate is not None
+                            and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+            statusResponse = self.weConnect.session.get(url, allow_redirects=False)
             data = statusResponse.json()
-            if cache is not None:
-                cache[url] = (data, datetime.utcnow())
+            if self.weConnect.cache is not None:
+                self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+        keyClassMap = {'accessStatus': AccessStatus,
+                       'batteryStatus': BatteryStatus,
+                       'chargingStatus': ChargingStatus,
+                       'chargingSettings': ChargingSettings,
+                       'plugStatus': PlugStatus,
+                       'climatisationStatus': ClimatizationStatus,
+                       'climatisationSettings': ClimatizationSettings,
+                       'windowHeatingStatus': WindowHeatingStatus,
+                       'lightsStatus': LightsStatus,
+                       'rangeStatus': RangeStatus,
+                       'capabilityStatus': CapabilityStatus,
+                       'climatisationTimer': ClimatizationTimer,
+                       'climatisationRequestStatus': ClimatisationRequestStatus,
+                       }
         if 'data' in data and data['data']:
-            keyClassMap = {'accessStatus': AccessStatus,
-                           'batteryStatus': BatteryStatus,
-                           'chargingStatus': ChargingStatus,
-                           'chargingSettings': ChargingSettings,
-                           'plugStatus': PlugStatus,
-                           'climatisationStatus': ClimatizationStatus,
-                           'climatisationSettings': ClimatizationSettings,
-                           'windowHeatingStatus': WindowHeatingStatus,
-                           'lightsStatus': LightsStatus,
-                           'rangeStatus': RangeStatus,
-                           'capabilityStatus': CapabilityStatus,
-                           'climatisationTimer': ClimatizationTimer,
-                           'climatisationRequestStatus': ClimatisationRequestStatus,
-                           }
             for key, className in keyClassMap.items():
                 if key == 'capabilityStatus' and not updateCapabilities:
                     continue
@@ -143,33 +148,65 @@ class Vehicle(AddressableObject):
                         self.statuses[key].update(fromDict=data['data'][key])
                     else:
                         LOG.debug('Status %s does not exist, creating it', key)
-                        self.statuses[key] = className(
-                            parent=self.statuses, statusId=key, fromDict=data['data'][key], fixAPI=self.fixAPI)
+                        self.statuses[key] = className(vehicle=self, parent=self.statuses, statusId=key,
+                                                       fromDict=data['data'][key], fixAPI=self.fixAPI)
 
+            # check that there is no additional status than the configured ones, except for "target" that we merge into
+            # the known ones
             for key, value in {key: value for key, value in data['data'].items()
-                               if key not in keyClassMap.keys()}.items():
+                               if key not in list(keyClassMap.keys()) + ['target']}.items():
                 # TODO GenericStatus(parent=self.statuses, statusId=statusId, fromDict=statusDict)
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+
+            for status in self.statuses.values():
+                status.updateTarget(fromDict=None)
+            # target handling (we merge the target state into the statuses)
+            if 'target' in data['data']:
+                for statusId, target in data['data']['target'].items():
+                    if statusId in self.statuses:
+                        self.statuses[statusId].updateTarget(fromDict=target)
+                    else:
+                        LOG.warning('%s: got target %s with value %s for not existing status',
+                                    self.getGlobalAddress(), statusId, target)
+
+        # error handling
+        if 'error' in data and data['error']:
+            for status, error in data['error'].items():
+                if status in self.statuses:
+                    self.statuses[status].updateError(fromDict=error)
+                else:
+                    self.statuses[status] = keyClassMap[status](vehicle=self, parent=self.statuses, statusId=status,
+                                                                fromDict=None, fixAPI=self.fixAPI)
+                    self.statuses[status].updateError(fromDict=error)
+        for statusId, status in {statusId: status for statusId, status in self.statuses.items()
+                                 if statusId not in data['error']}.items():
+            status.error.reset()
+
+        # Controls
+        self.controls.update()
 
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        if maxAge is not None and cache is not None and url in cache:
-            data, cacheDateString = cache[url]
+        if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
+            data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=maxAge))):
-            statusResponse = self.__session.get(url, allow_redirects=False)
+        if data is None or (cacheDate is not None
+                            and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+            statusResponse = self.weConnect.session.get(url, allow_redirects=False)
             if statusResponse.status_code == 200:
                 data = statusResponse.json()
-                if cache is not None:
-                    cache[url] = (data, datetime.utcnow())
+                if self.weConnect.cache is not None:
+                    self.weConnect.cache[url] = (data, str(datetime.utcnow()))
         if data is not None:
             if 'data' in data:
                 if 'parkingPosition' in self.statuses:
                     self.statuses['parkingPosition'].update(fromDict=data['data'])
                 else:
-                    self.statuses['parkingPosition'] = ParkingPosition(
-                        parent=self.statuses, statusId='parkingPosition', fromDict=data['data'])
+                    self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                       parent=self.statuses,
+                                                                       statusId='parkingPosition',
+                                                                       fromDict=data['data'])
             return
         if 'parkingPosition' in self.statuses:
             del self.statuses['parkingPosition']
@@ -200,10 +237,12 @@ class GenericCapability(AddressableObject):
     ):
         self.fixAPI = fixAPI
         super().__init__(localAddress=capabilityId, parent=parent)
-        self.id = AddressableAttribute(localAddress='id', parent=self, value=None)
-        self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
-        self.expirationDate = AddressableAttribute(localAddress='expirationDate', parent=self, value=None)
-        self.userDisablingAllowed = AddressableAttribute(localAddress='userDisablingAllowed', parent=self, value=None)
+        self.id = AddressableAttribute(localAddress='id', parent=self, value=None, valueType=str)
+        self.status = AddressableAttribute(localAddress='status', parent=self, value=None, valueType=list)
+        self.expirationDate = AddressableAttribute(
+            localAddress='expirationDate', parent=self, value=None, valueType=datetime)
+        self.userDisablingAllowed = AddressableAttribute(
+            localAddress='userDisablingAllowed', parent=self, value=None, valueType=bool)
         LOG.debug('Create capability from dict')
         if fromDict is not None:
             self.update(fromDict=fromDict)
@@ -212,22 +251,24 @@ class GenericCapability(AddressableObject):
         LOG.debug('Update capability from dict')
 
         if 'id' in fromDict:
-            self.id.setValueWithCarTime(fromDict['id'], lastUpdateFromCar=None)
+            self.id.setValueWithCarTime(fromDict['id'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.id.enabled = False
 
         if 'status' in fromDict:
-            self.status.setValueWithCarTime(fromDict['status'], lastUpdateFromCar=None)
+            self.status.setValueWithCarTime(fromDict['status'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.status.enabled = False
 
         if 'expirationDate' in fromDict:
-            self.expirationDate.setValueWithCarTime(robustTimeParse(fromDict['expirationDate']), lastUpdateFromCar=None)
+            self.expirationDate.setValueWithCarTime(robustTimeParse(
+                fromDict['expirationDate']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.expirationDate.enabled = False
 
         if 'userDisablingAllowed' in fromDict:
-            self.userDisablingAllowed.setValueWithCarTime(fromDict['userDisablingAllowed'], lastUpdateFromCar=None)
+            self.userDisablingAllowed.setValueWithCarTime(
+                fromDict['userDisablingAllowed'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.userDisablingAllowed.enabled = False
 
@@ -245,16 +286,21 @@ class GenericCapability(AddressableObject):
 class GenericStatus(AddressableObject):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
+        self.vehicle = vehicle
         self.fixAPI = fixAPI
         super().__init__(localAddress=None, parent=parent)
         self.id = statusId
         self.address = self.id
-        self.carCapturedTimestamp = AddressableAttribute(localAddress='carCapturedTimestamp', parent=self, value=None)
+        self.carCapturedTimestamp = AddressableAttribute(
+            localAddress='carCapturedTimestamp', parent=self, value=None, valueType=datetime)
+        self.error = GenericStatus.StatusError(localAddress='error', parent=self)
+        self.target = AddressableList(localAddress='target', parent=self)
 
         if fromDict is not None:
             self.update(fromDict=fromDict)
@@ -282,7 +328,7 @@ class GenericStatus(AddressableObject):
                                                     tzinfo=timezone.utc):
                     carCapturedTimestamp = None
 
-            self.carCapturedTimestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None)
+            self.carCapturedTimestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None, fromServer=True)
             if self.carCapturedTimestamp.value is None:
                 self.carCapturedTimestamp.enabled = False
         else:
@@ -293,32 +339,218 @@ class GenericStatus(AddressableObject):
                            }.items():
             LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
+    def updateError(self, fromDict):
+        if fromDict is None:
+            self.error.reset()
+        else:
+            self.error.update(fromDict)
+
+    def updateTarget(self, fromDict):
+        if fromDict is None:
+            self.target.clear()
+            self.target.enabled = False
+        else:
+            for target in fromDict:
+                self.target.append(GenericStatus.Target(localAddress=str(
+                    len(self.target)), parent=self.target, fromDict=target))
+
     def __str__(self):
         returnString = f'[{self.id}]'
         if self.carCapturedTimestamp.enabled:
             returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'
+        if self.error.enabled:
+            returnString += f'\nError: {self.error}'
+        for target in self.target:
+            returnString += f'\nTarget: {target}'
         return returnString
+
+    class Target(AddressableObject):
+        def __init__(
+            self,
+            localAddress,
+            parent,
+            fromDict=None,
+        ):
+            super().__init__(localAddress=localAddress, parent=parent)
+            self.status = AddressableAttribute(localAddress='status', parent=self,
+                                               value=None, valueType=GenericStatus.Target.Status)
+            self.operation = AddressableAttribute(
+                localAddress='operation', parent=self, value=None, valueType=Controls.Operation)
+            self.body = AddressableAttribute(localAddress='body', parent=self, value=None, valueType=str)
+            self.group = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
+            self.info = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
+
+            if fromDict is not None:
+                self.update(fromDict)
+
+        def update(self, fromDict):
+            LOG.debug('Update Status Target from dict')
+
+            if 'status' in fromDict:
+                try:
+                    self.status.setValueWithCarTime(GenericStatus.Target.Status(
+                        fromDict['status']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.status.setValueWithCarTime(GenericStatus.Target.Status.UNKNOWN,
+                                                    lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported target status: %s was provided,'
+                                ' please report this as a bug', fromDict['status'])
+            else:
+                self.status.enabled = False
+
+            if 'operation' in fromDict:
+                try:
+                    self.operation.setValueWithCarTime(Controls.Operation(
+                        fromDict['operation']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.operation.setValueWithCarTime(Controls.Operation.UNKNOWN,
+                                                       lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported target operation: %s was provided,'
+                                ' please report this as a bug', fromDict['operation'])
+            else:
+                self.operation.enabled = False
+
+            if 'body' in fromDict:
+                self.body.setValueWithCarTime(str(fromDict['body']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.body.enabled = False
+
+            if 'group' in fromDict:
+                self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.group.enabled = False
+
+            if 'info' in fromDict:
+                self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.info.enabled = False
+
+        def __str__(self):
+            returnValue = ''
+            if self.operation.enabled:
+                returnValue += f'{self.operation.value.value} operation,'
+            if self.status.enabled:
+                returnValue += f' status {self.status.value.value} '
+            if self.info.enabled:
+                returnValue += f' information: {self.info.value}'
+            return returnValue
+
+        class Status(Enum,):
+            SUCCESSFULL = 'successful'
+            POLLING_TIMEOUT = 'polling_timeout'
+            IN_PROGRESS = 'in_progress'
+            QUEUED = 'queued'
+            UNKNOWN = 'unknown status'
+
+    class StatusError(AddressableObject):
+        def __init__(
+            self,
+            localAddress,
+            parent,
+            fromDict=None,
+        ):
+            super().__init__(localAddress=localAddress, parent=parent)
+            self.code = AddressableAttribute(localAddress='code', parent=self, value=None, valueType=int)
+            self.message = AddressableAttribute(localAddress='message', parent=self, value=None, valueType=str)
+            self.group = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
+            self.info = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
+            self.retry = AddressableAttribute(localAddress='retry', parent=self, value=None, valueType=bool)
+
+            if fromDict is not None:
+                self.update(fromDict)
+
+        def reset(self):
+            self.code.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.code.enabled = False
+            self.message.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.message.enabled = False
+            self.group.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.group.enabled = False
+            self.info.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.info.enabled = False
+            self.retry.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.retry.enabled = False
+            self.enabled = False
+
+        def update(self, fromDict):
+            LOG.debug('Update Status Error from dict')
+
+            if 'code' in fromDict:
+                self.code.setValueWithCarTime(int(fromDict['code']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.code.enabled = False
+
+            if 'message' in fromDict:
+                self.message.setValueWithCarTime(fromDict['message'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.message.enabled = False
+
+            if 'group' in fromDict:
+                self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.code.enabled = False
+
+            if 'info' in fromDict:
+                self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.info.enabled = False
+
+            if 'retry' in fromDict:
+                self.retry.setValueWithCarTime(toBool(fromDict['retry']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.retry.enabled = False
+
+            if not self.code.enabled and not self.message.enabled and not self.code.enabled and not self.info.enabled \
+                    and not self.retry.enabled:
+                self.enabled = False
+            else:
+                self.enabled = True
+
+            for key, value in {key: value for key, value in fromDict.items()
+                               if key not in ['code', 'message', 'group', 'info', 'retry']}.items():
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+
+        def __str__(self):
+            return f'Error {self.code.value}: {self.message.value} info: {self.info.value}'
+
+
+class GenericSettings(GenericStatus):
+    def valueChanged(self, element, flags):
+        del element
+        if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED \
+                and not flags & AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER:
+            setting = self.id.partition('Settings')[0]
+            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/{setting}/settings'
+            settingsDict = dict()
+            for child in self.getLeafChildren():
+                if isinstance(child, ChangeableAttribute):
+                    settingsDict[child.getLocalAddress()] = child.value  # pylint: disable=no-member # this is a fales positive
+            data = json.dumps(settingsDict)
+            putResponse = self.vehicle.weConnect.session.put(url, data=data, allow_redirects=True)
+            if putResponse.status_code != requests.codes['ok']:
+                raise SetterError(f'Could not set value ({putResponse.status_code})')
 
 
 class AccessStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None)
+        self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None, valueType=str)
         self.doors = AddressableDict(localAddress='doors', parent=self)
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update access status from dict')
 
         if 'overallStatus' in fromDict:
-            self.overallStatus.setValueWithCarTime(fromDict['overallStatus'], lastUpdateFromCar=None)
+            self.overallStatus.setValueWithCarTime(fromDict['overallStatus'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.overallStatus.enabled = False
 
@@ -371,8 +603,10 @@ class AccessStatus(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=None, parent=parent)
-            self.openState = AddressableAttribute(localAddress='openState', parent=self, value=None)
-            self.lockState = AddressableAttribute(localAddress='lockState', parent=self, value=None)
+            self.openState = AddressableAttribute(
+                localAddress='openState', parent=self, value=None, valueType=AccessStatus.Door.OpenState)
+            self.lockState = AddressableAttribute(
+                localAddress='lockState', parent=self, value=None, valueType=AccessStatus.Door.LockState)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -387,18 +621,30 @@ class AccessStatus(GenericStatus):
 
             if 'status' in fromDict:
                 if 'locked' in fromDict['status']:
-                    self.lockState.setValueWithCarTime(AccessStatus.Door.LockState.LOCKED, lastUpdateFromCar=None)
+                    self.lockState.setValueWithCarTime(
+                        AccessStatus.Door.LockState.LOCKED, lastUpdateFromCar=None, fromServer=True)
                 elif 'unlocked' in fromDict['status']:
-                    self.lockState.setValueWithCarTime(AccessStatus.Door.LockState.UNLOCKED, lastUpdateFromCar=None)
+                    self.lockState.setValueWithCarTime(
+                        AccessStatus.Door.LockState.UNLOCKED, lastUpdateFromCar=None, fromServer=True)
                 else:
-                    self.lockState.setValueWithCarTime(AccessStatus.Door.LockState.UNKNOWN, lastUpdateFromCar=None)
+                    self.lockState.setValueWithCarTime(
+                        AccessStatus.Door.LockState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
 
                 if 'open' in fromDict['status']:
-                    self.openState.setValueWithCarTime(AccessStatus.Door.OpenState.OPEN, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(AccessStatus.Door.OpenState.OPEN,
+                                                       lastUpdateFromCar=None, fromServer=True)
                 elif 'closed' in fromDict['status']:
-                    self.openState.setValueWithCarTime(AccessStatus.Door.OpenState.CLOSED, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Door.OpenState.CLOSED, lastUpdateFromCar=None, fromServer=True)
+                elif 'unsupported' in fromDict['status']:
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Door.OpenState.UNSUPPORTED, lastUpdateFromCar=None, fromServer=True)
+                elif 'invalid' in fromDict['status']:
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Door.OpenState.INVALID, lastUpdateFromCar=None, fromServer=True)
                 else:
-                    self.openState.setValueWithCarTime(AccessStatus.Door.OpenState.UNKNOWN, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Door.OpenState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
             else:
                 self.lockState.enabled = False
                 self.openState.enabled = False
@@ -417,6 +663,8 @@ class AccessStatus(GenericStatus):
         class OpenState(Enum):
             OPEN = 'open'
             CLOSED = 'closed'
+            UNSUPPORTED = 'unsupported'
+            INVALID = 'invalid'
             UNKNOWN = 'unknown open state'
 
         class LockState(Enum):
@@ -431,7 +679,8 @@ class AccessStatus(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=None, parent=parent)
-            self.openState = AddressableAttribute(localAddress='openState', parent=self, value=None)
+            self.openState = AddressableAttribute(
+                localAddress='openState', parent=self, value=None, valueType=AccessStatus.Window.OpenState)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -446,14 +695,19 @@ class AccessStatus(GenericStatus):
 
             if 'status' in fromDict:
                 if 'open' in fromDict['status']:
-                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.OPEN, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Window.OpenState.OPEN, lastUpdateFromCar=None, fromServer=True)
                 elif 'closed' in fromDict['status']:
-                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.CLOSED, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Window.OpenState.CLOSED, lastUpdateFromCar=None, fromServer=True)
                 elif 'unsupported' in fromDict['status']:
-                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.UNSUPPORTED,
-                                                       lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.UNSUPPORTED, lastUpdateFromCar=None)
+                elif 'invalid' in fromDict['status']:
+                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.INVALID, lastUpdateFromCar=None)
                 else:
-                    self.openState.setValueWithCarTime(AccessStatus.Window.OpenState.UNKNOWN, lastUpdateFromCar=None)
+                    self.openState.setValueWithCarTime(
+                        AccessStatus.Window.OpenState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('No unsupported window status: %s was provided, please report this as a bug', fromDict['status'])
             else:
                 self.openState.enabled = False
 
@@ -467,28 +721,32 @@ class AccessStatus(GenericStatus):
             OPEN = 'open'
             CLOSED = 'closed'
             UNSUPPORTED = 'unsupported'
+            INVALID = 'invalid'
             UNKNOWN = 'unknown open state'
 
 
 class BatteryStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
-        fixAPI=True
+        fixAPI=True,
     ):
-        self.currentSOC_pct = AddressableAttribute(localAddress='currentSOC_pct', parent=self, value=None)
+        self.currentSOC_pct = AddressableAttribute(
+            localAddress='currentSOC_pct', parent=self, value=None, valueType=int)
         self.cruisingRangeElectric_km = AddressableAttribute(
-            localAddress='cruisingRangeElectric_km', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+            localAddress='cruisingRangeElectric_km', value=None, parent=self, valueType=int)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update battery status from dict')
 
         if 'currentSOC_pct' in fromDict:
-            self.currentSOC_pct.setValueWithCarTime(int(fromDict['currentSOC_pct']), lastUpdateFromCar=None)
+            self.currentSOC_pct.setValueWithCarTime(
+                int(fromDict['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.currentSOC_pct.enabled = False
 
@@ -498,7 +756,8 @@ class BatteryStatus(GenericStatus):
                 cruisingRangeElectric_km = None
                 LOG.warning('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
                             ' of 16383 km.', self.getGlobalAddress())
-            self.cruisingRangeElectric_km.setValueWithCarTime(cruisingRangeElectric_km, lastUpdateFromCar=None)
+            self.cruisingRangeElectric_km.setValueWithCarTime(
+                cruisingRangeElectric_km, lastUpdateFromCar=None, fromServer=True)
         else:
             self.cruisingRangeElectric_km.enabled = False
 
@@ -520,17 +779,21 @@ class BatteryStatus(GenericStatus):
 class ChargingStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.remainingChargingTimeToComplete_min = AddressableAttribute(
-            localAddress='remainingChargingTimeToComplete_min', parent=self, value=None)
-        self.chargingState = AddressableAttribute(localAddress='chargingState', value=None, parent=self)
-        self.chargePower_kW = AddressableAttribute(localAddress='chargePower_kW', value=None, parent=self)
-        self.chargeRate_kmph = AddressableAttribute(localAddress='chargeRate_kmph', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+            localAddress='remainingChargingTimeToComplete_min', parent=self, value=None, valueType=int)
+        self.chargingState = AddressableAttribute(
+            localAddress='chargingState', value=None, parent=self, valueType=ChargingStatus.ChargingState)
+        self.chargePower_kW = AddressableAttribute(
+            localAddress='chargePower_kW', value=None, parent=self, valueType=int)
+        self.chargeRate_kmph = AddressableAttribute(
+            localAddress='chargeRate_kmph', value=None, parent=self, valueType=int)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -538,7 +801,8 @@ class ChargingStatus(GenericStatus):
 
         if 'remainingChargingTimeToComplete_min' in fromDict:
             self.remainingChargingTimeToComplete_min \
-                .setValueWithCarTime(int(fromDict['remainingChargingTimeToComplete_min']), lastUpdateFromCar=None)
+                .setValueWithCarTime(int(fromDict['remainingChargingTimeToComplete_min']), lastUpdateFromCar=None,
+                                     fromServer=True)
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
 
@@ -547,19 +811,22 @@ class ChargingStatus(GenericStatus):
                 self.chargingState.setValueWithCarTime(ChargingStatus.ChargingState(fromDict['chargingState']),
                                                        lastUpdateFromCar=None)
             except ValueError:
-                self.chargingState.setValueWithCarTime(ChargingStatus.ChargingState.UNKNOWN, lastUpdateFromCar=None)
+                self.chargingState.setValueWithCarTime(
+                    ChargingStatus.ChargingState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported chargingState: %s was provided,'
                             ' please report this as a bug', fromDict['chargingState'])
         else:
             self.chargingState.enabled = False
 
         if 'chargePower_kW' in fromDict:
-            self.chargePower_kW.setValueWithCarTime(int(fromDict['chargePower_kW']), lastUpdateFromCar=None)
+            self.chargePower_kW.setValueWithCarTime(
+                int(fromDict['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.chargePower_kW.enabled = False
 
         if 'chargeRate_kmph' in fromDict:
-            self.chargeRate_kmph.setValueWithCarTime(int(fromDict['chargeRate_kmph']), lastUpdateFromCar=None)
+            self.chargeRate_kmph.setValueWithCarTime(
+                int(fromDict['chargeRate_kmph']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.chargeRate_kmph.enabled = False
 
@@ -591,43 +858,54 @@ class ChargingStatus(GenericStatus):
         UNKNOWN = 'unknown charging state'
 
 
-class ChargingSettings(GenericStatus):
+class ChargingSettings(GenericSettings):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.maxChargeCurrentAC = AddressableAttribute(localAddress='maxChargeCurrentAC', parent=self, value=None)
-        self.autoUnlockPlugWhenCharged = AddressableAttribute(
-            localAddress='autoUnlockPlugWhenCharged', value=None, parent=self)
-        self.targetSOC_pct = AddressableAttribute(localAddress='targetSOC_pct', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.maxChargeCurrentAC = ChangeableAttribute(
+            localAddress='maxChargeCurrentAC', parent=self, value=None, valueType=str)
+        self.autoUnlockPlugWhenCharged = ChangeableAttribute(localAddress='autoUnlockPlugWhenCharged', value=None,
+                                                             parent=self, valueType=ChargingSettings.UnlockPlugState)
+        self.targetSOC_pct = ChangeableAttribute(localAddress='targetSOC_pct', value=None, parent=self, valueType=int)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
+
+        self.maxChargeCurrentAC.addObserver(self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+                                            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.autoUnlockPlugWhenCharged.addObserver(self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+                                                   priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.targetSOC_pct.addObserver(self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+                                       priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Charging settings from dict')
 
         if 'maxChargeCurrentAC' in fromDict:
-            self.maxChargeCurrentAC.setValueWithCarTime(fromDict['maxChargeCurrentAC'], lastUpdateFromCar=None)
+            self.maxChargeCurrentAC.setValueWithCarTime(
+                fromDict['maxChargeCurrentAC'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.maxChargeCurrentAC.enabled = False
 
         if 'autoUnlockPlugWhenCharged' in fromDict:
             try:
                 self.autoUnlockPlugWhenCharged.setValueWithCarTime(ChargingSettings.UnlockPlugState(
-                    fromDict['autoUnlockPlugWhenCharged']), lastUpdateFromCar=None)
+                    fromDict['autoUnlockPlugWhenCharged']), lastUpdateFromCar=None, fromServer=True)
             except ValueError:
                 self.autoUnlockPlugWhenCharged.setValueWithCarTime(ChargingSettings.UnlockPlugState.UNKNOWN,
-                                                                   lastUpdateFromCar=None)
+                                                                   lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported autoUnlockPlugWhenCharged: %s was provided,'
                             ' please report this as a bug', fromDict['autoUnlockPlugWhenCharged'])
         else:
             self.autoUnlockPlugWhenCharged.enabled = False
 
         if 'targetSOC_pct' in fromDict:
-            self.targetSOC_pct.setValueWithCarTime(int(fromDict['targetSOC_pct']), lastUpdateFromCar=None)
+            self.targetSOC_pct.setValueWithCarTime(
+                int(fromDict['targetSOC_pct']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.targetSOC_pct.enabled = False
 
@@ -639,13 +917,13 @@ class ChargingSettings(GenericStatus):
                                                             ]))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.maxChargeCurrentAC.enabled:
-            string += f'\tMaximum Charge Current AC: {self.maxChargeCurrentAC.value}\n'
+            string += f'\n\tMaximum Charge Current AC: {self.maxChargeCurrentAC.value}'
         if self.autoUnlockPlugWhenCharged.enabled:
-            string += f'\tAuto Unlock When Charged: {self.autoUnlockPlugWhenCharged.value.value}\n'
+            string += f'\n\tAuto Unlock When Charged: {self.autoUnlockPlugWhenCharged.value.value}'  # pylint: disable=no-member # this is a fales positive
         if self.targetSOC_pct.enabled:
-            string += f'\tTarget SoC: {self.targetSOC_pct.value} %\n'
+            string += f'\n\tTarget SoC: {self.targetSOC_pct.value} %'
         return string
 
     class UnlockPlugState(Enum,):
@@ -657,14 +935,17 @@ class ChargingSettings(GenericStatus):
 class PlugStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.plugConnectionState = AddressableAttribute(localAddress='plugConnectionState', parent=self, value=None)
-        self.plugLockState = AddressableAttribute(localAddress='plugLockState', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.plugConnectionState = AddressableAttribute(
+            localAddress='plugConnectionState', parent=self, value=None, valueType=PlugStatus.PlugConnectionState)
+        self.plugLockState = AddressableAttribute(
+            localAddress='plugLockState', value=None, parent=self, valueType=PlugStatus.PlugLockState)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -673,10 +954,11 @@ class PlugStatus(GenericStatus):
         if 'plugConnectionState' in fromDict:
             try:
                 self.plugConnectionState.setValueWithCarTime(
-                    PlugStatus.PlugConnectionState(fromDict['plugConnectionState']), lastUpdateFromCar=None)
+                    PlugStatus.PlugConnectionState(fromDict['plugConnectionState']), lastUpdateFromCar=None,
+                    fromServer=True)
             except ValueError:
                 self.plugConnectionState.setValueWithCarTime(PlugStatus.PlugConnectionState.UNKNOWN,
-                                                             lastUpdateFromCar=None)
+                                                             lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported plugConnectionState: %s was provided,'
                             ' please report this as a bug', fromDict['plugConnectionState'])
         else:
@@ -685,10 +967,10 @@ class PlugStatus(GenericStatus):
         if 'plugLockState' in fromDict:
             try:
                 self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState(fromDict['plugLockState']),
-                                                       lastUpdateFromCar=None)
+                                                       lastUpdateFromCar=None, fromServer=True)
             except ValueError:
                 self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState.UNKNOWN,
-                                                       lastUpdateFromCar=None)
+                                                       lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported plugLockState: %s was provided,'
                             ' please report this as a bug', fromDict['plugLockState'])
         else:
@@ -721,15 +1003,17 @@ class PlugStatus(GenericStatus):
 class ClimatizationStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.remainingClimatisationTime_min = AddressableAttribute(
-            localAddress='remainingClimatisationTime_min', parent=self, value=None)
-        self.climatisationState = AddressableAttribute(localAddress='climatisationState', value=None, parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+            localAddress='remainingClimatisationTime_min', parent=self, value=None, valueType=int)
+        self.climatisationState = AddressableAttribute(localAddress='climatisationState', value=None, parent=self,
+                                                       valueType=ClimatizationStatus.ClimatizationState)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -737,17 +1021,18 @@ class ClimatizationStatus(GenericStatus):
 
         if 'remainingClimatisationTime_min' in fromDict:
             self.remainingClimatisationTime_min.setValueWithCarTime(int(fromDict['remainingClimatisationTime_min']),
-                                                                    lastUpdateFromCar=None)
+                                                                    lastUpdateFromCar=None, fromServer=True)
         else:
             self.remainingClimatisationTime_min.enabled = False
 
         if 'climatisationState' in fromDict:
             try:
                 self.climatisationState.setValueWithCarTime(
-                    ClimatizationStatus.ClimatizationState(fromDict['climatisationState']), lastUpdateFromCar=None)
+                    ClimatizationStatus.ClimatizationState(fromDict['climatisationState']), lastUpdateFromCar=None,
+                    fromServer=True)
             except ValueError:
                 self.climatisationState.setValueWithCarTime(ClimatizationStatus.ClimatizationState.UNKNOWN,
-                                                            lastUpdateFromCar=None)
+                                                            lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported climatisationState: %s was provided,'
                             ' please report this as a bug', fromDict['climatisationState'])
         else:
@@ -772,73 +1057,118 @@ class ClimatizationStatus(GenericStatus):
         UNKNOWN = 'unknown climatization state'
 
 
-class ClimatizationSettings(GenericStatus):
+class ClimatizationSettings(GenericSettings):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.targetTemperature_K = AddressableAttribute(localAddress='targetTemperature_K', parent=self, value=None)
-        self.targetTemperature_C = AddressableAttribute(localAddress='targetTemperature_C', parent=self, value=None)
-        self.climatisationWithoutExternalPower = AddressableAttribute(
-            localAddress='climatisationWithoutExternalPower', parent=self, value=None)
-        self.climatizationAtUnlock = AddressableAttribute(localAddress='climatizationAtUnlock', parent=self, value=None)
-        self.windowHeatingEnabled = AddressableAttribute(localAddress='windowHeatingEnabled', parent=self, value=None)
-        self.zoneFrontLeftEnabled = AddressableAttribute(localAddress='zoneFrontLeftEnabled', parent=self, value=None)
-        self.zoneFrontRightEnabled = AddressableAttribute(localAddress='zoneFrontRightEnabled', parent=self, value=None)
-        self.zoneRearLeftEnabled = AddressableAttribute(localAddress='zoneRearLeftEnabled', parent=self, value=None)
-        self.zoneRearRightEnabled = AddressableAttribute(localAddress='zoneRearRightEnabled', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.targetTemperature_K = ChangeableAttribute(
+            localAddress='targetTemperature_K', parent=self, value=None, valueType=float)
+        self.targetTemperature_C = ChangeableAttribute(
+            localAddress='targetTemperature_C', parent=self, value=None, valueType=float)
+        self.climatisationWithoutExternalPower = ChangeableAttribute(
+            localAddress='climatisationWithoutExternalPower', parent=self, value=None, valueType=bool)
+        self.climatizationAtUnlock = ChangeableAttribute(
+            localAddress='climatizationAtUnlock', parent=self, value=None, valueType=bool)
+        self.windowHeatingEnabled = ChangeableAttribute(
+            localAddress='windowHeatingEnabled', parent=self, value=None, valueType=bool)
+        self.zoneFrontLeftEnabled = ChangeableAttribute(
+            localAddress='zoneFrontLeftEnabled', parent=self, value=None, valueType=bool)
+        self.zoneFrontRightEnabled = ChangeableAttribute(
+            localAddress='zoneFrontRightEnabled', parent=self, value=None, valueType=bool)
+        self.zoneRearLeftEnabled = ChangeableAttribute(
+            localAddress='zoneRearLeftEnabled', parent=self, value=None, valueType=bool)
+        self.zoneRearRightEnabled = ChangeableAttribute(
+            localAddress='zoneRearRightEnabled', parent=self, value=None, valueType=bool)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
+
+        self.targetTemperature_C.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.targetTemperature_K.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.climatisationWithoutExternalPower.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.climatizationAtUnlock.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.windowHeatingEnabled.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.zoneFrontLeftEnabled.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.zoneFrontRightEnabled.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.zoneRearLeftEnabled.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.zoneRearRightEnabled.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Climatization settings from dict')
 
         if 'targetTemperature_K' in fromDict:
-            self.targetTemperature_K.setValueWithCarTime(float(fromDict['targetTemperature_K']), lastUpdateFromCar=None)
+            self.targetTemperature_K.setValueWithCarTime(
+                float(fromDict['targetTemperature_K']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.targetTemperature_K.enabled = False
 
         if 'targetTemperature_C' in fromDict:
-            self.targetTemperature_C.setValueWithCarTime(float(fromDict['targetTemperature_C']), lastUpdateFromCar=None)
+            self.targetTemperature_C.setValueWithCarTime(
+                float(fromDict['targetTemperature_C']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.targetTemperature_C.enabled = False
 
         if 'climatisationWithoutExternalPower' in fromDict:
-            self.climatisationWithoutExternalPower.setValueWithCarTime(fromDict['climatisationWithoutExternalPower'],
-                                                                       lastUpdateFromCar=None)
+            self.climatisationWithoutExternalPower.setValueWithCarTime(
+                toBool(fromDict['climatisationWithoutExternalPower']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.climatisationWithoutExternalPower.enabled = False
 
         if 'climatizationAtUnlock' in fromDict:
-            self.climatizationAtUnlock.setValueWithCarTime(fromDict['climatizationAtUnlock'], lastUpdateFromCar=None)
+            self.climatizationAtUnlock.setValueWithCarTime(
+                toBool(fromDict['climatizationAtUnlock']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.climatizationAtUnlock.enabled = False
 
         if 'windowHeatingEnabled' in fromDict:
-            self.windowHeatingEnabled.setValueWithCarTime(fromDict['windowHeatingEnabled'], lastUpdateFromCar=None)
+            self.windowHeatingEnabled.setValueWithCarTime(
+                toBool(fromDict['windowHeatingEnabled']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.windowHeatingEnabled.enabled = False
 
         if 'zoneFrontLeftEnabled' in fromDict:
-            self.zoneFrontLeftEnabled.setValueWithCarTime(fromDict['zoneFrontLeftEnabled'], lastUpdateFromCar=None)
+            self.zoneFrontLeftEnabled.setValueWithCarTime(
+                toBool(fromDict['zoneFrontLeftEnabled']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.zoneFrontLeftEnabled.enabled = False
 
         if 'zoneFrontRightEnabled' in fromDict:
-            self.zoneFrontRightEnabled.setValueWithCarTime(fromDict['zoneFrontRightEnabled'], lastUpdateFromCar=None)
+            self.zoneFrontRightEnabled.setValueWithCarTime(
+                toBool(fromDict['zoneFrontRightEnabled']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.zoneFrontRightEnabled.enabled = False
 
         if 'zoneRearLeftEnabled' in fromDict:
-            self.zoneRearLeftEnabled.setValueWithCarTime(fromDict['zoneRearLeftEnabled'], lastUpdateFromCar=None)
+            self.zoneRearLeftEnabled.setValueWithCarTime(
+                toBool(fromDict['zoneRearLeftEnabled']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.zoneRearLeftEnabled.enabled = False
 
         if 'zoneRearRightEnabled' in fromDict:
-            self.zoneRearRightEnabled.setValueWithCarTime(fromDict['zoneRearRightEnabled'], lastUpdateFromCar=None)
+            self.zoneRearRightEnabled.setValueWithCarTime(
+                toBool(fromDict['zoneRearRightEnabled']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.zoneRearRightEnabled.enabled = False
 
@@ -878,13 +1208,14 @@ class ClimatizationSettings(GenericStatus):
 class WindowHeatingStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.windows = AddressableDict(localAddress='windows', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -922,7 +1253,9 @@ class WindowHeatingStatus(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=None, parent=parent)
-            self.windowHeatingState = AddressableAttribute(localAddress='windowHeatingState', parent=self, value=None)
+            self.windowHeatingState = AddressableAttribute(
+                localAddress='windowHeatingState', parent=self, value=None,
+                valueType=WindowHeatingStatus.Window.WindowHeatingState)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -938,10 +1271,10 @@ class WindowHeatingStatus(GenericStatus):
             if 'windowHeatingState' in fromDict:
                 try:
                     self.windowHeatingState.setValueWithCarTime(WindowHeatingStatus.Window.WindowHeatingState(
-                        fromDict['windowHeatingState']), lastUpdateFromCar=None)
+                        fromDict['windowHeatingState']), lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
                     self.windowHeatingState.setValueWithCarTime(WindowHeatingStatus.Window.WindowHeatingState.UNKNOWN,
-                                                                lastUpdateFromCar=None)
+                                                                lastUpdateFromCar=None, fromServer=True)
                     LOG.warning('An unsupported windowHeatingState: %s was provided,'
                                 ' please report this as a bug', fromDict['windowHeatingState'])
             else:
@@ -963,13 +1296,14 @@ class WindowHeatingStatus(GenericStatus):
 class LightsStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.lights = AddressableDict(localAddress='lights', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1005,7 +1339,8 @@ class LightsStatus(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=None, parent=parent)
-            self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
+            self.status = AddressableAttribute(localAddress='status', parent=self,
+                                               value=None, valueType=LightsStatus.Light.LightState)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -1021,9 +1356,10 @@ class LightsStatus(GenericStatus):
             if 'status' in fromDict:
                 try:
                     self.status.setValueWithCarTime(LightsStatus.Light.LightState(fromDict['status']),
-                                                    lastUpdateFromCar=None)
+                                                    lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
-                    self.status.setValueWithCarTime(LightsStatus.Light.LightState.UNKNOWN, lastUpdateFromCar=None)
+                    self.status.setValueWithCarTime(LightsStatus.Light.LightState.UNKNOWN,
+                                                    lastUpdateFromCar=None, fromServer=True)
                     LOG.warning('An unsupported status: %s was provided,'
                                 ' please report this as a bug', fromDict['status'])
             else:
@@ -1044,16 +1380,18 @@ class LightsStatus(GenericStatus):
 class RangeStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.carType = AddressableAttribute(localAddress='carType', parent=self, value=None)
+        self.carType = AddressableAttribute(localAddress='carType', parent=self,
+                                            value=None, valueType=RangeStatus.CarType)
         self.primaryEngine = RangeStatus.Engine(localAddress='primaryEngine', parent=self)
         self.secondaryEngine = RangeStatus.Engine(localAddress='secondaryEngine', parent=self)
-        self.totalRange_km = AddressableAttribute(localAddress='totalRange_km', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.totalRange_km = AddressableAttribute(localAddress='totalRange_km', parent=self, value=None, valueType=int)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1061,9 +1399,10 @@ class RangeStatus(GenericStatus):
 
         if 'carType' in fromDict:
             try:
-                self.carType.setValueWithCarTime(RangeStatus.CarType(fromDict['carType']), lastUpdateFromCar=None)
+                self.carType.setValueWithCarTime(RangeStatus.CarType(
+                    fromDict['carType']), lastUpdateFromCar=None, fromServer=True)
             except ValueError:
-                self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None)
+                self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported carType: %s was provided,'
                             ' please report this as a bug', fromDict['carType'])
         else:
@@ -1080,7 +1419,8 @@ class RangeStatus(GenericStatus):
             self.secondaryEngine.enabled = False
 
         if 'totalRange_km' in fromDict:
-            self.totalRange_km.setValueWithCarTime(int(fromDict['totalRange_km']), lastUpdateFromCar=None)
+            self.totalRange_km.setValueWithCarTime(
+                int(fromDict['totalRange_km']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.totalRange_km.enabled = False
 
@@ -1110,9 +1450,12 @@ class RangeStatus(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=localAddress, parent=parent)
-            self.type = AddressableAttribute(localAddress='type', parent=self, value=None)
-            self.currentSOC_pct = AddressableAttribute(localAddress='currentSOC_pct', parent=self, value=None)
-            self.remainingRange_km = AddressableAttribute(localAddress='remainingRange_km', parent=self, value=None)
+            self.type = AddressableAttribute(localAddress='type', parent=self, value=None,
+                                             valueType=RangeStatus.Engine.EngineType)
+            self.currentSOC_pct = AddressableAttribute(
+                localAddress='currentSOC_pct', parent=self, value=None, valueType=int)
+            self.remainingRange_km = AddressableAttribute(
+                localAddress='remainingRange_km', parent=self, value=None, valueType=int)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -1122,21 +1465,24 @@ class RangeStatus(GenericStatus):
             if 'type' in fromDict:
                 try:
                     self.type.setValueWithCarTime(RangeStatus.Engine.EngineType(fromDict['type']),
-                                                  lastUpdateFromCar=None)
+                                                  lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
-                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType.UNKNOWN, lastUpdateFromCar=None)
+                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType.UNKNOWN,
+                                                  lastUpdateFromCar=None, fromServer=True)
                     LOG.warning('An unsupported type: %s was provided,'
                                 ' please report this as a bug', fromDict['type'])
             else:
                 self.type.enabled = False
 
             if 'currentSOC_pct' in fromDict:
-                self.currentSOC_pct.setValueWithCarTime(int(fromDict['currentSOC_pct']), lastUpdateFromCar=None)
+                self.currentSOC_pct.setValueWithCarTime(
+                    int(fromDict['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.currentSOC_pct.enabled = False
 
             if 'remainingRange_km' in fromDict:
-                self.remainingRange_km.setValueWithCarTime(int(fromDict['remainingRange_km']), lastUpdateFromCar=None)
+                self.remainingRange_km.setValueWithCarTime(
+                    int(fromDict['remainingRange_km']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.remainingRange_km.enabled = False
 
@@ -1161,13 +1507,14 @@ class RangeStatus(GenericStatus):
 class CapabilityStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1202,14 +1549,15 @@ class CapabilityStatus(GenericStatus):
 class ClimatizationTimer(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
         self.timers = AddressableDict(localAddress='timers', parent=self)
-        self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None, valueType=datetime)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1232,7 +1580,8 @@ class ClimatizationTimer(GenericStatus):
             self.timers.enabled = False
 
         if 'timeInCar' in fromDict:
-            self.timeInCar.setValueWithCarTime(robustTimeParse(fromDict['timeInCar']), lastUpdateFromCar=None)
+            self.timeInCar.setValueWithCarTime(robustTimeParse(
+                fromDict['timeInCar']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.timeInCar.enabled = False
 
@@ -1255,7 +1604,7 @@ class ClimatizationTimer(GenericStatus):
             fromDict=None,
         ):
             super().__init__(localAddress=None, parent=parent)
-            self.timerEnabled = AddressableAttribute(localAddress='enabled', parent=self, value=None)
+            self.timerEnabled = AddressableAttribute(localAddress='enabled', parent=self, value=None, valueType=bool)
             self.recurringTimer = None
             if fromDict is not None:
                 self.update(fromDict)
@@ -1270,7 +1619,8 @@ class ClimatizationTimer(GenericStatus):
                 LOG.error('Timer is missing id attribute')
 
             if 'enabled' in fromDict:
-                self.timerEnabled.setValueWithCarTime(bool(fromDict['enabled']), lastUpdateFromCar=None)
+                self.timerEnabled.setValueWithCarTime(
+                    toBool(fromDict['enabled']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.timerEnabled.enabled = False
 
@@ -1302,7 +1652,8 @@ class ClimatizationTimer(GenericStatus):
                 fromDict=None,
             ):
                 super().__init__(localAddress=localAddress, parent=parent)
-                self.startTime = AddressableAttribute(localAddress='startTime', parent=self, value=None)
+                self.startTime = AddressableAttribute(
+                    localAddress='startTime', parent=self, value=None, valueType=datetime)
                 self.recurringOn = AddressableDict(localAddress='recurringOn', parent=self)
                 if fromDict is not None:
                     self.update(fromDict)
@@ -1312,17 +1663,17 @@ class ClimatizationTimer(GenericStatus):
 
                 if 'startTime' in fromDict:
                     self.startTime.setValueWithCarTime(datetime.strptime(f'{fromDict["startTime"]}+00:00', '%H:%M%z'),
-                                                       lastUpdateFromCar=None)
+                                                       lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.startTime.enabled = False
 
                 if 'recurringOn' in fromDict:
                     for day, state in fromDict['recurringOn'].items():
                         if day in self.recurringOn:
-                            self.recurringOn[day].setValueWithCarTime(state, lastUpdateFromCar=None)
+                            self.recurringOn[day].setValueWithCarTime(state, lastUpdateFromCar=None, fromServer=True)
                         else:
                             self.recurringOn[day] = AddressableAttribute(
-                                localAddress=day, parent=self.recurringOn, value=state)
+                                localAddress=day, parent=self.recurringOn, value=state, valueType=bool)
                     for day in [day for day in self.recurringOn.keys() if day not in fromDict['recurringOn'].keys()]:
                         del self.recurringOn[day]
                 else:
@@ -1344,26 +1695,27 @@ class ClimatizationTimer(GenericStatus):
 class ParkingPosition(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
         fixAPI=True,
     ):
-        self.latitude = AddressableAttribute(localAddress='latitude', parent=self, value=None)
-        self.longitude = AddressableAttribute(localAddress='longitude', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.latitude = AddressableAttribute(localAddress='latitude', parent=self, value=None, valueType=float)
+        self.longitude = AddressableAttribute(localAddress='longitude', parent=self, value=None, valueType=float)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update ParkingPosition from dict')
 
         if 'latitude' in fromDict:
-            self.latitude.setValueWithCarTime(float(fromDict['latitude']), lastUpdateFromCar=None)
+            self.latitude.setValueWithCarTime(float(fromDict['latitude']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.latitude.enabled = False
 
         if 'longitude' in fromDict:
-            self.longitude.setValueWithCarTime(float(fromDict['longitude']), lastUpdateFromCar=None)
+            self.longitude.setValueWithCarTime(float(fromDict['longitude']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.longitude.enabled = False
 
@@ -1381,15 +1733,17 @@ class ParkingPosition(GenericStatus):
 class ClimatisationRequestStatus(GenericStatus):
     def __init__(
         self,
+        vehicle,
         parent,
         statusId,
         fromDict=None,
-        fixAPI=True
+        fixAPI=True,
     ):
-        self.status = AddressableAttribute(localAddress='status', parent=self, value=None)
-        self.group = AddressableAttribute(localAddress='group', parent=self, value=None)
-        self.info = AddressableAttribute(localAddress='info', parent=self, value=None)
-        super().__init__(parent, statusId, fromDict=fromDict, fixAPI=fixAPI)
+        self.status = AddressableAttribute(localAddress='status', parent=self,
+                                           value=None, valueType=ClimatisationRequestStatus.Status)
+        self.group = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
+        self.info = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
@@ -1398,21 +1752,22 @@ class ClimatisationRequestStatus(GenericStatus):
         if 'status' in fromDict:
             try:
                 self.status.setValueWithCarTime(ClimatisationRequestStatus.Status(fromDict['status']),
-                                                lastUpdateFromCar=None)
+                                                lastUpdateFromCar=None, fromServer=True)
             except ValueError:
-                self.status.setValueWithCarTime(ClimatisationRequestStatus.Status.UNKNOWN, lastUpdateFromCar=None)
+                self.status.setValueWithCarTime(ClimatisationRequestStatus.Status.UNKNOWN,
+                                                lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported status: %s was provided,'
                             ' please report this as a bug', fromDict['status'])
         else:
             self.status.enabled = False
 
         if 'group' in fromDict:
-            self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None)
+            self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.group.enabled = False
 
         if 'info' in fromDict:
-            self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None)
+            self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
         else:
             self.info.enabled = False
 
@@ -1429,5 +1784,77 @@ class ClimatisationRequestStatus(GenericStatus):
         return string
 
     class Status(Enum,):
+        SUCCESSFULL = 'successful'
         POLLING_TIMEOUT = 'polling_timeout'
-        UNKNOWN = 'unknown open state'
+        IN_PROGRESS = 'in_progress'
+        QUEUED = 'queued'
+        UNKNOWN = 'unknown status'
+
+
+class Controls(AddressableObject):
+    def __init__(
+        self,
+        localAddress,
+        vehicle,
+        parent,
+    ):
+        self.vehicle = vehicle
+        super().__init__(localAddress=localAddress, parent=parent)
+        self.update()
+        self.climatizationControl = None
+        self.chargingControl = None
+
+    def update(self):
+        for status in self.vehicle.statuses.values():
+            if isinstance(status, ClimatizationSettings):
+                if self.climatizationControl is None:
+                    self.climatizationControl = ChangeableAttribute(
+                        localAddress='climatization', parent=self, value=Controls.Operation.NONE, valueType=Controls.Operation)
+                    self.climatizationControl.addObserver(
+                        self.__onClimatizationControlChange, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+                        priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+            elif isinstance(status, ChargingSettings):
+                if self.climatizationControl is None:
+                    self.chargingControl = ChangeableAttribute(
+                        localAddress='charging', parent=self, value=Controls.Operation.NONE, valueType=Controls.Operation)
+                    self.chargingControl.addObserver(
+                        self.__onChargingControlChange, AddressableLeaf.ObserverEvent.VALUE_CHANGED, priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+
+    def __onClimatizationControlChange(self, element, flags):
+        if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED:
+            if element.value in [Controls.Operation.START, Controls.Operation.STOP]:
+                url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/climatisation/{element.value.value}'
+
+                settingsDict = dict()
+                if element.value == Controls.Operation.START:
+                    if 'climatisationSettings' not in self.vehicle.statuses:
+                        raise ControlError(
+                            'Could not control climatization, there are no climatisationSettings for the vehicle available.')
+                    climatizationSettings = self.vehicle.statuses['climatisationSettings']
+                    for child in climatizationSettings.getLeafChildren():
+                        if isinstance(child, ChangeableAttribute):
+                            settingsDict[child.getLocalAddress()] = child.value
+
+                data = json.dumps(settingsDict)
+                controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
+                if controlResponse.status_code != requests.codes['ok']:
+                    raise SetterError(f'Could not set value ({controlResponse.status_code})')
+                # Trigger one update for the vehicle status to show result
+                self.vehicle.updateStatus(force=True)
+
+    def __onChargingControlChange(self, element, flags):
+        if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED:
+            if element.value in [Controls.Operation.START, Controls.Operation.STOP]:
+                url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/charging/{element.value.value}'
+
+                controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
+                if controlResponse.status_code != requests.codes['ok']:
+                    raise SetterError(f'Could not set value ({controlResponse.status_code})')
+                # Trigger one update for the vehicle status to show result
+                self.vehicle.updateStatus(force=True)
+
+    class Operation(Enum):
+        START = 'start'
+        STOP = 'stop'
+        NONE = 'none'
+        UNKNOWN = 'unknown'

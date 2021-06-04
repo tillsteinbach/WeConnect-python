@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added:
+- Allow setting parameters through the API
+
+### Fixed:
+- Various small fixes
+
 ## [0.3.2] - 2021-06-02
 ### Fixed:
 - Various small API problems
