@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- Check allowed values for maximum charge current
+
 ## [0.4.0] - 2021-06-04
 ### Added:
 - Allow setting parameters through the API

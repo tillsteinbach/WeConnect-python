@@ -14,6 +14,12 @@ from .errors import ControlError, SetterError
 LOG = logging.getLogger("weconnect")
 
 
+class ControlInputEnum(Enum):
+    @classmethod
+    def allowedValues(cls):
+        return []
+
+
 class Vehicle(AddressableObject):
     def __init__(
         self,
@@ -868,7 +874,7 @@ class ChargingSettings(GenericSettings):
         fixAPI=True,
     ):
         self.maxChargeCurrentAC = ChangeableAttribute(
-            localAddress='maxChargeCurrentAC', parent=self, value=None, valueType=str)
+            localAddress='maxChargeCurrentAC', parent=self, value=None, valueType=ChargingSettings.MaximumChargeCurrent)
         self.autoUnlockPlugWhenCharged = ChangeableAttribute(localAddress='autoUnlockPlugWhenCharged', value=None,
                                                              parent=self, valueType=ChargingSettings.UnlockPlugState)
         self.targetSOC_pct = ChangeableAttribute(localAddress='targetSOC_pct', value=None, parent=self, valueType=int)
@@ -886,8 +892,14 @@ class ChargingSettings(GenericSettings):
         LOG.debug('Update Charging settings from dict')
 
         if 'maxChargeCurrentAC' in fromDict:
-            self.maxChargeCurrentAC.setValueWithCarTime(
-                fromDict['maxChargeCurrentAC'], lastUpdateFromCar=None, fromServer=True)
+            try:
+                self.maxChargeCurrentAC.setValueWithCarTime(ChargingSettings.MaximumChargeCurrent(
+                    fromDict['maxChargeCurrentAC']), lastUpdateFromCar=None, fromServer=True)
+            except ValueError:
+                self.maxChargeCurrentAC.setValueWithCarTime(ChargingSettings.MaximumChargeCurrent.UNKNOWN,
+                                                            lastUpdateFromCar=None, fromServer=True)
+                LOG.warning('An unsupported maxChargeCurrentAC: %s was provided,'
+                            ' please report this as a bug', fromDict['maxChargeCurrentAC'])
         else:
             self.maxChargeCurrentAC.enabled = False
 
@@ -926,10 +938,24 @@ class ChargingSettings(GenericSettings):
             string += f'\n\tTarget SoC: {self.targetSOC_pct.value} %'
         return string
 
-    class UnlockPlugState(Enum,):
+    class UnlockPlugState(ControlInputEnum,):
         OFF = 'off'
         ON = 'on'
-        UNKNOWN = 'unknown unlock plug state'
+        UNKNOWN = 'unknown'
+
+        @classmethod
+        def allowedValues(cls):
+            return [ChargingSettings.UnlockPlugState.OFF, ChargingSettings.UnlockPlugState.ON]
+
+    class MaximumChargeCurrent(ControlInputEnum,):
+        MAXIMUM = 'maximum'
+        REDUCED = 'reduced'
+        INVALID = 'invalid'
+        UNKNOWN = 'unknown'
+
+        @classmethod
+        def allowedValues(cls):
+            return [ChargingSettings.MaximumChargeCurrent.MAXIMUM, ChargingSettings.MaximumChargeCurrent.REDUCED]
 
 
 class PlugStatus(GenericStatus):
@@ -1853,8 +1879,12 @@ class Controls(AddressableObject):
                 # Trigger one update for the vehicle status to show result
                 self.vehicle.updateStatus(force=True)
 
-    class Operation(Enum):
+    class Operation(ControlInputEnum):
         START = 'start'
         STOP = 'stop'
         NONE = 'none'
         UNKNOWN = 'unknown'
+
+        @classmethod
+        def allowedValues(cls):
+            return [Controls.Operation.START, Controls.Operation.STOP]
