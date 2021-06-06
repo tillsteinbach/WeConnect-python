@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- Fix ChargingSettings to String method to use Enum value instead of raw enum 
+format"
 
 ## [0.4.1] - 2021-06-06
 ### Changed

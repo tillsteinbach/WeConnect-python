@@ -931,7 +931,7 @@ class ChargingSettings(GenericSettings):
     def __str__(self):
         string = super().__str__()
         if self.maxChargeCurrentAC.enabled:
-            string += f'\n\tMaximum Charge Current AC: {self.maxChargeCurrentAC.value}'
+            string += f'\n\tMaximum Charge Current AC: {self.maxChargeCurrentAC.value.value}'  # pylint: disable=no-member # this is a fales positive
         if self.autoUnlockPlugWhenCharged.enabled:
             string += f'\n\tAuto Unlock When Charged: {self.autoUnlockPlugWhenCharged.value.value}'  # pylint: disable=no-member # this is a fales positive
         if self.targetSOC_pct.enabled:
