@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Check allowed values for maximum charge current
 
+### Fixed
+- Problem with event observers
+
+###
+- Added events for deleted objects
+
 ## [0.4.0] - 2021-06-04
 ### Added:
 - Allow setting parameters through the API

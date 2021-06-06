@@ -20,13 +20,17 @@ class AddressableLeaf():
         self.lastUpdateFromServer = None
         self.lastUpdateFromCar = None
 
+    def __del__(self):
+        if self.enabled:
+            self.enabled = False
+
     def addObserver(self, observer, flag, priority=None):
         if priority is None:
             priority = AddressableLeaf.ObserverPriority.USER_MID
         self.__observers.add((observer, flag, priority))
         LOG.debug('%s: Observer added with flags: %s', self.getGlobalAddress(), flag)
 
-    def getObservers(self, flags):
+    def getObservers(self, flags, asTuple=False):
         observers = set()
         for observerEntry in self.__observers:
             observer, observerflags, priority = observerEntry
@@ -35,7 +39,9 @@ class AddressableLeaf():
             if flags & observerflags:
                 observers.add(observerEntry)
         if self.__parent is not None:
-            observers.update(self.__parent.getObservers(flags))
+            observers.update(self.__parent.getObservers(flags, asTuple=True))
+        if asTuple:
+            return sorted(observers, key=lambda entry: entry[2])
         return [observerEntry[0] for observerEntry in sorted(observers, key=lambda entry: entry[2])]
 
     def notify(self, flags):
