@@ -1656,7 +1656,7 @@ class ClimatizationTimer(GenericStatus):
                         localAddress='recurringTimer', parent=self, fromDict=fromDict['recurringTimer'])
                 else:
                     self.recurringTimer.update(fromDict=fromDict['recurringTimer'])
-            else:
+            elif self.recurringTimer is not None:
                 self.recurringTimer.enabled = False
                 self.recurringTimer = None
 
