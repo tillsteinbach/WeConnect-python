@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- Attribute Change from String
+
 ### Fixed
 - Fix ChargingSettings to String method to use Enum value instead of raw enum 
 format"

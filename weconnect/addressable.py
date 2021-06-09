@@ -30,7 +30,10 @@ class AddressableLeaf():
         self.__observers.add((observer, flag, priority))
         LOG.debug('%s: Observer added with flags: %s', self.getGlobalAddress(), flag)
 
-    def getObservers(self, flags, asTuple=False):
+    def getObservers(self, flags):
+        return [observerEntry[0] for observerEntry in self.getObserverEntries(flags)]
+
+    def getObserverEntries(self, flags):
         observers = set()
         for observerEntry in self.__observers:
             observer, observerflags, priority = observerEntry
@@ -39,10 +42,8 @@ class AddressableLeaf():
             if flags & observerflags:
                 observers.add(observerEntry)
         if self.__parent is not None:
-            observers.update(self.__parent.getObservers(flags, asTuple=True))
-        if asTuple:
-            return sorted(observers, key=lambda entry: entry[2])
-        return [observerEntry[0] for observerEntry in sorted(observers, key=lambda entry: entry[2])]
+            observers.update(self.__parent.getObserverEntries(flags))
+        return sorted(observers, key=lambda entry: entry[2])
 
     def notify(self, flags):
         observers = self.getObservers(flags)
@@ -198,8 +199,35 @@ class ChangeableAttribute(AddressableAttribute):
         super().__init__(localAddress=localAddress, parent=parent, value=value, valueType=valueType,
                          lastUpdateFromCar=lastUpdateFromCar)
 
-    @AddressableAttribute.value.setter
-    def value(self, newValue):
+    @AddressableAttribute.value.setter  # noqa: C901
+    def value(self, newValue):  # noqa: C901
+        if isinstance(newValue, str) and self.valueType != str:
+            try:
+                if self.valueType in [int, float]:
+                    newValue = self.valueType(newValue)
+                elif issubclass(self.valueType, Enum):
+                    newValue = self.valueType(newValue)
+                    try:
+                        allowedValues = self.valueType.allowedValues()
+                        if newValue not in allowedValues:
+                            raise ValueError('Value is not in allowed values')
+                    except AttributeError:
+                        pass
+                    newValue = self.valueType(newValue)
+            except ValueError as vErr:
+                valueFormat = ''
+                if self.valueType == int:
+                    valueFormat = 'N (Decimal number)'
+                elif self.valueType == float:
+                    valueFormat = 'F.F (Floating Point Number)'
+                elif self.valueType == bool:
+                    valueFormat = 'True/False (Boolean)'
+                elif issubclass(self.valueType, Enum):
+                    try:
+                        valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType.allowedValues()]) + ']'
+                    except AttributeError:
+                        valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType])
+                raise ValueError(f'id {self.getGlobalAddress()} cannot be set. You need to provide it in the correct format {valueFormat}') from vErr
         self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
 
 
