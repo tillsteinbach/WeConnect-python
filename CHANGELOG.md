@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## [0.5.2] - 2021-06-10
+### Fixed
+- Charging settings setting and request status response
+
 ## [0.5.1] - 2021-06-09
 ### Fixed
 - Bug with missing recurring timer
