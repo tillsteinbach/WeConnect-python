@@ -289,6 +289,9 @@ class AddressableDict(AddressableObject, Dict):
             self.enabled = True
         return retVal
 
+    def __str__(self):
+        return '[' + ', '.join([str(item) for item in self.values()]) + ']'
+
 
 class AddressableList(AddressableObject, List):
     def __add__(self, item):
@@ -296,3 +299,6 @@ class AddressableList(AddressableObject, List):
         if not self.enabled:
             self.enabled = True
         return retVal
+
+    def __str__(self):
+        return '[' + ', '.join([str(item) for item in self]) + ']'

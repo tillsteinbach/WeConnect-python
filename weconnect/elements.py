@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 import json
 from enum import Enum
@@ -8,7 +9,7 @@ import requests
 from .util import robustTimeParse, toBool
 from .addressable import AddressableLeaf, AddressableObject, AddressableAttribute, AddressableDict, AddressableList, \
     ChangeableAttribute
-from .errors import ControlError, SetterError
+from .errors import APICompatibilityError, ControlError, SetterError
 
 
 LOG = logging.getLogger("weconnect")
@@ -20,7 +21,8 @@ class ControlInputEnum(Enum):
         return []
 
 
-class Vehicle(AddressableObject):
+class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attributes
+
     def __init__(
         self,
         weConnect,
@@ -32,20 +34,21 @@ class Vehicle(AddressableObject):
         self.weConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
         self.vin = AddressableAttribute(localAddress='vin', parent=self, value=None, valueType=str)
-        self.role = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=str)
+        self.role = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=Vehicle.User.Role)
         self.enrollmentStatus = AddressableAttribute(localAddress='enrollmentStatus', parent=self, value=None,
-                                                     valueType=str)
+                                                     valueType=Vehicle.User.EnrollmentStatus)
         self.model = AddressableAttribute(localAddress='model', parent=self, value=None, valueType=str)
         self.nickname = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities = AddressableDict(localAddress='capabilities', parent=self)
         self.statuses = AddressableDict(localAddress='status', parent=self)
         self.images = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
+        self.coUsers = AddressableList(localAddress='coUsers', parent=self)
         self.controls = Controls(localAddress='controls', vehicle=self, parent=self)
         self.fixAPI = fixAPI
 
         self.update(fromDict)
 
-    def update(  # noqa: C901
+    def update(  # noqa: C901  # pylint: disable=too-many-branches
         self,
         fromDict=None,
         updateCapabilities=True,
@@ -59,16 +62,24 @@ class Vehicle(AddressableObject):
                 self.vin.enabled = False
 
             if 'role' in fromDict:
-                self.role.setValueWithCarTime(fromDict['role'], lastUpdateFromCar=None, fromServer=True)
+                try:
+                    self.role.setValueWithCarTime(Vehicle.User.Role(fromDict['role']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.role.setValueWithCarTime(Vehicle.User.Role.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported role: %s was provided, please report this as a bug', fromDict['role'])
             else:
                 self.role.enabled = False
 
             if 'enrollmentStatus' in fromDict:
-                self.enrollmentStatus.setValueWithCarTime(fromDict['enrollmentStatus'], lastUpdateFromCar=None,
-                                                          fromServer=True)
-                if self.enrollmentStatus.value == 'GDC_MISSING':
-                    LOG.warning('WeConnect reported enrollmentStatus GDC_MISSING. This means you have to login at'
-                                ' myvolkswagen.de website and accept the terms and conditions')
+                try:
+                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus(fromDict['enrollmentStatus']), lastUpdateFromCar=None,
+                                                              fromServer=True)
+                    if self.enrollmentStatus.value == Vehicle.User.EnrollmentStatus.GDC_MISSING:
+                        LOG.warning('WeConnect reported enrollmentStatus GDC_MISSING. This means you have to login at'
+                                    ' myvolkswagen.de website and accept the terms and conditions')
+                except ValueError:
+                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported target operation: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
             else:
                 self.enrollmentStatus.enabled = False
 
@@ -104,6 +115,23 @@ class Vehicle(AddressableObject):
             else:
                 self.images.enabled = False
 
+            if 'coUsers' in fromDict:
+                for user in fromDict['coUsers']:
+                    if 'id' in user:
+                        usersWithId = [x for x in self.coUsers if x.id.value == user['id']]
+                        if len(usersWithId) > 0:
+                            usersWithId[0].update(fromDict=user)
+                        else:
+                            self.coUsers.append(Vehicle.User(localAddress=str(len(self.coUsers)), parent=self.coUsers, fromDict=user))
+                    else:
+                        raise APICompatibilityError('User is missing id field')
+                # Remove all users that are not in list anymore
+                for user in [user for user in self.coUsers if user.id.value not in [x['id'] for x in fromDict['coUsers']]]:
+                    self.coUsers.remove(user)
+            else:
+                self.coUsers.enabled = False
+                self.coUsers.clear()
+
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['vin',
                                               'role',
@@ -111,7 +139,8 @@ class Vehicle(AddressableObject):
                                               'model',
                                               'nickname',
                                               'capabilities',
-                                              'images']}.items():
+                                              'images',
+                                              'coUsers']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         self.updateStatus(updateCapabilities=updateCapabilities, force=force)
@@ -218,20 +247,102 @@ class Vehicle(AddressableObject):
         if 'parkingPosition' in self.statuses:
             del self.statuses['parkingPosition']
 
-    def __str__(self):
-        string = \
-            f'VIN:               {self.vin.value}\n' \
-            f'Model:             {self.model.value}\n' \
-            f'Nickname:          {self.nickname.value}\n' \
-            f'Role:              {self.role.value}\n' \
-            f'Enrollment Status: {self.enrollmentStatus.value}\n' \
-            f'Capabilities:\n'
-        for capability in self.capabilities.values():
-            string += ''.join(['\t' + line for line in str(capability).splitlines(True)]) + '\n'
-        string += 'Statuses:\n'
-        for status in self.statuses.values():
-            string += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
-        return string
+    def __str__(self):  # noqa: C901
+        returnString = ''
+        if self.vin.enabled:
+            returnString += f'VIN:               {self.vin.value}\n'
+        if self.model.enabled:
+            returnString += f'Model:             {self.model.value}\n'
+        if self.nickname.enabled:
+            returnString += f'Nickname:          {self.nickname.value}\n'
+        if self.role.enabled:
+            returnString += f'Role:              {self.role.value.value}\n'
+        if self.enrollmentStatus.enabled:
+            returnString += f'Enrollment Status: {self.enrollmentStatus.value.value}\n'
+        if self.coUsers.enabled:
+            returnString += f'Co-Users: {len(self.coUsers)} items\n'
+            for coUser in self.coUsers:
+                returnString += ''.join(['\t' + line for line in str(coUser).splitlines(True)]) + '\n'
+        if self.capabilities.enabled:
+            returnString += f'Capabilities: {len(self.capabilities)} items\n'
+            for capability in self.capabilities.values():
+                returnString += ''.join(['\t' + line for line in str(capability).splitlines(True)]) + '\n'
+        if self.statuses.enabled:
+            returnString += f'Statuses: {len(self.statuses)} items\n'
+            for status in self.statuses.values():
+                returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
+        return returnString
+
+    class User(AddressableObject):
+        def __init__(
+            self,
+            localAddress,
+            parent,
+            fromDict=None,
+        ):
+            super().__init__(localAddress=localAddress, parent=parent)
+            self.id = AddressableAttribute(localAddress='id', parent=self, value=None, valueType=str)
+            self.role = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=Vehicle.User.Role)
+            self.roleReseted = AddressableAttribute(localAddress='roleReseted', parent=self, value=None, valueType=bool)
+            self.enrollmentStatus = AddressableAttribute(localAddress='enrollmentStatus', parent=self, value=None, valueType=Vehicle.User.EnrollmentStatus)
+
+            if fromDict is not None:
+                self.update(fromDict)
+
+        def update(self, fromDict):
+            LOG.debug('Update User from dict')
+
+            if 'id' in fromDict:
+                self.id.setValueWithCarTime(fromDict['id'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.id.enabled = False
+
+            if 'role' in fromDict:
+                try:
+                    self.role.setValueWithCarTime(Vehicle.User.Role(fromDict['role']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.role.setValueWithCarTime(Vehicle.User.Role.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported role: %s was provided, please report this as a bug', fromDict['role'])
+            else:
+                self.role.enabled = False
+
+            if 'roleReseted' in fromDict:
+                self.roleReseted.setValueWithCarTime(toBool(fromDict['roleReseted']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.roleReseted.enabled = False
+
+            if 'enrollmentStatus' in fromDict:
+                try:
+                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus(fromDict['enrollmentStatus']), lastUpdateFromCar=None,
+                                                              fromServer=True)
+                except ValueError:
+                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported target operation: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
+            else:
+                self.enrollmentStatus.enabled = False
+
+        def __str__(self):
+            returnValue = ''
+            if self.id.enabled:
+                returnValue += f'Id: {self.id.value}, '
+            if self.role.enabled:
+                returnValue += f' Role: {self.role.value.value}, '
+            if self.roleReseted.enabled:
+                returnValue += f' Reseted: {self.roleReseted.value}, '
+            if self.enrollmentStatus.enabled:
+                returnValue += f' Enrollment Status: {self.enrollmentStatus.value.value}'
+            return returnValue
+
+        class Role(Enum,):
+            PRIMARY_USER = 'PRIMARY_USER'
+            SECONDARY_USER = 'SECONDARY_USER'
+            UNKNOWN = 'unknown role'
+
+        class EnrollmentStatus(Enum,):
+            NOT_STARTED = 'NOT_STARTED'
+            COMPLETED = 'COMPLETED'
+            GDC_MISSING = 'GDC_MISSING'
+            UNKNOWN = 'unknown enrollment status'
 
 
 class GenericCapability(AddressableObject):
