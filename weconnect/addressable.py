@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timezone
-from enum import Enum, Flag, auto
+from enum import Enum, IntEnum, Flag, auto
 from typing import Dict, List
 
 LOG = logging.getLogger("weconnect")
@@ -114,7 +114,7 @@ class AddressableLeaf():
         UPDATED_FROM_CAR = auto()
         ALL = ENABLED | DISABLED | VALUE_CHANGED | UPDATED_FROM_SERVER | UPDATED_FROM_CAR
 
-    class ObserverPriority(Enum):
+    class ObserverPriority(IntEnum):
         INTERNAL_FIRST = 1
         INTERNAL_HIGH = 2
         USER_HIGH = 3
