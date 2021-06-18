@@ -385,7 +385,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
-            vehiclesResponse = self.__session.get(url, allow_redirects=False)
+            try:
+                vehiclesResponse = self.__session.get(url, allow_redirects=False)
+            except requests.exceptions.ConnectionError as conenctionError:
+                raise RetrievalError from conenctionError
             if vehiclesResponse.status_code == requests.codes['ok']:
                 data = vehiclesResponse.json()
             elif vehiclesResponse.status_code == requests.codes['unauthorized']:

@@ -336,7 +336,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         class Role(Enum,):
             PRIMARY_USER = 'PRIMARY_USER'
             SECONDARY_USER = 'SECONDARY_USER'
-            UNKNOWN = 'unknown role'
+            UNKNOWN = 'UNKNOWN'
 
         class EnrollmentStatus(Enum,):
             NOT_STARTED = 'NOT_STARTED'

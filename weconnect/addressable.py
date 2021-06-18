@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from enum import Enum, IntEnum, Flag, auto
 from typing import Dict, List
 
+from .util import toBool
+
 LOG = logging.getLogger("weconnect")
 
 
@@ -150,7 +152,7 @@ class AddressableAttribute(AddressableLeaf):
 
     def setValueWithCarTime(self, newValue, lastUpdateFromCar=None, fromServer=False, noNotify=False):
         if newValue is not None and not isinstance(newValue, self.valueType):
-            raise ValueError(f'{self.getGlobalAddress()}: new value must be of type {self.valueType}'
+            raise ValueError(f'{self.getGlobalAddress()}: new value {newValue} must be of type {self.valueType}'
                              f' but is of type {type(newValue)}')
         valueChanged = newValue != self.__value
         self.__value = newValue
@@ -205,6 +207,8 @@ class ChangeableAttribute(AddressableAttribute):
             try:
                 if self.valueType in [int, float]:
                     newValue = self.valueType(newValue)
+                elif self.valueType == bool:
+                    newValue = toBool(newValue)
                 elif issubclass(self.valueType, Enum):
                     newValue = self.valueType(newValue)
                     try:
@@ -227,7 +231,8 @@ class ChangeableAttribute(AddressableAttribute):
                         valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType.allowedValues()]) + ']'
                     except AttributeError:
                         valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType])
-                raise ValueError(f'id {self.getGlobalAddress()} cannot be set. You need to provide it in the correct format {valueFormat}') from vErr
+                raise ValueError(f'id {self.getGlobalAddress()} cannot be set to value {newValue}.'
+                                 f' You need to provide it in the correct format {valueFormat}') from vErr
         self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
 
 
@@ -257,7 +262,8 @@ class AddressableObject(AddressableLeaf):
 
         children = [self]
         for child in self.__children.values():
-            children += child.getLeafChildren()
+            if isinstance(child, AddressableObject):
+                children += child.getLeafChildren()
         return children
 
     @property
