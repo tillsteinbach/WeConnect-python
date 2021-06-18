@@ -256,9 +256,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if self.nickname.enabled:
             returnString += f'Nickname:          {self.nickname.value}\n'
         if self.role.enabled:
-            returnString += f'Role:              {self.role.value.value}\n'
+            returnString += f'Role:              {self.role.value.value}\n'  # pylint: disable=no-member
         if self.enrollmentStatus.enabled:
-            returnString += f'Enrollment Status: {self.enrollmentStatus.value.value}\n'
+            returnString += f'Enrollment Status: {self.enrollmentStatus.value.value}\n'  # pylint: disable=no-member
         if self.coUsers.enabled:
             returnString += f'Co-Users: {len(self.coUsers)} items\n'
             for coUser in self.coUsers:
@@ -326,11 +326,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             if self.id.enabled:
                 returnValue += f'Id: {self.id.value}, '
             if self.role.enabled:
-                returnValue += f' Role: {self.role.value.value}, '
+                returnValue += f' Role: {self.role.value.value}, '  # pylint: disable=no-member
             if self.roleReseted.enabled:
                 returnValue += f' Reseted: {self.roleReseted.value}, '
             if self.enrollmentStatus.enabled:
-                returnValue += f' Enrollment Status: {self.enrollmentStatus.value.value}'
+                returnValue += f' Enrollment Status: {self.enrollmentStatus.value.value}'  # pylint: disable=no-member
             return returnValue
 
         class Role(Enum,):
@@ -397,7 +397,7 @@ class GenericCapability(AddressableObject):
     def __str__(self):
         returnString = f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value}'
         if self.expirationDate.enabled:
-            returnString += f' (expires {self.expirationDate.value.isoformat()})'
+            returnString += f' (expires {self.expirationDate.value.isoformat()})'  # pylint: disable=no-member
         return returnString
 
 
@@ -475,7 +475,7 @@ class GenericStatus(AddressableObject):
     def __str__(self):
         returnString = f'[{self.id}]'
         if self.carCapturedTimestamp.enabled:
-            returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'
+            returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'  # pylint: disable=no-member
         if self.error.enabled:
             returnString += f'\nError: {self.error}'
         for target in self.target:
@@ -546,9 +546,9 @@ class GenericStatus(AddressableObject):
         def __str__(self):
             returnValue = ''
             if self.operation.enabled:
-                returnValue += f'{self.operation.value.value} operation,'
+                returnValue += f'{self.operation.value.value} operation,'  # pylint: disable=no-member
             if self.status.enabled:
-                returnValue += f' status {self.status.value.value} '
+                returnValue += f' status {self.status.value.value} '  # pylint: disable=no-member
             if self.info.enabled:
                 returnValue += f' information: {self.info.value}'
             return returnValue
@@ -776,9 +776,9 @@ class AccessStatus(GenericStatus):
         def __str__(self):
             returnString = f'{self.id}: '
             if self.openState.enabled:
-                returnString += f'{self.openState.value.value}'
+                returnString += f'{self.openState.value.value}'  # pylint: disable=no-member
             elif self.lockState.enabled:
-                returnString += f', {self.lockState.value.value}'
+                returnString += f', {self.lockState.value.value}'  # pylint: disable=no-member
             return returnString
 
         class OpenState(Enum):
@@ -836,7 +836,7 @@ class AccessStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.id}: {self.openState.value.value}'
+            return f'{self.id}: {self.openState.value.value}'  # pylint: disable=no-member
 
         class OpenState(Enum,):
             OPEN = 'open'
@@ -962,7 +962,7 @@ class ChargingStatus(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.chargingState.enabled:
-            string += f'\tState: {self.chargingState.value.value}\n'
+            string += f'\tState: {self.chargingState.value.value}\n'  # pylint: disable=no-member
         if self.remainingChargingTimeToComplete_min.enabled:
             string += f'\tRemaining Charging Time: {self.remainingChargingTimeToComplete_min.value} minutes\n'
         if self.chargePower_kW.enabled:
@@ -1124,9 +1124,9 @@ class PlugStatus(GenericStatus):
         string = super().__str__() + '\n'
         string += '\tPlug:'
         if self.plugConnectionState.enabled:
-            string += f' {self.plugConnectionState.value.value}, '
+            string += f' {self.plugConnectionState.value.value}, '  # pylint: disable=no-member
         if self.plugLockState.enabled:
-            string += f'{self.plugLockState.value.value}'
+            string += f'{self.plugLockState.value.value}'  # pylint: disable=no-member
         string = '\n'
         return string
 
@@ -1185,7 +1185,7 @@ class ClimatizationStatus(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.climatisationState.enabled:
-            string += f'\tState: {self.climatisationState.value.value}\n'
+            string += f'\tState: {self.climatisationState.value.value}\n'  # pylint: disable=no-member
         if self.remainingClimatisationTime_min.enabled:
             string += f'\tRemaining Climatization Time: {self.remainingClimatisationTime_min.value} min\n'
         return string
@@ -1426,7 +1426,7 @@ class WindowHeatingStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.id}: {self.windowHeatingState.value.value}'
+            return f'{self.id}: {self.windowHeatingState.value.value}'  # pylint: disable=no-member
 
         class WindowHeatingState(Enum,):
             ON = 'on'
@@ -1510,7 +1510,7 @@ class LightsStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.id}: {self.status.value.value}'
+            return f'{self.id}: {self.status.value.value}'  # pylint: disable=no-member
 
         class LightState(Enum,):
             ON = 'on'
@@ -1574,7 +1574,7 @@ class RangeStatus(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.carType.enabled:
-            string += f'\tCar Type: {self.carType.value.value}\n'
+            string += f'\tCar Type: {self.carType.value.value}\n'  # pylint: disable=no-member
         if self.totalRange_km.enabled:
             string += f'\tTotal Range: {self.totalRange_km.value} km\n'
         if self.primaryEngine.enabled:
@@ -1632,7 +1632,7 @@ class RangeStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'
+            return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'  # pylint: disable=no-member
 
         class EngineType(Enum,):
             GASOLINE = 'gasoline'
@@ -1731,8 +1731,8 @@ class ClimatizationTimer(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.timeInCar.enabled:
-            string += f'\tTime in Car: {self.timeInCar.value.isoformat()}' \
-                f' (captured at {self.carCapturedTimestamp.value.isoformat()})\n'
+            string += f'\tTime in Car: {self.timeInCar.value.isoformat()}'  # pylint: disable=no-member
+            string += f' (captured at {self.carCapturedTimestamp.value.isoformat()})\n'  # pylint: disable=no-member
         string += f'\tTimers: {len(self.timers)} items\n'
         for timer in self.timers.values():
             string += f'\t\t{timer}\n'
@@ -1826,7 +1826,7 @@ class ClimatizationTimer(GenericStatus):
                     LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
-                string = f'{self.startTime.value.strftime("%H:%M")} on '
+                string = f'{self.startTime.value.strftime("%H:%M")} on '  # pylint: disable=no-member
                 for day, value in self.recurringOn.items():
                     if value:
                         string += day + ' '
@@ -1917,7 +1917,7 @@ class ClimatisationRequestStatus(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.status.enabled:
-            string += f'\tStatus: {self.status.value.value}\n'
+            string += f'\tStatus: {self.status.value.value}\n'  # pylint: disable=no-member
         if self.group.enabled:
             string += f'\tGroup: {self.group.value}\n'
         if self.info.enabled:
@@ -1978,7 +1978,7 @@ class ChargingSettingsRequestStatus(GenericStatus):
     def __str__(self):
         string = super().__str__() + '\n'
         if self.status.enabled:
-            string += f'\tStatus: {self.status.value.value}\n'
+            string += f'\tStatus: {self.status.value.value}\n'  # pylint: disable=no-member
         if self.group.enabled:
             string += f'\tGroup: {self.group.value}\n'
         if self.info.enabled:

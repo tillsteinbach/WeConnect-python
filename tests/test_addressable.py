@@ -37,15 +37,15 @@ def test_AddressableLeafGetObservers():
     observerEntries = addressableLeaf.getObserverEntries(flags=addressable.AddressableLeaf.ObserverEvent.ALL)
     assert len(observerEntries) == 3
 
-    assert observerEntries[0][0] == observe2
+    assert observerEntries[0][0] == observe2  # pylint: disable=comparison-with-callable
     assert observerEntries[0][1] == addressable.AddressableLeaf.ObserverEvent.ENABLED
     assert observerEntries[0][2] == addressable.AddressableLeaf.ObserverPriority.INTERNAL_HIGH
 
-    assert observerEntries[1][0] == observe3
+    assert observerEntries[1][0] == observe3  # pylint: disable=comparison-with-callable
     assert observerEntries[1][1] == addressable.AddressableLeaf.ObserverEvent.ALL
     assert observerEntries[1][2] == addressable.AddressableLeaf.ObserverPriority.USER_MID
 
-    assert observerEntries[2][0] == observe1
+    assert observerEntries[2][0] == observe1  # pylint: disable=comparison-with-callable
     assert observerEntries[2][1] == addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED
     assert observerEntries[2][2] == addressable.AddressableLeaf.ObserverPriority.INTERNAL_LOW
 

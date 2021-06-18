@@ -183,9 +183,9 @@ class AddressableAttribute(AddressableLeaf):
 
     def __str__(self):
         if isinstance(self.value, Enum):
-            return str(self.value.value)
+            return str(self.value.value)  # pylint: disable=no-member
         if isinstance(self.value, datetime):
-            return self.value.isoformat()
+            return self.value.isoformat()  # pylint: disable=no-member
         return str(self.value)
 
 
