@@ -555,6 +555,7 @@ class GenericStatus(AddressableObject):
 
         class Status(Enum,):
             SUCCESSFULL = 'successful'
+            FAIL = 'fail'
             POLLING_TIMEOUT = 'polling_timeout'
             IN_PROGRESS = 'in_progress'
             QUEUED = 'queued'
@@ -1988,6 +1989,7 @@ class ClimatisationRequestStatus(GenericStatus):
 
     class Status(Enum,):
         SUCCESSFULL = 'successful'
+        FAIL = 'fail'
         POLLING_TIMEOUT = 'polling_timeout'
         IN_PROGRESS = 'in_progress'
         QUEUED = 'queued'
@@ -2049,6 +2051,7 @@ class ChargingSettingsRequestStatus(GenericStatus):
 
     class Status(Enum,):
         SUCCESSFULL = 'successful'
+        FAIL = 'fail'
         POLLING_TIMEOUT = 'polling_timeout'
         IN_PROGRESS = 'in_progress'
         QUEUED = 'queued'
