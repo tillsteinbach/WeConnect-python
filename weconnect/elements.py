@@ -910,6 +910,8 @@ class ChargingStatus(GenericStatus):
             localAddress='remainingChargingTimeToComplete_min', parent=self, value=None, valueType=int)
         self.chargingState = AddressableAttribute(
             localAddress='chargingState', value=None, parent=self, valueType=ChargingStatus.ChargingState)
+        self.chargeMode = AddressableAttribute(
+            localAddress='chargeMode', value=None, parent=self, valueType=ChargingStatus.ChargeMode)
         self.chargePower_kW = AddressableAttribute(
             localAddress='chargePower_kW', value=None, parent=self, valueType=int)
         self.chargeRate_kmph = AddressableAttribute(
@@ -939,6 +941,17 @@ class ChargingStatus(GenericStatus):
         else:
             self.chargingState.enabled = False
 
+        if 'chargeMode' in fromDict:
+            try:
+                self.chargeMode.setValueWithCarTime(ChargingStatus.ChargeMode(fromDict['chargeMode']), lastUpdateFromCar=None)
+            except ValueError:
+                self.chargeMode.setValueWithCarTime(
+                    ChargingStatus.ChargeMode.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                LOG.warning('An unsupported chargeMode: %s was provided,'
+                            ' please report this as a bug', fromDict['chargeMode'])
+        else:
+            self.chargeMode.enabled = False
+
         if 'chargePower_kW' in fromDict:
             self.chargePower_kW.setValueWithCarTime(
                 int(fromDict['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
@@ -963,6 +976,8 @@ class ChargingStatus(GenericStatus):
         string = super().__str__() + '\n'
         if self.chargingState.enabled:
             string += f'\tState: {self.chargingState.value.value}\n'  # pylint: disable=no-member
+        if self.chargeMode.enabled:
+            string += f'\tMode: {self.chargeMode.value.value}\n'  # pylint: disable=no-member
         if self.remainingChargingTimeToComplete_min.enabled:
             string += f'\tRemaining Charging Time: {self.remainingChargingTimeToComplete_min.value} minutes\n'
         if self.chargePower_kW.enabled:
@@ -977,6 +992,11 @@ class ChargingStatus(GenericStatus):
         CHARGING = 'charging'
         ERROR = 'error'
         UNKNOWN = 'unknown charging state'
+
+    class ChargeMode(Enum,):
+        MANUAL = 'manual'
+        INVALID = 'invalid'
+        UNKNOWN = 'unknown charge mode'
 
 
 class ChargingSettings(GenericSettings):
