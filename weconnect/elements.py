@@ -968,6 +968,7 @@ class ChargingStatus(GenericStatus):
                                                             + [
                                                                 'remainingChargingTimeToComplete_min',
                                                                 'chargingState',
+                                                                'chargeMode',
                                                                 'chargePower_kW',
                                                                 'chargeRate_kmph'
                                                             ]))
