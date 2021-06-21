@@ -1747,6 +1747,7 @@ class ClimatizationTimer(GenericStatus):
             super().__init__(localAddress=None, parent=parent)
             self.timerEnabled = AddressableAttribute(localAddress='enabled', parent=self, value=None, valueType=bool)
             self.recurringTimer = None
+            self.singleTimer = None
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -1775,14 +1776,26 @@ class ClimatizationTimer(GenericStatus):
                 self.recurringTimer.enabled = False
                 self.recurringTimer = None
 
+            if 'singleTimer' in fromDict:
+                if self.singleTimer is None:
+                    self.singleTimer = ClimatizationTimer.Timer.SingleTimer(
+                        localAddress='singleTimer', parent=self, fromDict=fromDict['singleTimer'])
+                else:
+                    self.singleTimer.update(fromDict=fromDict['singleTimer'])
+            elif self.singleTimer is not None:
+                self.singleTimer.enabled = False
+                self.singleTimer = None
+
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['id', 'enabled', 'recurringTimer']}.items():
+                               if key not in ['id', 'enabled', 'recurringTimer', 'singleTimer']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             string = f'{self.id}: Enabled: {self.timerEnabled.value}'
             if self.recurringTimer is not None and self.recurringTimer.enabled:
                 string += f' at {self.recurringTimer} '
+            if self.singleTimer is not None and self.singleTimer.enabled:
+                string += f' at {self.singleTimer} '
             return string
 
         class RecurringTimer(AddressableObject):
@@ -1831,6 +1844,34 @@ class ClimatizationTimer(GenericStatus):
                     if value:
                         string += day + ' '
                 return string
+
+        class SingleTimer(AddressableObject):
+            def __init__(
+                self,
+                localAddress,
+                parent,
+                fromDict=None,
+            ):
+                super().__init__(localAddress=localAddress, parent=parent)
+                self.startDateTime = AddressableAttribute(
+                    localAddress='startDateTime', parent=self, value=None, valueType=datetime)
+                if fromDict is not None:
+                    self.update(fromDict)
+
+            def update(self, fromDict):
+                LOG.debug('Update recurring timer from dict')
+
+                if 'startDateTime' in fromDict:
+                    self.startDateTime.setValueWithCarTime(robustTimeParse(fromDict["startDateTime"]), lastUpdateFromCar=None, fromServer=True)
+                else:
+                    self.startDateTime.enabled = False
+
+                for key, value in {key: value for key, value in fromDict.items()
+                                   if key not in ['startDateTime']}.items():
+                    LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+
+            def __str__(self):
+                return self.startDateTime.value.isoformat()  # pylint: disable=no-member
 
 
 class ParkingPosition(GenericStatus):
