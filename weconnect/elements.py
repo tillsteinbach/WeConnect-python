@@ -207,6 +207,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
         # error handling
         if 'error' in data and data['error']:
+            print(data['error'])
             for status, error in data['error'].items():
                 if status in self.statuses:
                     self.statuses[status].updateError(fromDict=error)
