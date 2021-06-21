@@ -80,7 +80,7 @@ def test_AddressableLeafParents():
     assert addressableLeaf.enabled is True
 
     leafChildren = parentAddressableLeaf.getLeafChildren()
-    assert len(leafChildren) == 1
+    assert len(leafChildren) == 2  # This is two as it is the oarent as well as the child
 
     addressableLeaf.enabled = False
     assert addressableLeaf.enabled is False
@@ -155,3 +155,32 @@ def test_AdressableAttribute():
 
     with pytest.raises(NotImplementedError):
         attribute.value = 'newValue'
+
+
+def test_AdressableObjectLeafChildren():
+    addressableObject = addressable.AddressableObject(localAddress='parent', parent=None)
+    childAddressableLeaf1 = addressable.AddressableAttribute(localAddress='child1', parent=addressableObject, value=None, valueType=str, lastUpdateFromCar=None)
+    childAddressableLeaf2 = addressable.AddressableAttribute(localAddress='child2', parent=addressableObject, value=None, valueType=str, lastUpdateFromCar=None)
+
+    children = addressableObject.getLeafChildren()
+    assert len(children) == 0
+
+    addressableObject.enabled = True
+    children = addressableObject.getLeafChildren()
+    assert len(children) == 1
+    assert children[0] == addressableObject
+
+    childAddressableLeaf1.setValueWithCarTime(newValue='test1')
+
+    children = addressableObject.getLeafChildren()
+    assert len(children) == 2
+    assert children[0] == addressableObject
+    assert children[1] == childAddressableLeaf1
+
+    childAddressableLeaf2.setValueWithCarTime(newValue='test2')
+
+    children = addressableObject.getLeafChildren()
+    assert len(children) == 3
+    assert children[0] == addressableObject
+    assert children[1] == childAddressableLeaf1
+    assert children[2] == childAddressableLeaf2

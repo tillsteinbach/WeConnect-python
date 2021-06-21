@@ -263,7 +263,9 @@ class AddressableObject(AddressableLeaf):
         children = [self]
         for child in self.__children.values():
             if isinstance(child, AddressableObject):
-                children += child.getLeafChildren()
+                children.extend(child.getLeafChildren())
+            elif isinstance(child, AddressableLeaf) and child.enabled:
+                children.append(child)
         return children
 
     @property
