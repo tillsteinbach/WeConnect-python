@@ -97,6 +97,14 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 else:
                     LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
 
+                if 'accessToken' in tokens and all(key in tokens['accessToken'] for key in ('type', 'token', 'expires')):
+                    self.__aToken['type'] = tokens['accessToken']['type']
+                    self.__aToken['token'] = tokens['accessToken']['token']
+                    self.__aToken['expires'] = datetime.fromisoformat(tokens['accessToken']['expires'])
+                    self.__session.auth = BearerAuth(self.__aToken['token'])
+                else:
+                    LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
+
                 if 'refreshToken' in tokens and all(key in tokens['refreshToken']
                                                     for key in ('type', 'token', 'expires')):
                     self.__rToken['type'] = tokens['refreshToken']['type']
@@ -136,7 +144,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if self.tokenfile:
             try:
                 with open(self.tokenfile, 'w') as file:
-                    json.dump({'idToken': self.__token, 'refreshToken': self.__rToken}, file, cls=DateTimeEncoder)
+                    json.dump({'idToken': self.__token, 'refreshToken': self.__rToken, 'accessToken': self.__aToken}, file, cls=DateTimeEncoder)
                 LOG.info('Writing tokenfile %s', self.tokenfile)
             except ValueError as err:  # pragma: no cover
                 LOG.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
@@ -342,12 +350,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         refreshResponse = self.__session.get(url, allow_redirects=False, auth=BearerAuth(self.__rToken['token']))
         if refreshResponse.status_code == requests.codes['ok']:
             data = refreshResponse.json()
-            if 'accessToken' in data:
-                self.__aToken['type'] = 'Bearer'
-                self.__aToken['token'] = data['accessToken']
-                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-            else:
-                LOG.error('No id token received')
 
             if 'idToken' in data:
                 self.__token['type'] = 'Bearer'
@@ -356,6 +358,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__session.auth = BearerAuth(self.__token['token'])
             else:
                 LOG.error('No id token received')
+
+            if 'accessToken' in data:
+                self.__aToken['type'] = 'Bearer'
+                self.__aToken['token'] = data['accessToken']
+                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                # THe access token is prefered to be used
+                self.__session.auth = BearerAuth(self.__aToken['token'])
+            else:
+                LOG.error('No access token received')
 
             if 'refreshToken' in data:
                 self.__rToken['type'] = 'Bearer'
@@ -386,7 +397,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
-                vehiclesResponse = self.__session.get(url, allow_redirects=False)
+                vehiclesResponse = self.__session.get(url, allow_redirects=True)
             except requests.exceptions.ConnectionError as conenctionError:
                 raise RetrievalError from conenctionError
             if vehiclesResponse.status_code == requests.codes['ok']:
