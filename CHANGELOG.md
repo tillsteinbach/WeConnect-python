@@ -2,7 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- no unreleased changes so far
+### Changed
+- Use access token instead of id token
 
 ## [0.9.0] - 2021-06-21
 ### Added
