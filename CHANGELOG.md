@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Use access token instead of id token
 
+## [0.9.1] - 2021-06-21
+### Fixed
+- Added chargeMode off (fixes #4)
+
 ## [0.9.0] - 2021-06-21
 ### Added
 - Fail status for all target operations
@@ -107,7 +111,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.9.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.9.1
 [0.9.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.9.0
 [0.8.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.8.2
 [0.8.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.8.1
