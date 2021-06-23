@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 - Use access token instead of id token
 
 ### Fixed
-- Fix TypeError when maxAge is not set (fixes #5)
+- Fixed TypeError when maxAge is not set (fixes #5)
+- Fixed that Enums can be set by Enum and not only by value
 
 ## [0.9.1] - 2021-06-21
 ### Fixed

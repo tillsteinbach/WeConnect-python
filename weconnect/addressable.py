@@ -210,7 +210,8 @@ class ChangeableAttribute(AddressableAttribute):
                 elif self.valueType == bool:
                     newValue = toBool(newValue)
                 elif issubclass(self.valueType, Enum):
-                    newValue = self.valueType(newValue)
+                    if not isinstance(newValue, Enum):
+                        newValue = self.valueType(newValue)
                     try:
                         allowedValues = self.valueType.allowedValues()
                         if newValue not in allowedValues:
