@@ -395,7 +395,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if force or (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
+        if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
                 vehiclesResponse = self.__session.get(url, allow_redirects=True)
             except requests.exceptions.ConnectionError as conenctionError:

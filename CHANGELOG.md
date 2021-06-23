@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Use access token instead of id token
 
+### Fixed
+- Fix TypeError when maxAge is not set (fixes #5)
+
 ## [0.9.1] - 2021-06-21
 ### Fixed
 - Added chargeMode off (fixes #4)

@@ -153,8 +153,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if force or (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or (cacheDate is not None
-                            and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+        if data is None or self.weConnect.maxAge is None \
+                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             statusResponse = self.weConnect.session.get(url, allow_redirects=False)
             data = statusResponse.json()
             if self.weConnect.cache is not None:
@@ -228,8 +228,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or (cacheDate is not None
-                            and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+        if data is None or self.weConnect.maxAge is None \
+                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             statusResponse = self.weConnect.session.get(url, allow_redirects=False)
             if statusResponse.status_code == 200:
                 data = statusResponse.json()
