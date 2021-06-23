@@ -998,6 +998,7 @@ class ChargingStatus(GenericStatus):
     class ChargeMode(Enum,):
         MANUAL = 'manual'
         INVALID = 'invalid'
+        OFF = 'off'
         UNKNOWN = 'unknown charge mode'
 
 
