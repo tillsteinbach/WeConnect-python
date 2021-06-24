@@ -348,7 +348,9 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         url = 'https://login.apps.emea.vwapps.io/refresh/v1'
 
         refreshResponse = self.__session.get(url, allow_redirects=False, auth=BearerAuth(self.__rToken['token']))
-        if refreshResponse.status_code == requests.codes['ok']:
+        if refreshResponse.status_code == requests.codes['unauthorized']:
+            self.login()
+        elif refreshResponse.status_code == requests.codes['ok']:
             data = refreshResponse.json()
 
             if 'idToken' in data:

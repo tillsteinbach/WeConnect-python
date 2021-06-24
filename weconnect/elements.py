@@ -3,13 +3,14 @@ import logging
 import json
 from enum import Enum
 from datetime import datetime, timedelta, timezone
+from typing import Dict
 
 import requests
 
 from .util import robustTimeParse, toBool
 from .addressable import AddressableLeaf, AddressableObject, AddressableAttribute, AddressableDict, AddressableList, \
     ChangeableAttribute
-from .errors import APICompatibilityError, ControlError, SetterError
+from .errors import APICompatibilityError, ControlError, RetrievalError, SetterError
 
 
 LOG = logging.getLogger("weconnect")
@@ -156,7 +157,24 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if data is None or self.weConnect.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             statusResponse = self.weConnect.session.get(url, allow_redirects=False)
-            data = statusResponse.json()
+            if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
+                data = statusResponse.json()
+                if self.weConnect.cache is not None:
+                    self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+            elif statusResponse.status_code == requests.codes['unauthorized']:
+                LOG.info('Server asks for new authorization')
+                self.weConnect.login()
+                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                if statusResponse.status_code == requests.codes['ok']:
+                    data = statusResponse.json()
+                    if self.weConnect.cache is not None:
+                        self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                else:
+                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                         f' Status Code was: {statusResponse.status_code}')
+            else:
+                raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
+
             if self.weConnect.cache is not None:
                 self.weConnect.cache[url] = (data, str(datetime.utcnow()))
         keyClassMap = {'accessStatus': AccessStatus,
@@ -207,17 +225,22 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
         # error handling
         if 'error' in data and data['error']:
-            print(data['error'])
-            for status, error in data['error'].items():
-                if status in self.statuses:
-                    self.statuses[status].updateError(fromDict=error)
-                else:
-                    self.statuses[status] = keyClassMap[status](vehicle=self, parent=self.statuses, statusId=status,
-                                                                fromDict=None, fixAPI=self.fixAPI)
-                    self.statuses[status].updateError(fromDict=error)
-        for statusId, status in {statusId: status for statusId, status in self.statuses.items()
-                                 if statusId not in data['error']}.items():
-            status.error.reset()
+            if isinstance(data['error'], Dict):
+                for status, error in data['error'].items():
+                    if status in self.statuses:
+                        self.statuses[status].updateError(fromDict=error)
+                    else:
+                        self.statuses[status] = keyClassMap[status](vehicle=self, parent=self.statuses, statusId=status,
+                                                                    fromDict=None, fixAPI=self.fixAPI)
+                        self.statuses[status].updateError(fromDict=error)
+                for statusId, status in {statusId: status for statusId, status in self.statuses.items()
+                                         if statusId not in data['error']}.items():
+                    status.error.reset()
+            else:
+                raise RetrievalError(data['error'])
+        else:
+            for statusId, status in self.statuses.items():
+                status.error.reset()
 
         # Controls
         self.controls.update()
@@ -231,10 +254,26 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if data is None or self.weConnect.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             statusResponse = self.weConnect.session.get(url, allow_redirects=False)
-            if statusResponse.status_code == 200:
+            if statusResponse.status_code == requests.codes['ok']:
                 data = statusResponse.json()
                 if self.weConnect.cache is not None:
                     self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+            elif statusResponse.status_code == requests.codes['unauthorized']:
+                LOG.info('Server asks for new authorization')
+                self.weConnect.login()
+                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                if statusResponse.status_code == requests.codes['ok']:
+                    data = statusResponse.json()
+                    if self.weConnect.cache is not None:
+                        self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                else:
+                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                         f' Status Code was: {statusResponse.status_code}')
+            elif statusResponse.status_code == requests.codes['bad_request']:
+                # This is the case if no parking position is available for the car
+                pass
+            else:
+                raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
         if data is not None:
             if 'data' in data:
                 if 'parkingPosition' in self.statuses:

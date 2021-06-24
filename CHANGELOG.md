@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Changed
 - Use access token instead of id token
+- More robust on connection problems with WeConnect servers
 
 ### Fixed
 - Fixed TypeError when maxAge is not set (fixes #5)
