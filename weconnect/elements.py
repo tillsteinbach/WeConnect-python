@@ -189,8 +189,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                        'rangeStatus': RangeStatus,
                        'capabilityStatus': CapabilityStatus,
                        'climatisationTimer': ClimatizationTimer,
-                       'climatisationRequestStatus': ClimatisationRequestStatus,
-                       'chargingSettingsRequestStatus': ChargingSettingsRequestStatus,
+                       'climatisationRequestStatus': GenericRequestStatus,
+                       'chargingSettingsRequestStatus': GenericRequestStatus,
+                       'climatisationTimersRequestStatus': GenericRequestStatus,
+                       'chargingRequestStatus': GenericRequestStatus,
                        }
         if 'data' in data and data['data']:
             for key, className in keyClassMap.items():
@@ -217,6 +219,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             # target handling (we merge the target state into the statuses)
             if 'target' in data['data']:
                 for statusId, target in data['data']['target'].items():
+                    if self.weConnect.fixAPI:
+                        statusAliasMap = {'climatisationTimersStatus': 'climatisationTimer'}
+                        statusId = statusAliasMap.get(statusId, statusId)
                     if statusId in self.statuses:
                         self.statuses[statusId].updateTarget(fromDict=target)
                     else:
@@ -1975,7 +1980,7 @@ class ParkingPosition(GenericStatus):
         return string
 
 
-class ClimatisationRequestStatus(GenericStatus):
+class GenericRequestStatus(GenericStatus):
     def __init__(
         self,
         vehicle,
@@ -1985,83 +1990,21 @@ class ClimatisationRequestStatus(GenericStatus):
         fixAPI=True,
     ):
         self.status = AddressableAttribute(localAddress='status', parent=self,
-                                           value=None, valueType=ClimatisationRequestStatus.Status)
+                                           value=None, valueType=GenericRequestStatus.Status)
         self.group = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
         self.info = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        LOG.debug('Update Climatization Request status from dict')
+        LOG.debug('Update Request status from dict')
 
         if 'status' in fromDict:
             try:
-                self.status.setValueWithCarTime(ClimatisationRequestStatus.Status(fromDict['status']),
+                self.status.setValueWithCarTime(GenericRequestStatus.Status(fromDict['status']),
                                                 lastUpdateFromCar=None, fromServer=True)
             except ValueError:
-                self.status.setValueWithCarTime(ClimatisationRequestStatus.Status.UNKNOWN,
-                                                lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported status: %s was provided,'
-                            ' please report this as a bug', fromDict['status'])
-        else:
-            self.status.enabled = False
-
-        if 'group' in fromDict:
-            self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.group.enabled = False
-
-        if 'info' in fromDict:
-            self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.info.enabled = False
-
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['status', 'group', 'info']))
-
-    def __str__(self):
-        string = super().__str__() + '\n'
-        if self.status.enabled:
-            string += f'\tStatus: {self.status.value.value}\n'  # pylint: disable=no-member
-        if self.group.enabled:
-            string += f'\tGroup: {self.group.value}\n'
-        if self.info.enabled:
-            string += f'\tInfo: {self.info.value}\n'
-        return string
-
-    class Status(Enum,):
-        SUCCESSFULL = 'successful'
-        FAIL = 'fail'
-        POLLING_TIMEOUT = 'polling_timeout'
-        IN_PROGRESS = 'in_progress'
-        QUEUED = 'queued'
-        UNKNOWN = 'unknown status'
-
-
-class ChargingSettingsRequestStatus(GenericStatus):
-    def __init__(
-        self,
-        vehicle,
-        parent,
-        statusId,
-        fromDict=None,
-        fixAPI=True,
-    ):
-        self.status = AddressableAttribute(localAddress='status', parent=self,
-                                           value=None, valueType=ChargingSettingsRequestStatus.Status)
-        self.group = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
-        self.info = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
-        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
-
-    def update(self, fromDict, ignoreAttributes=None):
-        ignoreAttributes = ignoreAttributes or []
-        LOG.debug('Update Charging settings Request status from dict')
-
-        if 'status' in fromDict:
-            try:
-                self.status.setValueWithCarTime(ChargingSettingsRequestStatus.Status(fromDict['status']),
-                                                lastUpdateFromCar=None, fromServer=True)
-            except ValueError:
-                self.status.setValueWithCarTime(ChargingSettingsRequestStatus.Status.UNKNOWN,
+                self.status.setValueWithCarTime(GenericRequestStatus.Status.UNKNOWN,
                                                 lastUpdateFromCar=None, fromServer=True)
                 LOG.warning('An unsupported status: %s was provided,'
                             ' please report this as a bug', fromDict['status'])
