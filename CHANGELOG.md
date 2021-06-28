@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- no unreleased changes so far
+
+## [0.10.0] - 2021-06-28
 ### Changed
 - Use access token instead of id token
 - More robust on connection problems with WeConnect servers
