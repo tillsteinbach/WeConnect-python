@@ -2,7 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- no unreleased changes so far
+### Fixed
+- Make robust against null data in response
 
 ## [0.10.0] - 2021-06-28
 ### Changed

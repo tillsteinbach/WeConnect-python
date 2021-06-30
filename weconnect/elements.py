@@ -94,7 +94,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.nickname.enabled = False
 
-            if updateCapabilities and 'capabilities' in fromDict:
+            if updateCapabilities and 'capabilities' in fromDict and fromDict['capabilities'] is not None:
                 for capDict in fromDict['capabilities']:
                     if 'id' in capDict:
                         if capDict['id'] in self.capabilities:
@@ -116,7 +116,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.images.enabled = False
 
-            if 'coUsers' in fromDict:
+            if 'coUsers' in fromDict and fromDict['coUsers'] is not None:
                 for user in fromDict['coUsers']:
                     if 'id' in user:
                         usersWithId = [x for x in self.coUsers if x.id.value == user['id']]
@@ -721,7 +721,7 @@ class AccessStatus(GenericStatus):
         else:
             self.overallStatus.enabled = False
 
-        if 'doors' in fromDict:
+        if 'doors' in fromDict and fromDict['doors'] is not None:
             for doorDict in fromDict['doors']:
                 if 'name' in doorDict:
                     if doorDict['name'] in self.doors:
@@ -735,7 +735,7 @@ class AccessStatus(GenericStatus):
             self.doors.clear()
             self.doors.enabled = False
 
-        if 'windows' in fromDict:
+        if 'windows' in fromDict and fromDict['windows'] is not None:
             for windowDict in fromDict['windows']:
                 if 'name' in windowDict:
                     if windowDict['name'] in self.windows:
@@ -1430,7 +1430,7 @@ class WindowHeatingStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update window heating status from dict')
 
-        if 'windowHeatingStatus' in fromDict:
+        if 'windowHeatingStatus' in fromDict and fromDict['windowHeatingStatus'] is not None:
             for windowDict in fromDict['windowHeatingStatus']:
                 if 'windowLocation' in windowDict:
                     if windowDict['windowLocation'] in self.windows:
@@ -1518,7 +1518,7 @@ class LightsStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update light status from dict')
 
-        if 'lights' in fromDict:
+        if 'lights' in fromDict and fromDict['lights'] is not None:
             for lightDict in fromDict['lights']:
                 if 'name' in lightDict:
                     if lightDict['name'] in self.lights:
@@ -1729,7 +1729,7 @@ class CapabilityStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update capability status from dict')
 
-        if 'capabilities' in fromDict:
+        if 'capabilities' in fromDict and fromDict['capabilities'] is not None:
             for capDict in fromDict['capabilities']:
                 if 'id' in capDict:
                     if capDict['id'] in self.capabilities:
@@ -1772,7 +1772,7 @@ class ClimatizationTimer(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update climatization timer from dict')
 
-        if 'timers' in fromDict:
+        if 'timers' in fromDict and fromDict['timers'] is not None:
             for climatizationTimerDict in fromDict['timers']:
                 if 'id' in climatizationTimerDict:
                     if climatizationTimerDict['id'] in self.timers:
@@ -1889,7 +1889,7 @@ class ClimatizationTimer(GenericStatus):
                 else:
                     self.startTime.enabled = False
 
-                if 'recurringOn' in fromDict:
+                if 'recurringOn' in fromDict and fromDict['recurringOn'] is not None:
                     for day, state in fromDict['recurringOn'].items():
                         if day in self.recurringOn:
                             self.recurringOn[day].setValueWithCarTime(state, lastUpdateFromCar=None, fromServer=True)

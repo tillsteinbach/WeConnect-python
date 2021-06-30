@@ -73,7 +73,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__token = {'type': None, 'token': None, 'expires': None}
         self.__aToken = {'type': None, 'token': None, 'expires': None}
         self.__rToken = {'type': None, 'token': None, 'expires': None}
-        self.__userId = None
+        self.__userId = None  # pylint: disable=unused-private-member
         self.__session = requests.Session()
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
@@ -283,7 +283,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
             raise APICompatibilityError('No user id provided')
-        self.__userId = params['userId']
+        self.__userId = params['userId']  # pylint: disable=unused-private-member
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLogingUrl = login3Response.headers['Location']
