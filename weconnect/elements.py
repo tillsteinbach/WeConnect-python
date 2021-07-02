@@ -4,8 +4,10 @@ import json
 from enum import Enum
 from datetime import datetime, timedelta, timezone
 from typing import Dict
-
+import base64
+import io
 import requests
+from PIL import Image
 
 from .util import robustTimeParse, toBool
 from .addressable import AddressableLeaf, AddressableObject, AddressableAttribute, AddressableDict, AddressableList, \
@@ -31,6 +33,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         parent,
         fromDict,
         fixAPI=True,
+        updateCapabilities=True,
+        updatePictures=True,
     ):
         self.weConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
@@ -47,12 +51,16 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.controls = Controls(localAddress='controls', vehicle=self, parent=self)
         self.fixAPI = fixAPI
 
-        self.update(fromDict)
+        self.__carImages = dict()
+        self.pictures = AddressableDict(localAddress='pictures', parent=self)
+
+        self.update(fromDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
 
     def update(  # noqa: C901  # pylint: disable=too-many-branches
         self,
         fromDict=None,
         updateCapabilities=True,
+        updatePictures=True,
         force=False,
     ):
         if fromDict is not None:
@@ -145,7 +153,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         self.updateStatus(updateCapabilities=updateCapabilities, force=force)
-        # self.test()
+        if updatePictures:
+            self.updatePictures()
 
     def updateStatus(self, updateCapabilities=True, force=False):  # noqa: C901 # pylint: disable=too-many-branches
         data = None
@@ -288,9 +297,144 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                        parent=self.statuses,
                                                                        statusId='parkingPosition',
                                                                        fromDict=data['data'])
-            return
-        if 'parkingPosition' in self.statuses:
+        elif 'parkingPosition' in self.statuses:
             del self.statuses['parkingPosition']
+
+    def updatePictures(self):  # noqa: C901
+        data = None
+        cacheDate = None
+        url = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
+        if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
+            data, cacheDateString = self.weConnect.cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or self.weConnect.maxAge is None \
+                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+            imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+            if imageResponse.status_code == requests.codes['ok']:
+                data = imageResponse.json()
+                if self.weConnect.cache is not None:
+                    self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+            elif imageResponse.status_code == requests.codes['unauthorized']:
+                LOG.info('Server asks for new authorization')
+                self.weConnect.login()
+                imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+                if imageResponse.status_code == requests.codes['ok']:
+                    data = imageResponse.json()
+                    if self.weConnect.cache is not None:
+                        self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                else:
+                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                         f' Status Code was: {imageResponse.status_code}')
+                raise RetrievalError(f'Could not retrieve data. Status Code was: {imageResponse.status_code}')
+        if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
+            for image in data['data']:
+                img = None
+                cacheDate = None
+                url = image['url']
+                if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
+                    img, cacheDateString = self.weConnect.cache[url]
+                    img = base64.b64decode(img)
+                    img = Image.open(io.BytesIO(img))
+                    cacheDate = datetime.fromisoformat(cacheDateString)
+                if img is None or self.weConnect.maxAge is None \
+                        or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(days=1))):
+                    imageDownloadResponse = self.weConnect.session.get(url, stream=True)
+                    if imageDownloadResponse.status_code == requests.codes['ok']:
+                        img = Image.open(imageDownloadResponse.raw)
+                        if self.weConnect.cache is not None:
+                            buffered = io.BytesIO()
+                            img.save(buffered, format="PNG")
+                            imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                            self.weConnect.cache[url] = (imgStr, str(datetime.utcnow()))
+                    elif imageDownloadResponse.status_code == requests.codes['unauthorized']:
+                        LOG.info('Server asks for new authorization')
+                        self.weConnect.login()
+                        imageDownloadResponse = self.weConnect.session.get(url, stream=True)
+                        if imageDownloadResponse.status_code == requests.codes['ok']:
+                            img = Image.open(imageDownloadResponse.raw)
+                            if self.weConnect.cache is not None:
+                                buffered = io.BytesIO()
+                                img.save(buffered, format="PNG")
+                                imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                                self.weConnect.cache[url] = (imgStr, str(datetime.utcnow()))
+                        else:
+                            raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                                 f' Status Code was: {imageDownloadResponse.status_code}')
+                        raise RetrievalError(f'Could not retrieve data. Status Code was: {imageDownloadResponse.status_code}')
+
+                if img is not None:
+                    self.__carImages[image['id']] = img
+                    if image['id'] == 'car_34view':
+                        if 'car' in self.pictures:
+                            self.pictures['car'].setValueWithCarTime(self.__carImages['car_34view'], lastUpdateFromCar=None, fromServer=True)
+                        else:
+                            self.pictures['car'] = AddressableAttribute(localAddress='car', parent=self.pictures, value=self.__carImages['car_34view'],
+                                                                        valueType=Image.Image)
+
+            self.updateStatusPicture()
+
+    def updateStatusPicture(self):  # noqa: C901
+        img = self.__carImages['car_birdview']
+
+        if 'accessStatus' in self.statuses:
+            accessStatus = self.statuses['accessStatus']
+            for name, door in accessStatus.doors.items():
+                doorNameMap = {'frontLeft': 'door_left_front',
+                               'frontRight': 'door_right_front',
+                               'rearLeft': 'door_left_back',
+                               'rearRight': 'door_right_back'}
+                name = doorNameMap.get(name, name)
+                doorImageName = None
+
+                if door.openState.value in (AccessStatus.Door.OpenState.OPEN, AccessStatus.Door.OpenState.INVALID):
+                    doorImageName = f'{name}_overlay'
+                elif door.openState.value == AccessStatus.Door.OpenState.CLOSED:
+                    doorImageName = name
+
+                if doorImageName is not None and doorImageName in self.__carImages:
+                    doorImage = self.__carImages[doorImageName].convert("RGBA")
+                    img.paste(doorImage, (0, 0), doorImage)
+
+            for name, window in accessStatus.windows.items():
+                windowNameMap = {'frontLeft': 'window_left_front',
+                                 'frontRight': 'window_right_front',
+                                 'rearLeft': 'window_left_back',
+                                 'rearRight': 'window_right_back',
+                                 'sunRoof': 'sunroof'}
+                name = windowNameMap.get(name, name)
+                windowImageName = None
+
+                if window.openState.value in (AccessStatus.Window.OpenState.OPEN, AccessStatus.Window.OpenState.INVALID):
+                    windowImageName = f'{name}_overlay'
+                elif window.openState.value == AccessStatus.Window.OpenState.CLOSED:
+                    windowImageName = f'{name}'
+
+                if windowImageName is not None and windowImageName in self.__carImages:
+                    windowImage = self.__carImages[windowImageName].convert("RGBA")
+                    img.paste(windowImage, (0, 0), windowImage)
+
+        if 'lightsStatus' in self.statuses:
+            lightsStatus = self.statuses['lightsStatus']
+            for name, light in lightsStatus.lights.items():
+                lightNameMap = {'frontLeft': 'door_left_front',
+                                'frontRight': 'door_right_front',
+                                'rearLeft': 'door_left_back',
+                                'rearRight': 'door_right_back'}
+                name = lightNameMap.get(name, name)
+                lightImageName = None
+
+                if light.status.value == LightsStatus.Light.LightState.ON:
+                    lightImageName = f'light_{name}'
+                    if lightImageName in self.__carImages:
+                        lightImage = self.__carImages[lightImageName].convert("RGBA")
+                        img.paste(lightImage, (0, 0), lightImage)
+
+        self.__carImages['status'] = img
+
+        if 'status' in self.pictures:
+            self.pictures['status'].setValueWithCarTime(img, lastUpdateFromCar=None, fromServer=True)
+        else:
+            self.pictures['status'] = AddressableAttribute(localAddress='status', parent=self.pictures, value=img, valueType=Image.Image)
 
     def __str__(self):  # noqa: C901
         returnString = ''

@@ -397,11 +397,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self):
         return self.__vehicles
 
-    def update(self, force=False):
-        self.updateVehicles(force=force)
+    def update(self, updateCapabilities=True, updatePictures=True, force=False):
+        self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force)
         self.updateChargingStations(force=force)
 
-    def updateVehicles(self, updateCapabilities=True, force=False):  # noqa: C901
+    def updateVehicles(self, updateCapabilities=True, updatePictures=True, force=False):  # noqa: C901
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
@@ -436,10 +436,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     vins.append(vin)
                     if vin not in self.__vehicles:
                         vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict,
-                                          fixAPI=self.fixAPI)
+                                          fixAPI=self.fixAPI, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
                         self.__vehicles[vin] = vehicle
                     else:
-                        self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities)
+                        self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
