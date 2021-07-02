@@ -3,7 +3,10 @@ from datetime import datetime, timezone
 from enum import Enum, IntEnum, Flag, auto
 from typing import Dict, List
 
-from .util import toBool
+from PIL import Image
+import ascii_magic
+
+from .util import toBool, imgToASCIIArt
 
 LOG = logging.getLogger("weconnect")
 
@@ -181,11 +184,47 @@ class AddressableAttribute(AddressableLeaf):
     def getLeafChildren(self):
         return [self]
 
+    def saveToFile(self, filename):
+        if filename.endswith(('.txt', '.TXT', '.text')):
+            with open(filename, mode='w') as file:
+                if self.valueType == Image.Image:
+                    file.write(imgToASCIIArt(self.value, columns=120, mode=ascii_magic.Modes.ASCII))
+                else:
+                    file.write(str(self))
+        elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
+            with open(filename, mode='w') as file:
+                if self.valueType == Image.Image:
+                    html = """<!DOCTYPE html><head><title>ASCII art</title></head><body><pre style="display: inline-block; border-width: 4px 6px;
+ border-color: black; border-style: solid; background-color:black; font-size: 8px;">"""
+                    file.write(html)
+                    file.write(imgToASCIIArt(self.value, columns=240, mode=ascii_magic.Modes.HTML))
+                    file.write('<pre/></body></html>')
+                else:
+                    file.write(str(self))
+        elif filename.endswith(('.png', '.PNG')):
+            with open(filename, mode='wb') as file:
+                if self.valueType == Image.Image:
+                    self.value.save(fp=file, format='PNG')  # pylint: disable=no-member
+                else:
+                    raise ValueError('Attribute is no image and cannot be converted to one')
+        elif filename.endswith(('.jpg', '.JPG', '.jpeg', '.JPEG')):
+            with open(filename, mode='wb') as file:
+                if self.valueType == Image.Image:
+                    if self.value.mode in ("RGBA", "P"):  # pylint: disable=no-member
+                        raise ValueError('Image contains transparency and thus cannot be saved as jpeg-file')
+                    self.value.save(fp=file, format='JPEG')  # pylint: disable=no-member
+                else:
+                    raise ValueError('Attribute is no image and cannot be converted to one')
+        else:
+            raise ValueError('I cannot recognize the target file extension')
+
     def __str__(self):
         if isinstance(self.value, Enum):
             return str(self.value.value)  # pylint: disable=no-member
         if isinstance(self.value, datetime):
             return self.value.isoformat()  # pylint: disable=no-member
+        if isinstance(self.value, Image.Image):
+            return imgToASCIIArt(self.value)  # pylint: disable=no-member
         return str(self.value)
 
 
