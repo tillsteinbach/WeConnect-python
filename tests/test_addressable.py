@@ -93,7 +93,7 @@ def test_AddressableLeafAdresses():
     parentAddressableLeaf = addressable.AddressableObject(localAddress='parent', parent=None)
     addressableLeaf = addressable.AddressableLeaf(localAddress='child', parent=parentAddressableLeaf)
 
-    getterAddress = addressableLeaf.address
+    getterAddress = addressableLeaf.localAddress
     localAdress = addressableLeaf.getLocalAddress()
     globalAdress = addressableLeaf.getGlobalAddress()
 
@@ -101,7 +101,7 @@ def test_AddressableLeafAdresses():
     assert localAdress == 'child'
     assert globalAdress == 'parent/child'
 
-    addressableLeaf.address = 'newChild'
+    addressableLeaf.localAddress = 'newChild'
 
     localAdress = addressableLeaf.getLocalAddress()
     globalAdress = addressableLeaf.getGlobalAddress()

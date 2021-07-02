@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- No unreleased changes so far
+
+## [0.11.0] - 2021-07-02
+### Added
+- Possibility to retrieve data for public charging stations
+
 ### Fixed
 - Make robust against null data in response
 
@@ -120,7 +126,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.10.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.11.0
 [0.10.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.10.0
 [0.9.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.9.1
 [0.9.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.9.0
