@@ -15,7 +15,7 @@ class AddressableLeaf():
         parent,
     ):
         self.__enabled = False
-        self.__address = localAddress
+        self.__localAddress = localAddress
         self.__parent = parent
         self.__observers = set()
         self.lastChange = None
@@ -67,12 +67,12 @@ class AddressableLeaf():
         self.__enabled = setEnabled
 
     @property
-    def address(self):
+    def localAddress(self):
         return self.getLocalAddress()
 
-    @address.setter
-    def address(self, newAdress):
-        self.__address = newAdress
+    @localAddress.setter
+    def localAddress(self, newAdress):
+        self.__localAddress = newAdress
 
     @property
     def parent(self):
@@ -83,13 +83,13 @@ class AddressableLeaf():
         self.__parent = newParent
 
     def getLocalAddress(self):
-        return self.__address
+        return self.__localAddress
 
     def getGlobalAddress(self):
         address = ''
         if self.__parent is not None:
             address = f'{self.__parent.getGlobalAddress()}/'
-        address += f'{self.__address}'
+        address += f'{self.__localAddress}'
         return address
 
     def getByAddressString(self, addressString):

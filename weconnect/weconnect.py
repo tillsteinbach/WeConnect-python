@@ -1,6 +1,7 @@
 import string
 import random
 import re
+import locale
 import logging
 import threading
 import json
@@ -9,7 +10,7 @@ from urllib import parse
 
 import requests
 
-from .elements import Vehicle
+from .elements import Vehicle, ChargingStation
 from .addressable import AddressableObject, AddressableDict
 from .errors import APICompatibilityError, AuthentificationError, RetrievalError
 
@@ -77,9 +78,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__session = requests.Session()
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
+        self.__stations = AddressableDict(localAddress='chargingStations', parent=self)
         self.__cache = dict()
         self.fixAPI = fixAPI
         self.maxAge = maxAge
+        self.latitude = None
+        self.longitude = None
+        self.searchRadius = None
+        self.market = None
+        self.useLocale = locale.getlocale()[0]
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
 
@@ -390,7 +397,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self):
         return self.__vehicles
 
-    def update(self, updateCapabilities=True, force=False):  # noqa: C901
+    def update(self, force=False):
+        self.updateVehicles(force=force)
+        self.updateChargingStations(force=force)
+
+    def updateVehicles(self, updateCapabilities=True, force=False):  # noqa: C901
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
@@ -435,11 +446,75 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
                 self.__cache[url] = (data, str(datetime.utcnow()))
 
+    def setChargingStationSearchParameters(self, latitude, longitude, searchRadius=None, market=None, useLocale=locale.getlocale()[0]):
+        self.latitude = latitude
+        self.longitude = longitude
+        self.searchRadius = searchRadius
+        self.market = market
+        self.useLocale = useLocale
+
+    def updateChargingStations(self, force=False):  # noqa: C901
+        if self.latitude is not None and self.longitude is not None:
+            data = None
+            cacheDate = None
+            url = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={self.latitude}&longitude={self.longitude}'
+            if self.market is not None:
+                url += f'&market={self.market}'
+            if self.useLocale is not None:
+                url += f'&locale={self.useLocale}'
+            if self.searchRadius is not None:
+                url += f'&searchRadius={self.searchRadius}'
+            if self.__userId is not None:
+                url += f'&userId={self.__userId}'
+            if force or (self.maxAge is not None and url in self.__cache):
+                data, cacheDateString = self.__cache[url]
+                cacheDate = datetime.fromisoformat(cacheDateString)
+            if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
+                try:
+                    stationsResponse = self.__session.get(url, allow_redirects=True)
+                except requests.exceptions.ConnectionError as conenctionError:
+                    raise RetrievalError from conenctionError
+                if stationsResponse.status_code == requests.codes['ok']:
+                    data = stationsResponse.json()
+                elif stationsResponse.status_code == requests.codes['unauthorized']:
+                    LOG.info('Server asks for new authorization')
+                    self.login()
+                    stationsResponse = self.__session.get(url, allow_redirects=False)
+                    if stationsResponse.status_code == requests.codes['ok']:
+                        data = stationsResponse.json()
+                    else:
+                        raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                             f' Status Code was: {stationsResponse.status_code}')
+                else:
+                    raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
+            if data is not None:
+                if 'chargingStations' in data and data['chargingStations']:
+                    ids = list()
+                    for stationDict in data['chargingStations']:
+                        if 'id' not in stationDict:
+                            break
+                        stationId = stationDict['id']
+                        ids.append(stationId)
+                        if stationId not in self.__stations:
+                            station = ChargingStation(weConnect=self, stationId=stationId, parent=self.__stations, fromDict=stationDict,
+                                                      fixAPI=self.fixAPI)
+                            self.__stations[stationId] = station
+                        else:
+                            self.__stations[stationId].update(fromDict=stationDict)
+                    # delete those vins that are not anymore available
+                    for stationId in [stationId for stationId in ids if stationId not in self.__stations]:
+                        del self.__stations[stationId]
+
+                    self.__cache[url] = (data, str(datetime.utcnow()))
+
     def getLeafChildren(self):
-        return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()]
+        return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()] \
+            + [children for station in self.__stations.values() for children in station.getLeafChildren()]
 
     def __str__(self):
         returnString = ''
         for vin, vehicle in self.__vehicles.items():
             returnString += f'Vehicle: {vin}\n{vehicle}\n'
+        for stationId, station in sorted(self.__stations.items(), key=lambda x: x[1].distance.value, reverse=False):
+            returnString += f'Charging Station: {stationId}\n{station}\n'
         return returnString
