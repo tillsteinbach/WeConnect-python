@@ -73,7 +73,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__token = {'type': None, 'token': None, 'expires': None}
         self.__aToken = {'type': None, 'token': None, 'expires': None}
         self.__rToken = {'type': None, 'token': None, 'expires': None}
-        self.__userId = None  # pylint: disable=unused-private-member
+        self.__userId = None
         self.__session = requests.Session()
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
@@ -112,6 +112,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.__rToken['expires'] = datetime.fromisoformat(tokens['refreshToken']['expires'])
                 else:
                     LOG.info('Could not use refreshToken from file %s (does not contain a token)', self.tokenfile)
+                
+                if 'userId' in tokens:
+                    self.__userId = tokens['userId']
+                else:
+                    LOG.info('Could not use userId from file %s (does not contain an id)', self.tokenfile)
 
                 # Refresh tokens once
                 if loginOnInit or refreshTokens:
@@ -144,7 +149,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if self.tokenfile:
             try:
                 with open(self.tokenfile, 'w') as file:
-                    json.dump({'idToken': self.__token, 'refreshToken': self.__rToken, 'accessToken': self.__aToken}, file, cls=DateTimeEncoder)
+                    json.dump({'idToken': self.__token, 'refreshToken': self.__rToken, 'accessToken': self.__aToken, 'userId': self.__userId}, file, cls=DateTimeEncoder)
                 LOG.info('Writing tokenfile %s', self.tokenfile)
             except ValueError as err:  # pragma: no cover
                 LOG.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
@@ -283,7 +288,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
             raise APICompatibilityError('No user id provided')
-        self.__userId = params['userId']  # pylint: disable=unused-private-member
+        self.__userId = params['userId']
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLogingUrl = login3Response.headers['Location']
@@ -390,7 +395,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self):
         return self.__vehicles
 
-    def update(self, updateCapabilities=True, force=False):  # noqa: C901
+    def update(self, updateCapabilities=True, updateUsers=True, force=False):  # noqa: C901
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
@@ -432,6 +437,38 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
+
+                self.__cache[url] = (data, str(datetime.utcnow()))
+        
+        if updateUsers:
+            data = None
+            cacheDate = None
+            url = f'https://mobileapi.apps.emea.vwapps.io/user-profile/{self.__userId}?'
+            for vin in self.__vehicles:
+                url += f'&vin={vin}'
+            if force or (self.maxAge is not None and url in self.__cache):
+                data, cacheDateString = self.__cache[url]
+                cacheDate = datetime.fromisoformat(cacheDateString)
+            if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
+                try:
+                    userResponse = self.__session.get(url, allow_redirects=True)
+                except requests.exceptions.ConnectionError as conenctionError:
+                    raise RetrievalError from conenctionError
+                if userResponse.status_code == requests.codes['ok']:
+                    data = userResponse.json()
+                elif userResponse.status_code == requests.codes['unauthorized']:
+                    LOG.info('Server asks for new authorization')
+                    self.login()
+                    userResponse = self.__session.get(url, allow_redirects=False)
+                    if userResponse.status_code == requests.codes['ok']:
+                        data = userResponse.json()
+                    else:
+                        raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                            f' Status Code was: {userResponse.status_code}')
+                else:
+                    raise RetrievalError(f'Status Code from WeConnect server was: {userResponse.status_code}')
+            if data is not None:
+                print(data)
 
                 self.__cache[url] = (data, str(datetime.utcnow()))
 
