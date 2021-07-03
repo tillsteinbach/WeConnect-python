@@ -459,7 +459,7 @@ class GenericStatus(AddressableObject):
         self.fixAPI = fixAPI
         super().__init__(localAddress=None, parent=parent)
         self.id = statusId
-        self.address = self.id
+        self.localAddress = self.id
         self.carCapturedTimestamp = AddressableAttribute(
             localAddress='carCapturedTimestamp', parent=self, value=None, valueType=datetime)
         self.error = GenericStatus.StatusError(localAddress='error', parent=self)
@@ -782,7 +782,7 @@ class AccessStatus(GenericStatus):
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
-                self.address = self.id
+                self.localAddress = self.id
             else:
                 LOG.error('Door is missing name attribute')
 
@@ -856,7 +856,7 @@ class AccessStatus(GenericStatus):
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
-                self.address = self.id
+                self.localAddress = self.id
             else:
                 LOG.error('Window is missing name attribute')
 
@@ -1473,7 +1473,7 @@ class WindowHeatingStatus(GenericStatus):
 
             if 'windowLocation' in fromDict:
                 self.id = fromDict['windowLocation']
-                self.address = self.id
+                self.localAddress = self.id
             else:
                 LOG.error('Window is missing windowLocation attribute')
 
@@ -1558,7 +1558,7 @@ class LightsStatus(GenericStatus):
 
             if 'name' in fromDict:
                 self.id = fromDict['name']
-                self.address = self.id
+                self.localAddress = self.id
             else:
                 LOG.error('Light is missing name attribute')
 
@@ -1824,7 +1824,7 @@ class ClimatizationTimer(GenericStatus):
 
             if 'id' in fromDict:
                 self.id = fromDict['id']
-                self.address = self.id
+                self.localAddress = self.id
             else:
                 LOG.error('Timer is missing id attribute')
 
