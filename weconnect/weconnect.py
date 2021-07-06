@@ -57,7 +57,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         "refreshBeforeExpires": 30
     }
 
-    def __init__(  # noqa: C901
+    def __init__(  # noqa: C901 # pylint: disable=too-many-arguments
         self,
         username,
         password,
@@ -67,6 +67,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         refreshTokens=True,
         fixAPI=True,
         maxAge=None,
+        updateCapabilities=True,
+        updatePictures=True
     ):
         super().__init__(localAddress='', parent=None)
         self.username = username
@@ -137,7 +139,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 LOG.info('Login not necessary, token still valid')
 
         if updateAfterLogin:
-            self.update()
+            self.update(updateCapabilities=updateCapabilities, updatePictures=updatePictures)
 
     @property
     def session(self):

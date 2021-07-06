@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.12.1] - 2021-07-06
+### Added
+- Possibility to disable capabilities and pictures in constructor
+
 ## [0.12.0] - 2021-07-05
 ### Added
 - Possibility to retrieve images and save attributes to files on disk
@@ -134,7 +138,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.12.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.12.1
 [0.12.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.12.0
 [0.11.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.11.1
 [0.11.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.11.0
