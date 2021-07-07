@@ -10,7 +10,8 @@ from urllib import parse
 
 import requests
 
-from .elements import Vehicle, ChargingStation
+from .elements.vehicle import Vehicle
+from .elements.charging_station import ChargingStation
 from .addressable import AddressableObject, AddressableDict
 from .errors import APICompatibilityError, AuthentificationError, RetrievalError
 
