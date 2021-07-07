@@ -1,0 +1,134 @@
+from enum import Enum
+import logging
+
+from ..addressable import AddressableAttribute, AddressableObject
+from ..elements.generic_status import GenericStatus
+
+LOG = logging.getLogger("weconnect")
+
+
+class RangeStatus(GenericStatus):
+    def __init__(
+        self,
+        vehicle,
+        parent,
+        statusId,
+        fromDict=None,
+        fixAPI=True,
+    ):
+        self.carType = AddressableAttribute(localAddress='carType', parent=self,
+                                            value=None, valueType=RangeStatus.CarType)
+        self.primaryEngine = RangeStatus.Engine(localAddress='primaryEngine', parent=self)
+        self.secondaryEngine = RangeStatus.Engine(localAddress='secondaryEngine', parent=self)
+        self.totalRange_km = AddressableAttribute(localAddress='totalRange_km', parent=self, value=None, valueType=int)
+        super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
+
+    def update(self, fromDict, ignoreAttributes=None):
+        ignoreAttributes = ignoreAttributes or []
+        LOG.debug('Update Climatization settings from dict')
+
+        if 'carType' in fromDict:
+            try:
+                self.carType.setValueWithCarTime(RangeStatus.CarType(
+                    fromDict['carType']), lastUpdateFromCar=None, fromServer=True)
+            except ValueError:
+                self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                LOG.warning('An unsupported carType: %s was provided,'
+                            ' please report this as a bug', fromDict['carType'])
+        else:
+            self.carType.enabled = False
+
+        if 'primaryEngine' in fromDict:
+            self.primaryEngine.update(fromDict['primaryEngine'])
+        else:
+            self.primaryEngine.enabled = False
+
+        if 'secondaryEngine' in fromDict:
+            self.secondaryEngine.update(fromDict['secondaryEngine'])
+        else:
+            self.secondaryEngine.enabled = False
+
+        if 'totalRange_km' in fromDict:
+            self.totalRange_km.setValueWithCarTime(
+                int(fromDict['totalRange_km']), lastUpdateFromCar=None, fromServer=True)
+        else:
+            self.totalRange_km.enabled = False
+
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes
+                                                            + ['carType',
+                                                               'primaryEngine',
+                                                               'secondaryEngine',
+                                                               'totalRange_km']))
+
+    def __str__(self):
+        string = super().__str__() + '\n'
+        if self.carType.enabled:
+            string += f'\tCar Type: {self.carType.value.value}\n'  # pylint: disable=no-member
+        if self.totalRange_km.enabled:
+            string += f'\tTotal Range: {self.totalRange_km.value} km\n'
+        if self.primaryEngine.enabled:
+            string += f'\tPrimary Engine: {self.primaryEngine}\n'
+        if self.secondaryEngine.enabled:
+            string += f'\tSecondary Engine: {self.secondaryEngine}\n'
+        return string
+
+    class Engine(AddressableObject):
+        def __init__(
+            self,
+            localAddress,
+            parent,
+            fromDict=None,
+        ):
+            super().__init__(localAddress=localAddress, parent=parent)
+            self.type = AddressableAttribute(localAddress='type', parent=self, value=None,
+                                             valueType=RangeStatus.Engine.EngineType)
+            self.currentSOC_pct = AddressableAttribute(
+                localAddress='currentSOC_pct', parent=self, value=None, valueType=int)
+            self.remainingRange_km = AddressableAttribute(
+                localAddress='remainingRange_km', parent=self, value=None, valueType=int)
+            if fromDict is not None:
+                self.update(fromDict)
+
+        def update(self, fromDict):
+            LOG.debug('Update Engine from dict')
+
+            if 'type' in fromDict:
+                try:
+                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType(fromDict['type']),
+                                                  lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType.UNKNOWN,
+                                                  lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported type: %s was provided,'
+                                ' please report this as a bug', fromDict['type'])
+            else:
+                self.type.enabled = False
+
+            if 'currentSOC_pct' in fromDict:
+                self.currentSOC_pct.setValueWithCarTime(
+                    int(fromDict['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.currentSOC_pct.enabled = False
+
+            if 'remainingRange_km' in fromDict:
+                self.remainingRange_km.setValueWithCarTime(
+                    int(fromDict['remainingRange_km']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.remainingRange_km.enabled = False
+
+            for key, value in {key: value for key, value in fromDict.items()
+                               if key not in ['type', 'currentSOC_pct', 'remainingRange_km']}.items():
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+
+        def __str__(self):
+            return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'  # pylint: disable=no-member
+
+        class EngineType(Enum,):
+            GASOLINE = 'gasoline'
+            ELECTRIC = 'electric'
+            UNKNOWN = 'unknown open state'
+
+    class CarType(Enum,):
+        ELECTRIC = 'electric'
+        HYBRID = 'hybrid'
+        UNKNOWN = 'unknown open state'
