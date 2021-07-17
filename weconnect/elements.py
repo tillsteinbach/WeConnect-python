@@ -283,7 +283,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 else:
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {statusResponse.status_code}')
-            elif statusResponse.status_code == requests.codes['bad_request']:
+            elif statusResponse.status_code == requests.codes['bad_request'] \
+                    or statusResponse.status_code == requests.codes['no_content']:
                 # This is the case if no parking position is available for the car
                 pass
             else:
