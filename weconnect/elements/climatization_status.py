@@ -49,11 +49,11 @@ class ClimatizationStatus(GenericStatus):
             ignoreAttributes + ['remainingClimatisationTime_min', 'climatisationState']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.climatisationState.enabled:
-            string += f'\tState: {self.climatisationState.value.value}\n'  # pylint: disable=no-member
+            string += f'\n\tState: {self.climatisationState.value.value}'  # pylint: disable=no-member
         if self.remainingClimatisationTime_min.enabled:
-            string += f'\tRemaining Climatization Time: {self.remainingClimatisationTime_min.value} min\n'
+            string += f'\n\tRemaining Climatization Time: {self.remainingClimatisationTime_min.value} min'
         return string
 
     class ClimatizationState(Enum,):

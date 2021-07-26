@@ -42,8 +42,8 @@ class CapabilityStatus(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['capabilities']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
-        string += f'\tCapabilities: {len(self.capabilities)} items\n'
+        string = super().__str__()
+        string += f'\n\tCapabilities: {len(self.capabilities)} items'
         for capability in self.capabilities.values():
-            string += f'\t\t{capability}\n'
+            string += f'\n\t\t{capability}'
         return string

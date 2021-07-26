@@ -46,12 +46,12 @@ class BatteryStatus(GenericStatus):
             ignoreAttributes + ['currentSOC_pct', 'cruisingRangeElectric_km']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.currentSOC_pct.enabled:
-            string += f'\tCurrent SoC: {self.currentSOC_pct.value}%\n'
+            string += f'\n\tCurrent SoC: {self.currentSOC_pct.value}%'
         if self.cruisingRangeElectric_km.enabled:
             if self.cruisingRangeElectric_km.value is not None:
-                string += f'\tRange: {self.cruisingRangeElectric_km.value}km\n'
+                string += f'\n\tRange: {self.cruisingRangeElectric_km.value}km'
             else:
-                string += '\tRange: currently unknown\n'
+                string += '\n\tRange: currently unknown'
         return string

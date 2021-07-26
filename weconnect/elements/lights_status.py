@@ -40,10 +40,10 @@ class LightsStatus(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['lights']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
-        string += f'\tLights: {len(self.lights)} items\n'
+        string = super().__str__()
+        string += f'\n\tLights: {len(self.lights)} items'
         for light in self.lights.values():
-            string += f'\t\t{light}\n'
+            string += f'\n\t\t{light}'
         return string
 
     class Light(AddressableObject):

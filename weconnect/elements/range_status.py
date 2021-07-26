@@ -61,15 +61,15 @@ class RangeStatus(GenericStatus):
                                                                'totalRange_km']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.carType.enabled:
-            string += f'\tCar Type: {self.carType.value.value}\n'  # pylint: disable=no-member
+            string += f'\n\tCar Type: {self.carType.value.value}'  # pylint: disable=no-member
         if self.totalRange_km.enabled:
-            string += f'\tTotal Range: {self.totalRange_km.value} km\n'
+            string += f'\n\tTotal Range: {self.totalRange_km.value} km'
         if self.primaryEngine.enabled:
-            string += f'\tPrimary Engine: {self.primaryEngine}\n'
+            string += f'\n\tPrimary Engine: {self.primaryEngine}'
         if self.secondaryEngine.enabled:
-            string += f'\tSecondary Engine: {self.secondaryEngine}\n'
+            string += f'\n\tSecondary Engine: {self.secondaryEngine}'
         return string
 
     class Engine(AddressableObject):

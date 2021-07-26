@@ -62,14 +62,14 @@ class AccessStatus(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['overallStatus', 'doors', 'windows']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
-        string += f'\tOverall Status: {self.overallStatus.value}\n'
-        string += f'\tDoors: {len(self.doors)} items\n'
+        string = super().__str__()
+        string += f'\n\tOverall Status: {self.overallStatus.value}'
+        string += f'\n\tDoors: {len(self.doors)} items'
         for door in self.doors.values():
-            string += f'\t\t{door}\n'
-        string += f'\tWindows: {len(self.windows)} items\n'
+            string += f'\n\t\t{door}'
+        string += f'\n\tWindows: {len(self.windows)} items'
         for window in self.windows.values():
-            string += f'\t\t{window}\n'
+            string += f'\n\t\t{window}'
         return string
 
     class Door(AddressableObject):

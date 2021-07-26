@@ -36,9 +36,9 @@ class ParkingPosition(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['latitude', 'longitude']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.latitude.enabled:
-            string += f'\tLatitude: {self.latitude.value}\n'
+            string += f'\n\tLatitude: {self.latitude.value}'
         if self.longitude.enabled:
-            string += f'\tLongitude: {self.longitude.value}\n'
+            string += f'\n\tLongitude: {self.longitude.value}'
         return string

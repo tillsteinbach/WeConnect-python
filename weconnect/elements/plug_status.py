@@ -55,13 +55,12 @@ class PlugStatus(GenericStatus):
             ignoreAttributes + ['plugConnectionState', 'plugLockState']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
-        string += '\tPlug:'
+        string = super().__str__()
+        string += '\n\tPlug:'
         if self.plugConnectionState.enabled:
             string += f' {self.plugConnectionState.value.value}, '  # pylint: disable=no-member
         if self.plugLockState.enabled:
             string += f'{self.plugLockState.value.value}'  # pylint: disable=no-member
-        string = '\n'
         return string
 
     class PlugConnectionState(Enum,):

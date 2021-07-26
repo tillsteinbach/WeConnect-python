@@ -84,17 +84,17 @@ class ChargingStatus(GenericStatus):
                                                             ]))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.chargingState.enabled:
-            string += f'\tState: {self.chargingState.value.value}\n'  # pylint: disable=no-member
+            string += f'\n\tState: {self.chargingState.value.value}'  # pylint: disable=no-member
         if self.chargeMode.enabled:
-            string += f'\tMode: {self.chargeMode.value.value}\n'  # pylint: disable=no-member
+            string += f'\n\tMode: {self.chargeMode.value.value}'  # pylint: disable=no-member
         if self.remainingChargingTimeToComplete_min.enabled:
-            string += f'\tRemaining Charging Time: {self.remainingChargingTimeToComplete_min.value} minutes\n'
+            string += f'\n\tRemaining Charging Time: {self.remainingChargingTimeToComplete_min.value} minutes'
         if self.chargePower_kW.enabled:
-            string += f'\tCharge Power: {self.chargePower_kW.value} kW\n'
+            string += f'\n\tCharge Power: {self.chargePower_kW.value} kW'
         if self.chargeRate_kmph.enabled:
-            string += f'\tCharge Rate: {self.chargeRate_kmph.value} km/h\n'
+            string += f'\n\tCharge Rate: {self.chargeRate_kmph.value} km/h'
         return string
 
     class ChargingState(Enum,):

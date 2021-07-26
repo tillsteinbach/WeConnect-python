@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.13.0] - 2021-07-26
+### Added
+- Dummy for maintenance status (currently no data provided, only error messages)
+- Added attribute for chargeMode
+
+### Changed
+- Divide Code in several modules for better maintenance
+- More compact string formating
+
 ## [0.12.3] - 2021-07-25
 ### Fixed
 - Allow status code 404 for parking position
@@ -147,7 +156,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.12.3...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.0
 [0.12.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.12.3
 [0.12.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.12.2
 [0.12.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.12.1

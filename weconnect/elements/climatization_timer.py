@@ -50,13 +50,13 @@ class ClimatizationTimer(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['timers', 'timeInCar']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.timeInCar.enabled:
-            string += f'\tTime in Car: {self.timeInCar.value.isoformat()}'  # pylint: disable=no-member
-            string += f' (captured at {self.carCapturedTimestamp.value.isoformat()})\n'  # pylint: disable=no-member
-        string += f'\tTimers: {len(self.timers)} items\n'
+            string += f'\n\tTime in Car: {self.timeInCar.value.isoformat()}'  # pylint: disable=no-member
+            string += f' (captured at {self.carCapturedTimestamp.value.isoformat()})'  # pylint: disable=no-member
+        string += f'\n\tTimers: {len(self.timers)} items'
         for timer in self.timers.values():
-            string += f'\t\t{timer}\n'
+            string += f'\n\t\t{timer}'
         return string
 
     class Timer(AddressableObject):

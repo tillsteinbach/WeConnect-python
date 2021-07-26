@@ -10,6 +10,7 @@ from PIL import Image
 
 from ..addressable import AddressableObject, AddressableAttribute, AddressableDict, AddressableList
 from ..elements.generic_capability import GenericCapability
+from ..elements.generic_status import GenericStatus
 from ..elements.generic_request_status import GenericRequestStatus
 from ..elements.controls import Controls
 from ..elements.access_status import AccessStatus
@@ -17,6 +18,7 @@ from ..elements.battery_status import BatteryStatus
 from ..elements.capability_status import CapabilityStatus
 from ..elements.charging_status import ChargingStatus
 from ..elements.charging_settings import ChargingSettings
+from ..elements.charge_mode import ChargeMode
 from ..elements.climatization_status import ClimatizationStatus
 from ..elements.climatization_settings import ClimatizationSettings
 from ..elements.climatization_timer import ClimatizationTimer
@@ -197,11 +199,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                        'batteryStatus': BatteryStatus,
                        'chargingStatus': ChargingStatus,
                        'chargingSettings': ChargingSettings,
+                       'chargeMode': ChargeMode,
                        'plugStatus': PlugStatus,
                        'climatisationStatus': ClimatizationStatus,
                        'climatisationSettings': ClimatizationSettings,
                        'windowHeatingStatus': WindowHeatingStatus,
                        'lightsStatus': LightsStatus,
+                       'maintenanceStatus': GenericStatus,  # The actual format of the maintenanceStatus we don't know yet. Only to provide error message
                        'rangeStatus': RangeStatus,
                        'capabilityStatus': CapabilityStatus,
                        'climatisationTimer': ClimatizationTimer,

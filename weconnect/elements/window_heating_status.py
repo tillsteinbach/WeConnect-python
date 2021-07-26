@@ -42,10 +42,10 @@ class WindowHeatingStatus(GenericStatus):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['windowHeatingStatus']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
-        string += f'\tWindows: {len(self.windows)} items\n'
+        string = super().__str__()
+        string += f'\n\tWindows: {len(self.windows)} items'
         for window in self.windows.values():
-            string += f'\t\t{window}\n'
+            string += f'\n\t\t{window}'
         return string
 
     class Window(AddressableObject):

@@ -134,22 +134,22 @@ class ClimatizationSettings(GenericSettings):
             'zoneRearRightEnabled']))
 
     def __str__(self):
-        string = super().__str__() + '\n'
+        string = super().__str__()
         if self.targetTemperature_C.enabled:
-            string += f'\tTarget Temperature: {self.targetTemperature_C.value} °C ' \
-                f'({self.targetTemperature_K.value}°K) \n'
+            string += f'\n\tTarget Temperature: {self.targetTemperature_C.value} °C ' \
+                f'({self.targetTemperature_K.value}°K)'
         if self.climatisationWithoutExternalPower.enabled:
-            string += f'\tClimatization without external Power: {self.climatisationWithoutExternalPower.value}\n'
+            string += f'\n\tClimatization without external Power: {self.climatisationWithoutExternalPower.value}'
         if self.climatizationAtUnlock.enabled:
-            string += f'\tStart climatization after unlock: {self.climatizationAtUnlock.value}\n'
+            string += f'\n\tStart climatization after unlock: {self.climatizationAtUnlock.value}'
         if self.windowHeatingEnabled.enabled:
-            string += f'\tWindow heating: {self.windowHeatingEnabled.value}\n'
+            string += f'\n\tWindow heating: {self.windowHeatingEnabled.value}'
         if self.zoneFrontLeftEnabled.enabled:
-            string += f'\tHeating Front Left Seat: {self.zoneFrontLeftEnabled.value}\n'
+            string += f'\n\tHeating Front Left Seat: {self.zoneFrontLeftEnabled.value}'
         if self.zoneFrontRightEnabled.enabled:
-            string += f'\tHeating Front Right Seat: {self.zoneFrontRightEnabled.value}\n'
+            string += f'\n\tHeating Front Right Seat: {self.zoneFrontRightEnabled.value}'
         if self.zoneRearLeftEnabled.enabled:
-            string += f'\tHeating Rear Left Seat: {self.zoneRearLeftEnabled.value}\n'
+            string += f'\n\tHeating Rear Left Seat: {self.zoneRearLeftEnabled.value}'
         if self.zoneRearRightEnabled.enabled:
-            string += f'\tHeating Rear Right Seat: {self.zoneRearRightEnabled.value}\n'
+            string += f'\n\tHeating Rear Right Seat: {self.zoneRearRightEnabled.value}'
         return string

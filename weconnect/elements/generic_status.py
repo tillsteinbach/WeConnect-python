@@ -85,9 +85,9 @@ class GenericStatus(AddressableObject):
         if self.carCapturedTimestamp.enabled:
             returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'  # pylint: disable=no-member
         if self.error.enabled:
-            returnString += f'\nError: {self.error}'
+            returnString += f'\n\tError: {self.error}'
         for target in self.target:
-            returnString += f'\nTarget: {target}'
+            returnString += f'\n\tTarget: {target}'
         return returnString
 
     class Target(AddressableObject):
