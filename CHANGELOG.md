@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+- Fix for sorting observers (fixes crash)
 
 ## [0.13.2] - 2021-07-26
 ### Changed

@@ -48,7 +48,7 @@ class AddressableLeaf():
                 observers.add(observerEntry)
         if self.__parent is not None:
             observers.update(self.__parent.getObserverEntries(flags))
-        return sorted(observers, key=lambda entry: entry[2])
+        return sorted(observers, key=lambda entry: entry[2].value())
 
     def notify(self, flags):
         observers = self.getObservers(flags)
