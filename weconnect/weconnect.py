@@ -10,10 +10,10 @@ from urllib import parse
 
 import requests
 
-from .elements.vehicle import Vehicle
-from .elements.charging_station import ChargingStation
-from .addressable import AddressableObject, AddressableDict
-from .errors import APICompatibilityError, AuthentificationError, RetrievalError
+from weconnect.elements.vehicle import Vehicle
+from weconnect.elements.charging_station import ChargingStation
+from weconnect.addressable import AddressableObject, AddressableDict
+from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError
 
 LOG = logging.getLogger("weconnect")
 
@@ -296,20 +296,26 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__userId = params['userId']  # pylint: disable=unused-private-member
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
-        afterLogingUrl = login3Response.headers['Location']
+        afterLoginUrl = login3Response.headers['Location']
+        consentURL = None
         while True:
+            if 'consent' in afterLoginUrl:
+                consentURL = afterLoginUrl
             afterLoginResponse = self.__session.get(
-                afterLogingUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+                afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
 
             if 'Location' not in afterLoginResponse.headers:
+                if consentURL is not None:
+                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
+                                                ' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
                 raise APICompatibilityError('No Location for forwarding in response headers')
 
-            afterLogingUrl = afterLoginResponse.headers['Location']
+            afterLoginUrl = afterLoginResponse.headers['Location']
 
-            if afterLogingUrl.startswith('weconnect://authenticated#'):
+            if afterLoginUrl.startswith('weconnect://authenticated#'):
                 break
 
-        params = dict(parse.parse_qsl(parse.urlsplit(afterLogingUrl.replace('authenticated#', 'authenticated?')).query))
+        params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
 
         if all(key in params for key in ('token_type', 'id_token', 'expires_in')):
             self.__token = {
@@ -393,6 +399,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__refreshTimer.daemon = True
             self.__refreshTimer.start()
             LOG.info('Token refreshed')
+        elif refreshResponse.status_code == requests.codes['internal_server_error'] \
+                or refreshResponse.status_code == requests.codes['service_unavailable'] \
+                or refreshResponse.status_code == requests.codes['gateway_timeout']:
+            if self.__refreshTimer and self.__refreshTimer.is_alive():
+                self.__refreshTimer.cancel()
+            self.__refreshTimer = threading.Timer(60, self.__refreshToken)
+            self.__refreshTimer.daemon = True
+            self.__refreshTimer.start()
+            LOG.info('Token could not be refreshed, will try again after 60 seconds.')
         else:
             raise RetrievalError(f'Status Code from WeConnect server was: {refreshResponse.status_code}')
 
