@@ -2,7 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
 - Fix for sorting observers (fixes crash)
+
+### Added
+- Added WindowHeatingState.INVALID
 
 ## [0.13.2] - 2021-07-26
 ### Changed

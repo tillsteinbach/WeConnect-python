@@ -92,4 +92,5 @@ class WindowHeatingStatus(GenericStatus):
         class WindowHeatingState(Enum,):
             ON = 'on'
             OFF = 'off'
+            INVALID = 'invalid'
             UNKNOWN = 'unknown open state'
