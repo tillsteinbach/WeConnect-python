@@ -2,11 +2,11 @@ import logging
 import json
 import requests
 
-from ..addressable import AddressableObject, ChangeableAttribute, AddressableLeaf
-from .control_operation import ControlOperation
-from .charging_settings import ChargingSettings
-from .climatization_settings import ClimatizationSettings
-from ..errors import ControlError, SetterError
+from weconnect.addressable import AddressableObject, ChangeableAttribute, AddressableLeaf
+from weconnect.elements.control_operation import ControlOperation
+from weconnect.elements.charging_settings import ChargingSettings
+from weconnect.elements.climatization_settings import ClimatizationSettings
+from weconnect.errors import ControlError, SetterError
 
 LOG = logging.getLogger("weconnect")
 

@@ -1,8 +1,8 @@
 import logging
 
-from ..addressable import AddressableLeaf, ChangeableAttribute
-from ..elements.generic_settings import GenericSettings
-from ..elements.control_operation import ControlInputEnum
+from weconnect.addressable import AddressableLeaf, ChangeableAttribute
+from weconnect.elements.generic_settings import GenericSettings
+from weconnect.elements.control_operation import ControlInputEnum
 
 LOG = logging.getLogger("weconnect")
 

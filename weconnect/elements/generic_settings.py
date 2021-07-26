@@ -4,9 +4,9 @@ import logging
 import json
 import requests
 
-from ..addressable import AddressableLeaf, ChangeableAttribute
-from ..elements.generic_status import GenericStatus
-from ..errors import SetterError
+from weconnect.addressable import AddressableLeaf, ChangeableAttribute
+from weconnect.elements.generic_status import GenericStatus
+from weconnect.errors import SetterError
 
 LOG = logging.getLogger("weconnect")
 

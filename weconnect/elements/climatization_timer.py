@@ -1,9 +1,9 @@
 from datetime import datetime
 import logging
 
-from ..addressable import AddressableObject, AddressableAttribute, AddressableDict
-from ..elements.generic_status import GenericStatus
-from ..util import robustTimeParse, toBool
+from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableDict
+from weconnect.elements.generic_status import GenericStatus
+from weconnect.util import robustTimeParse, toBool
 
 LOG = logging.getLogger("weconnect")
 

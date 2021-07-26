@@ -6,7 +6,7 @@ from typing import Dict, List
 from PIL import Image
 import ascii_magic
 
-from .util import toBool, imgToASCIIArt
+from weconnect.util import toBool, imgToASCIIArt
 
 LOG = logging.getLogger("weconnect")
 

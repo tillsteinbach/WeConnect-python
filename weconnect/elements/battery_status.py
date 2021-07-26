@@ -1,7 +1,7 @@
 import logging
 
-from ..addressable import AddressableAttribute
-from ..elements.generic_status import GenericStatus
+from weconnect.addressable import AddressableAttribute
+from weconnect.elements.generic_status import GenericStatus
 
 LOG = logging.getLogger("weconnect")
 

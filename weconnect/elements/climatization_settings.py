@@ -1,8 +1,8 @@
 import logging
 
-from ..addressable import AddressableLeaf, ChangeableAttribute
-from ..elements.generic_settings import GenericSettings
-from ..util import toBool
+from weconnect.addressable import AddressableLeaf, ChangeableAttribute
+from weconnect.elements.generic_settings import GenericSettings
+from weconnect.util import toBool
 
 LOG = logging.getLogger("weconnect")
 

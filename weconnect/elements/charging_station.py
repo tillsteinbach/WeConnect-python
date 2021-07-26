@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
 
-from ..util import toBool
-from ..addressable import AddressableObject, AddressableAttribute, AddressableList
+from weconnect.util import toBool
+from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableList
 
 LOG = logging.getLogger("weconnect")
 

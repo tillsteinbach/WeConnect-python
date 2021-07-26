@@ -1,8 +1,8 @@
 from enum import Enum
 import logging
 
-from ..addressable import AddressableObject, AddressableAttribute, AddressableDict
-from ..elements.generic_status import GenericStatus
+from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableDict
+from weconnect.elements.generic_status import GenericStatus
 
 LOG = logging.getLogger("weconnect")
 

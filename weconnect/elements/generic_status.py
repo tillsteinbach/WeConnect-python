@@ -2,9 +2,9 @@ from enum import Enum
 import logging
 from datetime import datetime, timedelta, timezone
 
-from ..util import robustTimeParse, toBool
-from ..addressable import AddressableObject, AddressableAttribute, AddressableList
-from ..elements.control_operation import ControlOperation
+from weconnect.util import robustTimeParse, toBool
+from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableList
+from weconnect.elements.control_operation import ControlOperation
 
 LOG = logging.getLogger("weconnect")
 

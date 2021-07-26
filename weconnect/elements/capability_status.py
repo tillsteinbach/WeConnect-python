@@ -1,8 +1,8 @@
 import logging
 
-from ..addressable import AddressableDict
-from ..elements.generic_status import GenericStatus
-from ..elements.generic_capability import GenericCapability
+from weconnect.addressable import AddressableDict
+from weconnect.elements.generic_status import GenericStatus
+from weconnect.elements.generic_capability import GenericCapability
 
 LOG = logging.getLogger("weconnect")
 

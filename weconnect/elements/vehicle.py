@@ -8,27 +8,27 @@ import logging
 import requests
 from PIL import Image
 
-from ..addressable import AddressableObject, AddressableAttribute, AddressableDict, AddressableList
-from ..elements.generic_capability import GenericCapability
-from ..elements.generic_status import GenericStatus
-from ..elements.generic_request_status import GenericRequestStatus
-from ..elements.controls import Controls
-from ..elements.access_status import AccessStatus
-from ..elements.battery_status import BatteryStatus
-from ..elements.capability_status import CapabilityStatus
-from ..elements.charging_status import ChargingStatus
-from ..elements.charging_settings import ChargingSettings
-from ..elements.charge_mode import ChargeMode
-from ..elements.climatization_status import ClimatizationStatus
-from ..elements.climatization_settings import ClimatizationSettings
-from ..elements.climatization_timer import ClimatizationTimer
-from ..elements.lights_status import LightsStatus
-from ..elements.parking_position import ParkingPosition
-from ..elements.plug_status import PlugStatus
-from ..elements.range_status import RangeStatus
-from ..elements.window_heating_status import WindowHeatingStatus
-from ..errors import APICompatibilityError, RetrievalError
-from ..util import toBool
+from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableDict, AddressableList
+from weconnect.elements.generic_capability import GenericCapability
+from weconnect.elements.generic_status import GenericStatus
+from weconnect.elements.generic_request_status import GenericRequestStatus
+from weconnect.elements.controls import Controls
+from weconnect.elements.access_status import AccessStatus
+from weconnect.elements.battery_status import BatteryStatus
+from weconnect.elements.capability_status import CapabilityStatus
+from weconnect.elements.charging_status import ChargingStatus
+from weconnect.elements.charging_settings import ChargingSettings
+from weconnect.elements.charge_mode import ChargeMode
+from weconnect.elements.climatization_status import ClimatizationStatus
+from weconnect.elements.climatization_settings import ClimatizationSettings
+from weconnect.elements.climatization_timer import ClimatizationTimer
+from weconnect.elements.lights_status import LightsStatus
+from weconnect.elements.parking_position import ParkingPosition
+from weconnect.elements.plug_status import PlugStatus
+from weconnect.elements.range_status import RangeStatus
+from weconnect.elements.window_heating_status import WindowHeatingStatus
+from weconnect.errors import APICompatibilityError, RetrievalError
+from weconnect.util import toBool
 
 LOG = logging.getLogger("weconnect")
 

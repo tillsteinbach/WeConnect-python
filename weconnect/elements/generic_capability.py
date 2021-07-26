@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
 
-from ..util import robustTimeParse
-from ..addressable import AddressableObject, AddressableAttribute
+from weconnect.util import robustTimeParse
+from weconnect.addressable import AddressableObject, AddressableAttribute
 
 LOG = logging.getLogger("weconnect")
 
