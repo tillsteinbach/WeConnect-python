@@ -10,11 +10,11 @@ from PIL import Image
 
 from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableDict, AddressableList
 from weconnect.elements.generic_capability import GenericCapability
-from weconnect.elements.generic_status import GenericStatus
 from weconnect.elements.generic_request_status import GenericRequestStatus
 from weconnect.elements.controls import Controls
 from weconnect.elements.access_status import AccessStatus
 from weconnect.elements.battery_status import BatteryStatus
+from weconnect.elements.lv_battery_status import LVBatteryStatus
 from weconnect.elements.capability_status import CapabilityStatus
 from weconnect.elements.charging_status import ChargingStatus
 from weconnect.elements.charging_settings import ChargingSettings
@@ -23,6 +23,7 @@ from weconnect.elements.climatization_status import ClimatizationStatus
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.climatization_timer import ClimatizationTimer
 from weconnect.elements.lights_status import LightsStatus
+from weconnect.elements.maintenance_status import MaintenanceStatus
 from weconnect.elements.parking_position import ParkingPosition
 from weconnect.elements.plug_status import PlugStatus
 from weconnect.elements.range_status import RangeStatus
@@ -197,6 +198,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.weConnect.cache[url] = (data, str(datetime.utcnow()))
         keyClassMap = {'accessStatus': AccessStatus,
                        'batteryStatus': BatteryStatus,
+                       'lvBatteryStatus': LVBatteryStatus,
                        'chargingStatus': ChargingStatus,
                        'chargingSettings': ChargingSettings,
                        'chargeMode': ChargeMode,
@@ -205,7 +207,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                        'climatisationSettings': ClimatizationSettings,
                        'windowHeatingStatus': WindowHeatingStatus,
                        'lightsStatus': LightsStatus,
-                       'maintenanceStatus': GenericStatus,  # The actual format of the maintenanceStatus we don't know yet. Only to provide error message
+                       'maintenanceStatus': MaintenanceStatus,
                        'rangeStatus': RangeStatus,
                        'capabilityStatus': CapabilityStatus,
                        'climatisationTimer': ClimatizationTimer,

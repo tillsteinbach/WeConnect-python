@@ -2,11 +2,15 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.14.0] - 2021-07-28
 ### Fixed
 - Fix for sorting observers (fixes crash)
 
 ### Added
 - Added WindowHeatingState.INVALID
+- Added ChargeMode.INVALID
+- New statuses lvBatteryStatus (seen for ID vehicles), maintenanceStatus for legacy cars (contains milage and km/days until service) 
 
 ## [0.13.2] - 2021-07-26
 ### Changed
@@ -172,7 +176,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.13.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.14.0
 [0.13.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.2
 [0.13.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.1
 [0.13.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.0
