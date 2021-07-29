@@ -16,6 +16,9 @@ def test_AddressableLeafGetObservers():
     def observe3():
         pass
 
+    def observe4():
+        pass
+
     observerEntries = addressableLeaf.getObserverEntries(addressable.AddressableLeaf.ObserverEvent.ALL)
     assert len(observerEntries) == 0
 
@@ -59,6 +62,18 @@ def test_AddressableLeafGetObservers():
     # Now request only a subset of registred observers
     observerEntries = addressableLeaf.getObserverEntries(flags=addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED)
     assert len(observerEntries) == 2
+
+    # Observer for post update only
+    observerEntries = addressableLeaf.getObserverEntries(addressable.AddressableLeaf.ObserverEvent.ALL, onUpdateComplete=True)
+    assert len(observerEntries) == 0
+
+    addressableLeaf.addObserver(observe4, flag=addressable.AddressableLeaf.ObserverEvent.ENABLED,
+                                priority=addressable.AddressableLeaf.ObserverPriority.INTERNAL_HIGH, onUpdateComplete=True)
+
+    observerEntries = addressableLeaf.getObserverEntries(addressable.AddressableLeaf.ObserverEvent.ALL)
+    assert len(observerEntries) == 3
+    observerEntries = addressableLeaf.getObserverEntries(addressable.AddressableLeaf.ObserverEvent.ALL, onUpdateComplete=True)
+    assert len(observerEntries) == 1
 
 
 def test_AddressableLeafParents():

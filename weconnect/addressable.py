@@ -24,38 +24,51 @@ class AddressableLeaf():
         self.lastChange = None
         self.lastUpdateFromServer = None
         self.lastUpdateFromCar = None
+        self.onCompleteNotifyFlags = None
 
     def __del__(self):
         if self.enabled:
             self.enabled = False
 
-    def addObserver(self, observer, flag, priority=None):
+    def addObserver(self, observer, flag, priority=None, onUpdateComplete=False):
         if priority is None:
             priority = AddressableLeaf.ObserverPriority.USER_MID
-        self.__observers.add((observer, flag, priority))
+        self.__observers.add((observer, flag, priority, onUpdateComplete))
         LOG.debug('%s: Observer added with flags: %s', self.getGlobalAddress(), flag)
 
-    def getObservers(self, flags):
-        return [observerEntry[0] for observerEntry in self.getObserverEntries(flags)]
+    def getObservers(self, flags, onUpdateComplete=False):
+        return [observerEntry[0] for observerEntry in self.getObserverEntries(flags, onUpdateComplete)]
 
-    def getObserverEntries(self, flags):
+    def getObserverEntries(self, flags, onUpdateComplete=False):
         observers = set()
         for observerEntry in self.__observers:
-            observer, observerflags, priority = observerEntry
+            observer, observerflags, priority, observerOnUpdateComplete = observerEntry
             del observer
             del priority
-            if flags & observerflags:
+            if (flags & observerflags) and observerOnUpdateComplete == onUpdateComplete:
                 observers.add(observerEntry)
         if self.__parent is not None:
-            observers.update(self.__parent.getObserverEntries(flags))
+            observers.update(self.__parent.getObserverEntries(flags, onUpdateComplete))
         return sorted(observers, key=lambda entry: int(entry[2]))
 
     def notify(self, flags):
-        observers = self.getObservers(flags)
+        observers = self.getObservers(flags, onUpdateComplete=False)
         for observer in observers:
             observer(element=self, flags=flags)
-        LOG.debug('%s: Notify called with flags: %s for %d observers', str(self), flags, len(observers))
+        if self.onCompleteNotifyFlags is not None:
+            self.onCompleteNotifyFlags &= flags
+        else:
+            self.onCompleteNotifyFlags = flags
         LOG.debug('%s: Notify called with flags: %s for %d observers', self.getGlobalAddress(), flags, len(observers))
+
+    def updateComplete(self):
+        if self.onCompleteNotifyFlags is not None:
+            observers = self.getObservers(self.onCompleteNotifyFlags, onUpdateComplete=True)
+            for observer in observers:
+                observer(element=self, flags=self.onCompleteNotifyFlags)
+            self.onCompleteNotifyFlags = None
+            LOG.debug('%s: Notify called on update complete with flags: %s for %d observers', self.getGlobalAddress(),
+                      self.onCompleteNotifyFlags, len(observers))
 
     @property
     def enabled(self):
@@ -327,6 +340,11 @@ class AddressableObject(AddressableLeaf):
         if childAddress in self.__children:
             return self.__children[childAddress].getByAddressString(childPath)
         return False
+
+    def updateComplete(self):
+        for child in self.__children.values():
+            child.updateComplete()
+        super().updateComplete()
 
 
 class AddressableDict(AddressableObject, Dict):

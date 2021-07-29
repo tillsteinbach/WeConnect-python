@@ -418,6 +418,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def update(self, updateCapabilities=True, updatePictures=True, force=False):
         self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force)
         self.updateChargingStations(force=force)
+        self.updateComplete()
 
     def updateVehicles(self, updateCapabilities=True, updatePictures=True, force=False):  # noqa: C901
         data = None

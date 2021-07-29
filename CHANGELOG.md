@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.0] - 2021-07-29
+### Added
+- Possibility to add Observers that are triggered after the update finished
+
 ## [0.14.0] - 2021-07-28
 ### Fixed
 - Fix for sorting observers (fixes crash)
@@ -176,7 +180,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.14.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.15.0...HEAD
+[0.15.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.15.0
 [0.14.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.14.0
 [0.13.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.2
 [0.13.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.13.1
