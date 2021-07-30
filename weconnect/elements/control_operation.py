@@ -13,3 +13,7 @@ class ControlOperation(ControlInputEnum):
     NONE = 'none'
     SETTINGS = 'settings'
     UNKNOWN = 'unknown'
+
+    @classmethod
+    def allowedValues(cls):
+        return [ControlOperation.START, ControlOperation.STOP]

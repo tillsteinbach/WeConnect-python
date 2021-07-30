@@ -72,7 +72,3 @@ class Controls(AddressableObject):
                     raise SetterError(f'Could not set value ({controlResponse.status_code})')
                 # Trigger one update for the vehicle status to show result
                 self.vehicle.updateStatus(force=True)
-
-        @classmethod
-        def allowedValues(cls):
-            return [ControlOperation.START, ControlOperation.STOP]
