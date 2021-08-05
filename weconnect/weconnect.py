@@ -170,6 +170,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
 
+    def fillCacheFromJsonString(self, jsonString, maxAge):
+        self.maxAge = maxAge
+        self.__cache = json.loads(jsonString)
+        LOG.info('Reading cache from string')
+
     def clearCache(self, maxAge):
         self.maxAge = maxAge
         self.__cache.clear()
