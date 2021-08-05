@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- Currently no unreleased changes
+
+## [0.16.0] - 2021-08-05
+### Added
+- Possibility to fill cache from strings instead of files
+
+### Fixed
+- Observers that are triggered after the update finished were failing in certain cases
 
 ## [0.15.1] - 2021-07-30
 ### Fixed
@@ -184,7 +192,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.15.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.16.0...HEAD
+[0.16.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.16.0
 [0.15.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.15.1
 [0.15.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.15.0
 [0.14.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.14.0
