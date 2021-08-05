@@ -56,7 +56,7 @@ class AddressableLeaf():
         for observer in observers:
             observer(element=self, flags=flags)
         if self.onCompleteNotifyFlags is not None:
-            self.onCompleteNotifyFlags &= flags
+            self.onCompleteNotifyFlags |= flags
         else:
             self.onCompleteNotifyFlags = flags
         LOG.debug('%s: Notify called with flags: %s for %d observers', self.getGlobalAddress(), flags, len(observers))
