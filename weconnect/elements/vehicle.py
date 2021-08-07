@@ -98,7 +98,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                     ' myvolkswagen.de website and accept the terms and conditions')
                 except ValueError:
                     self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported target operation: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
+                    LOG.warning('An unsupported enrollment Status: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
             else:
                 self.enrollmentStatus.enabled = False
 
@@ -299,8 +299,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif statusResponse.status_code == requests.codes['bad_request'] \
                     or statusResponse.status_code == requests.codes['no_content'] \
                     or statusResponse.status_code == requests.codes['not_found']:
-                # This is the case if no parking position is available for the car
-                pass
+                if 'parkingPosition' in self.statuses:
+                    self.statuses['parkingPosition'].update(fromDict=dict())
             else:
                 raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
         if data is not None:
@@ -540,10 +540,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         class Role(Enum,):
             PRIMARY_USER = 'PRIMARY_USER'
             SECONDARY_USER = 'SECONDARY_USER'
+            GUEST_USER = 'GUEST_USER'
             UNKNOWN = 'UNKNOWN'
 
         class EnrollmentStatus(Enum,):
             NOT_STARTED = 'NOT_STARTED'
             COMPLETED = 'COMPLETED'
             GDC_MISSING = 'GDC_MISSING'
-            UNKNOWN = 'unknown enrollment status'
+            UNKNOWN = 'UNKNOWN'

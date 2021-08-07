@@ -66,4 +66,6 @@ class GenericRequestStatus(GenericStatus):
         POLLING_TIMEOUT = 'polling_timeout'
         IN_PROGRESS = 'in_progress'
         QUEUED = 'queued'
+        DELAYED = 'delayed'
+        TIMEOUT = 'timeout'
         UNKNOWN = 'unknown status'
