@@ -36,6 +36,10 @@ class AddressableLeaf():
         self.__observers.add((observer, flag, priority, onUpdateComplete))
         LOG.debug('%s: Observer added with flags: %s', self.getGlobalAddress(), flag)
 
+    def removeObserver(self, observer, flag=None):
+        self.__observers = self.__observers = filter(lambda observerEntry: observerEntry[0] == observer
+                                                     or (flag is not None and observerEntry[1] == flag), self.__observers)
+
     def getObservers(self, flags, onUpdateComplete=False):
         return [observerEntry[0] for observerEntry in self.getObserverEntries(flags, onUpdateComplete)]
 

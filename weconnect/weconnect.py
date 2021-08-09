@@ -477,6 +477,53 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.market = market
         self.useLocale = useLocale
 
+    def getChargingStations(self, latitude, longitude, searchRadius=None, market=None, useLocale=None, force=False):  # noqa: C901
+        chargingStationMap = AddressableDict(localAddress='', parent=None)
+        data = None
+        cacheDate = None
+        url = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={latitude}&longitude={longitude}'
+        if market is not None:
+            url += f'&market={market}'
+        if useLocale is not None:
+            url += f'&locale={useLocale}'
+        if searchRadius is not None:
+            url += f'&searchRadius={searchRadius}'
+        if self.__userId is not None:
+            url += f'&userId={self.__userId}'
+        if force or (self.maxAge is not None and url in self.__cache):
+            data, cacheDateString = self.__cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
+            try:
+                stationsResponse = self.__session.get(url, allow_redirects=True)
+            except requests.exceptions.ConnectionError as conenctionError:
+                raise RetrievalError from conenctionError
+            if stationsResponse.status_code == requests.codes['ok']:
+                data = stationsResponse.json()
+            elif stationsResponse.status_code == requests.codes['unauthorized']:
+                LOG.info('Server asks for new authorization')
+                self.login()
+                stationsResponse = self.__session.get(url, allow_redirects=False)
+                if stationsResponse.status_code == requests.codes['ok']:
+                    data = stationsResponse.json()
+                else:
+                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                                         f' Status Code was: {stationsResponse.status_code}')
+            else:
+                raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
+        if data is not None:
+            if 'chargingStations' in data and data['chargingStations']:
+                for stationDict in data['chargingStations']:
+                    if 'id' not in stationDict:
+                        break
+                    stationId = stationDict['id']
+                    station = ChargingStation(weConnect=self, stationId=stationId, parent=chargingStationMap, fromDict=stationDict,
+                                              fixAPI=self.fixAPI)
+                    chargingStationMap[stationId] = station
+
+                self.__cache[url] = (data, str(datetime.utcnow()))
+        return chargingStationMap
+
     def updateChargingStations(self, force=False):  # noqa: C901
         if self.latitude is not None and self.longitude is not None:
             data = None
