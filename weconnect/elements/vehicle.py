@@ -170,7 +170,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
-        if force or (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
+        if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
@@ -275,7 +275,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
+        if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
@@ -299,8 +299,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif statusResponse.status_code == requests.codes['bad_request'] \
                     or statusResponse.status_code == requests.codes['no_content'] \
                     or statusResponse.status_code == requests.codes['not_found']:
-                if 'parkingPosition' in self.statuses:
-                    self.statuses['parkingPosition'].update(fromDict=dict())
+                data = None
             else:
                 raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
         if data is not None:
@@ -313,7 +312,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                        statusId='parkingPosition',
                                                                        fromDict=data['data'])
         elif 'parkingPosition' in self.statuses:
-            del self.statuses['parkingPosition']
+            self.statuses['parkingPosition'].latitude.setValueWithCarTime(None, fromServer=True)
+            self.statuses['parkingPosition'].latitude.enabled = False
+            self.statuses['parkingPosition'].longitude.setValueWithCarTime(None, fromServer=True)
+            self.statuses['parkingPosition'].longitude.enabled = False
+            self.statuses['parkingPosition'].carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+            self.statuses['parkingPosition'].carCapturedTimestamp.enabled = False
+            self.statuses['parkingPosition'].enabled = False
 
     def updatePictures(self):  # noqa: C901
         data = None
@@ -466,15 +471,18 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if self.coUsers.enabled:
             returnString += f'Co-Users: {len(self.coUsers)} items\n'
             for coUser in self.coUsers:
-                returnString += ''.join(['\t' + line for line in str(coUser).splitlines(True)]) + '\n'
+                if coUser.enabled:
+                    returnString += ''.join(['\t' + line for line in str(coUser).splitlines(True)]) + '\n'
         if self.capabilities.enabled:
             returnString += f'Capabilities: {len(self.capabilities)} items\n'
             for capability in self.capabilities.values():
-                returnString += ''.join(['\t' + line for line in str(capability).splitlines(True)]) + '\n'
+                if capability.enabled:
+                    returnString += ''.join(['\t' + line for line in str(capability).splitlines(True)]) + '\n'
         if self.statuses.enabled:
             returnString += f'Statuses: {len(self.statuses)} items\n'
             for status in self.statuses.values():
-                returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
+                if status.enabled:
+                    returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
         return returnString
 
     class User(AddressableObject):

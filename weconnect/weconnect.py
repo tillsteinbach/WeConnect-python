@@ -429,7 +429,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         data = None
         cacheDate = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        if force or (self.maxAge is not None and url in self.__cache):
+        if not force and (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
@@ -490,7 +490,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             url += f'&searchRadius={searchRadius}'
         if self.__userId is not None:
             url += f'&userId={self.__userId}'
-        if force or (self.maxAge is not None and url in self.__cache):
+        if not force and (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
@@ -537,7 +537,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 url += f'&searchRadius={self.searchRadius}'
             if self.__userId is not None:
                 url += f'&userId={self.__userId}'
-            if force or (self.maxAge is not None and url in self.__cache):
+            if not force and (self.maxAge is not None and url in self.__cache):
                 data, cacheDateString = self.__cache[url]
                 cacheDate = datetime.fromisoformat(cacheDateString)
             if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):

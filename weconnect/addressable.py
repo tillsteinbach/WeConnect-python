@@ -302,6 +302,13 @@ class AddressableObject(AddressableLeaf):
         super().__init__(localAddress, parent)
         self.__children = dict()
 
+    @AddressableLeaf.enabled.setter
+    def enabled(self, setEnabled):
+        if not setEnabled and self.enabled:
+            for child in self.__children.values():
+                child.enabled = False
+        AddressableLeaf.enabled.fset(self, setEnabled)
+
     def isLeaf(self):
         return not self.__children
 
@@ -360,7 +367,7 @@ class AddressableDict(AddressableObject, Dict):
         return retVal
 
     def __str__(self):
-        return '[' + ', '.join([str(item) for item in self.values()]) + ']'
+        return '[' + ', '.join([str(item) for item in self.values() if item.enabled]) + ']'
 
 
 class AddressableList(AddressableObject, List):
@@ -371,4 +378,4 @@ class AddressableList(AddressableObject, List):
         return retVal
 
     def __str__(self):
-        return '[' + ', '.join([str(item) for item in self]) + ']'
+        return '[' + ', '.join([str(item) for item in self if item.enabled]) + ']'
