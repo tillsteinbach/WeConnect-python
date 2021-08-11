@@ -60,7 +60,14 @@ class AddressableLeaf():
         for observer in observers:
             observer(element=self, flags=flags)
         if self.onCompleteNotifyFlags is not None:
-            self.onCompleteNotifyFlags |= flags
+            # Remove disabled if was enabled and not yet notified
+            if (flags & AddressableLeaf.ObserverEvent.ENABLED) and (self.onCompleteNotifyFlags & AddressableLeaf.ObserverEvent.DISABLED):
+                self.onCompleteNotifyFlags &= ~AddressableLeaf.ObserverEvent.DISABLED  # pylint: disable=invalid-unary-operand-type
+            # Remove enabled if was enabled and not yet notified
+            elif (flags & AddressableLeaf.ObserverEvent.DISABLED) and (self.onCompleteNotifyFlags & AddressableLeaf.ObserverEvent.ENABLED):
+                self.onCompleteNotifyFlags &= ~AddressableLeaf.ObserverEvent.ENABLED  # pylint: disable=invalid-unary-operand-type
+            else:
+                self.onCompleteNotifyFlags |= flags
         else:
             self.onCompleteNotifyFlags = flags
         LOG.debug('%s: Notify called with flags: %s for %d observers', self.getGlobalAddress(), flags, len(observers))
@@ -70,9 +77,9 @@ class AddressableLeaf():
             observers = self.getObservers(self.onCompleteNotifyFlags, onUpdateComplete=True)
             for observer in observers:
                 observer(element=self, flags=self.onCompleteNotifyFlags)
-            self.onCompleteNotifyFlags = None
             LOG.debug('%s: Notify called on update complete with flags: %s for %d observers', self.getGlobalAddress(),
                       self.onCompleteNotifyFlags, len(observers))
+            self.onCompleteNotifyFlags = None
 
     @property
     def enabled(self):
@@ -84,6 +91,8 @@ class AddressableLeaf():
             if self.parent is not None:
                 self.parent.addChild(self)
             self.notify(AddressableLeaf.ObserverEvent.ENABLED)
+        elif not setEnabled and self.__enabled:
+            self.notify(AddressableLeaf.ObserverEvent.DISABLED)
         self.__enabled = setEnabled
 
     @property
