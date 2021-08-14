@@ -381,6 +381,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             raise RetrievalError('Could not retrieve data even after re-authorization.'
                                                  f' Status Code was: {imageDownloadResponse.status_code}')
                         raise RetrievalError(f'Could not retrieve data. Status Code was: {imageDownloadResponse.status_code}')
+                    else:
+                        LOG.warning('Failed downloading picture %s with status code %d', image['id'], imageDownloadResponse.status_code)
 
                 if img is not None:
                     self.__carImages[image['id']] = img
@@ -394,67 +396,78 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             self.updateStatusPicture()
 
     def updateStatusPicture(self):  # noqa: C901
-        img = self.__carImages['car_birdview']
+        if 'car_birdview' in self.__carImages:
+            img = self.__carImages['car_birdview']
 
-        if 'accessStatus' in self.statuses:
-            accessStatus = self.statuses['accessStatus']
-            for name, door in accessStatus.doors.items():
-                doorNameMap = {'frontLeft': 'door_left_front',
-                               'frontRight': 'door_right_front',
-                               'rearLeft': 'door_left_back',
-                               'rearRight': 'door_right_back'}
-                name = doorNameMap.get(name, name)
-                doorImageName = None
+            if 'accessStatus' in self.statuses:
+                accessStatus = self.statuses['accessStatus']
+                for name, door in accessStatus.doors.items():
+                    doorNameMap = {'frontLeft': 'door_left_front',
+                                   'frontRight': 'door_right_front',
+                                   'rearLeft': 'door_left_back',
+                                   'rearRight': 'door_right_back'}
+                    name = doorNameMap.get(name, name)
+                    doorImageName = None
 
-                if door.openState.value in (AccessStatus.Door.OpenState.OPEN, AccessStatus.Door.OpenState.INVALID):
-                    doorImageName = f'{name}_overlay'
-                elif door.openState.value == AccessStatus.Door.OpenState.CLOSED:
-                    doorImageName = name
+                    if door.openState.value in (AccessStatus.Door.OpenState.OPEN, AccessStatus.Door.OpenState.INVALID):
+                        doorImageName = f'{name}_overlay'
+                    elif door.openState.value == AccessStatus.Door.OpenState.CLOSED:
+                        doorImageName = name
 
-                if doorImageName is not None and doorImageName in self.__carImages:
-                    doorImage = self.__carImages[doorImageName].convert("RGBA")
-                    img.paste(doorImage, (0, 0), doorImage)
+                    if doorImageName is not None and doorImageName in self.__carImages:
+                        doorImage = self.__carImages[doorImageName].convert("RGBA")
+                        img.paste(doorImage, (0, 0), doorImage)
 
-            for name, window in accessStatus.windows.items():
-                windowNameMap = {'frontLeft': 'window_left_front',
-                                 'frontRight': 'window_right_front',
-                                 'rearLeft': 'window_left_back',
-                                 'rearRight': 'window_right_back',
-                                 'sunRoof': 'sunroof'}
-                name = windowNameMap.get(name, name)
-                windowImageName = None
+                for name, window in accessStatus.windows.items():
+                    windowNameMap = {'frontLeft': 'window_left_front',
+                                     'frontRight': 'window_right_front',
+                                     'rearLeft': 'window_left_back',
+                                     'rearRight': 'window_right_back',
+                                     'sunRoof': 'sunroof'}
+                    name = windowNameMap.get(name, name)
+                    windowImageName = None
 
-                if window.openState.value in (AccessStatus.Window.OpenState.OPEN, AccessStatus.Window.OpenState.INVALID):
-                    windowImageName = f'{name}_overlay'
-                elif window.openState.value == AccessStatus.Window.OpenState.CLOSED:
-                    windowImageName = f'{name}'
+                    if window.openState.value in (AccessStatus.Window.OpenState.OPEN, AccessStatus.Window.OpenState.INVALID):
+                        windowImageName = f'{name}_overlay'
+                    elif window.openState.value == AccessStatus.Window.OpenState.CLOSED:
+                        windowImageName = f'{name}'
 
-                if windowImageName is not None and windowImageName in self.__carImages:
-                    windowImage = self.__carImages[windowImageName].convert("RGBA")
-                    img.paste(windowImage, (0, 0), windowImage)
+                    if windowImageName is not None and windowImageName in self.__carImages:
+                        windowImage = self.__carImages[windowImageName].convert("RGBA")
+                        img.paste(windowImage, (0, 0), windowImage)
 
-        if 'lightsStatus' in self.statuses:
-            lightsStatus = self.statuses['lightsStatus']
-            for name, light in lightsStatus.lights.items():
-                lightNameMap = {'frontLeft': 'door_left_front',
-                                'frontRight': 'door_right_front',
-                                'rearLeft': 'door_left_back',
-                                'rearRight': 'door_right_back'}
-                name = lightNameMap.get(name, name)
-                lightImageName = None
+            if 'lightsStatus' in self.statuses:
+                lightsStatus = self.statuses['lightsStatus']
+                for name, light in lightsStatus.lights.items():
+                    lightNameMap = {'frontLeft': 'door_left_front',
+                                    'frontRight': 'door_right_front',
+                                    'rearLeft': 'door_left_back',
+                                    'rearRight': 'door_right_back'}
+                    name = lightNameMap.get(name, name)
+                    lightImageName = None
 
-                if light.status.value == LightsStatus.Light.LightState.ON:
-                    lightImageName = f'light_{name}'
-                    if lightImageName in self.__carImages:
-                        lightImage = self.__carImages[lightImageName].convert("RGBA")
-                        img.paste(lightImage, (0, 0), lightImage)
+                    if light.status.value == LightsStatus.Light.LightState.ON:
+                        lightImageName = f'light_{name}'
+                        if lightImageName in self.__carImages:
+                            lightImage = self.__carImages[lightImageName].convert("RGBA")
+                            img.paste(lightImage, (0, 0), lightImage)
 
-        self.__carImages['status'] = img
+            self.__carImages['status'] = img
+        else:
+            LOG.info('Could not update status picture as birdview image could not be retrieved')
+            if 'status' in self.__carImages:
+                self.__carImages.pop("status")
 
         if 'status' in self.pictures:
-            self.pictures['status'].setValueWithCarTime(img, lastUpdateFromCar=None, fromServer=True)
+            if 'status' in self.__carImages:
+                self.pictures['status'].setValueWithCarTime(self.__carImages['status'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.pictures['status'].setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+                self.pictures['status'].enabled = False
         else:
-            self.pictures['status'] = AddressableAttribute(localAddress='status', parent=self.pictures, value=img, valueType=Image.Image)
+            if 'status' in self.__carImages:
+                self.pictures['status'] = AddressableAttribute(localAddress='status', parent=self.pictures, value=self.__carImages['status'],
+                                                               valueType=Image.Image)
 
     def __str__(self):  # noqa: C901
         returnString = ''
