@@ -68,6 +68,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         refreshTokens=True,
         fixAPI=True,
         maxAge=None,
+        maxAgePictures=None,
         updateCapabilities=True,
         updatePictures=True
     ):
@@ -85,6 +86,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__cache = dict()
         self.fixAPI = fixAPI
         self.maxAge = maxAge
+        self.maxAgePictures = maxAgePictures
         self.latitude = None
         self.longitude = None
         self.searchRadius = None
@@ -164,19 +166,28 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             json.dump(self.__cache, file, cls=DateTimeEncoder)
         LOG.info('Writing cachefile %s', filename)
 
-    def fillCacheFromJson(self, filename, maxAge):
+    def fillCacheFromJson(self, filename, maxAge, maxAgePictures=None):
         self.maxAge = maxAge
+        if maxAgePictures is None:
+            self.maxAgePictures = maxAge
+        else:
+            self.maxAgePictures = maxAgePictures
+
         with open(filename, 'r') as file:
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
 
-    def fillCacheFromJsonString(self, jsonString, maxAge):
+    def fillCacheFromJsonString(self, jsonString, maxAge, maxAgePictures=None):
         self.maxAge = maxAge
+        if maxAgePictures is None:
+            self.maxAgePictures = maxAge
+        else:
+            self.maxAgePictures = maxAgePictures
+
         self.__cache = json.loads(jsonString)
         LOG.info('Reading cache from string')
 
-    def clearCache(self, maxAge):
-        self.maxAge = maxAge
+    def clearCache(self):
         self.__cache.clear()
         LOG.info('Clearing cache')
 

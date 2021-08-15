@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - Currently no unreleased changes
 
+## [0.19.0] - 2021-08-15
+### Added
+- Possibility to set caching time for picture downloads seperately
+
 ## [0.18.3] - 2021-08-14
 ### Fixed
 - Bug with failing picture download
@@ -217,7 +221,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.18.3...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.19.0...HEAD
+[0.19.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.19.0
 [0.18.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.18.3
 [0.18.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.18.2
 [0.18.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.18.1

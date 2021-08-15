@@ -351,12 +351,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 img = None
                 cacheDate = None
                 url = image['url']
-                if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
+                if self.weConnect.maxAgePictures is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
                     img, cacheDateString = self.weConnect.cache[url]
                     img = base64.b64decode(img)
                     img = Image.open(io.BytesIO(img))
                     cacheDate = datetime.fromisoformat(cacheDateString)
-                if img is None or self.weConnect.maxAge is None \
+                if img is None or self.weConnect.maxAgePictures is None \
                         or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(days=1))):
                     imageDownloadResponse = self.weConnect.session.get(url, stream=True)
                     if imageDownloadResponse.status_code == requests.codes['ok']:
@@ -382,7 +382,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                  f' Status Code was: {imageDownloadResponse.status_code}')
                         raise RetrievalError(f'Could not retrieve data. Status Code was: {imageDownloadResponse.status_code}')
                     else:
-                        LOG.warning('Failed downloading picture %s with status code %d', image['id'], imageDownloadResponse.status_code)
+                        LOG.warning('Failed downloading picture %s with status code %d will try again in next update', image['id'],
+                                    imageDownloadResponse.status_code)
 
                 if img is not None:
                     self.__carImages[image['id']] = img
