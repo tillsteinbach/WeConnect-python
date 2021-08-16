@@ -2,7 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Currently no unreleased changes
+### Fixed
+- Catching timeout error
 
 ## [0.19.0] - 2021-08-15
 ### Added

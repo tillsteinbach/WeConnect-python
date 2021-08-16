@@ -448,6 +448,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 vehiclesResponse = self.__session.get(url, allow_redirects=True)
             except requests.exceptions.ConnectionError as conenctionError:
                 raise RetrievalError from conenctionError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                raise RetrievalError from timeoutError
             if vehiclesResponse.status_code == requests.codes['ok']:
                 data = vehiclesResponse.json()
             elif vehiclesResponse.status_code == requests.codes['unauthorized']:
@@ -509,6 +511,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 stationsResponse = self.__session.get(url, allow_redirects=True)
             except requests.exceptions.ConnectionError as conenctionError:
                 raise RetrievalError from conenctionError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                raise RetrievalError from timeoutError
             if stationsResponse.status_code == requests.codes['ok']:
                 data = stationsResponse.json()
             elif stationsResponse.status_code == requests.codes['unauthorized']:
@@ -556,6 +560,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     stationsResponse = self.__session.get(url, allow_redirects=True)
                 except requests.exceptions.ConnectionError as conenctionError:
                     raise RetrievalError from conenctionError
+                except requests.exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if stationsResponse.status_code == requests.codes['ok']:
                     data = stationsResponse.json()
                 elif stationsResponse.status_code == requests.codes['unauthorized']:
