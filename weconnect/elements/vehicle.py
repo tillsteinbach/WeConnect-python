@@ -175,7 +175,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
-            statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+            try:
+                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+            except requests.exceptions.ConnectionError as conenctionError:
+                raise RetrievalError from conenctionError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                raise RetrievalError from timeoutError
             if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
                 data = statusResponse.json()
                 if self.weConnect.cache is not None:
@@ -280,7 +285,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
-            statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+            try:
+                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+            except requests.exceptions.ConnectionError as conenctionError:
+                raise RetrievalError from conenctionError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                raise RetrievalError from timeoutError
             if statusResponse.status_code == requests.codes['ok']:
                 data = statusResponse.json()
                 if self.weConnect.cache is not None:
@@ -329,7 +339,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
-            imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+            try:
+                imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+            except requests.exceptions.ConnectionError as conenctionError:
+                raise RetrievalError from conenctionError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                raise RetrievalError from timeoutError
             if imageResponse.status_code == requests.codes['ok']:
                 data = imageResponse.json()
                 if self.weConnect.cache is not None:
