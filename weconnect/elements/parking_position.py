@@ -23,17 +23,21 @@ class ParkingPosition(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update ParkingPosition from dict')
 
-        if 'latitude' in fromDict:
+        if 'lat' in fromDict:
+            self.latitude.setValueWithCarTime(float(fromDict['lat']), lastUpdateFromCar=None, fromServer=True)
+        elif 'latitude' in fromDict:
             self.latitude.setValueWithCarTime(float(fromDict['latitude']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.latitude.enabled = False
 
-        if 'longitude' in fromDict:
+        if 'lon' in fromDict:
+            self.longitude.setValueWithCarTime(float(fromDict['lon']), lastUpdateFromCar=None, fromServer=True)
+        elif 'longitude' in fromDict:
             self.longitude.setValueWithCarTime(float(fromDict['longitude']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.longitude.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['latitude', 'longitude']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['latitude', 'longitude', 'lat', 'lon']))
 
     def __str__(self):
         string = super().__str__()
