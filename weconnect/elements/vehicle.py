@@ -308,7 +308,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                          f' Status Code was: {statusResponse.status_code}')
             elif statusResponse.status_code == requests.codes['bad_request'] \
                     or statusResponse.status_code == requests.codes['no_content'] \
-                    or statusResponse.status_code == requests.codes['not_found']:
+                    or statusResponse.status_code == requests.codes['not_found'] \
+                    or statusResponse.status_code == requests.codes['bad_gateway']:
                 data = None
             else:
                 raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
