@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 ## [0.19.2] - 2021-08-20
 ### Fixed
 - Fix setting float values from int input
+- Fix controls for charging
+
+### Added
 
 ## [0.19.2] - 2021-08-20
 ### Fixed

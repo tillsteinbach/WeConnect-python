@@ -34,7 +34,7 @@ class Controls(AddressableObject):
                         self.__onClimatizationControlChange, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
                         priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
             elif isinstance(status, ChargingSettings):
-                if self.climatizationControl is None:
+                if self.chargingControl is None:
                     self.chargingControl = ChangeableAttribute(
                         localAddress='charging', parent=self, value=ControlOperation.NONE, valueType=ControlOperation)
                     self.chargingControl.addObserver(
