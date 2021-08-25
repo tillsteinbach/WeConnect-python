@@ -218,6 +218,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                        'climatisationTimer': ClimatizationTimer,
                        'climatisationRequestStatus': GenericRequestStatus,
                        'chargingSettingsRequestStatus': GenericRequestStatus,
+                       'climatisationSettingsRequestStatus': GenericRequestStatus,
                        'climatisationTimersRequestStatus': GenericRequestStatus,
                        'chargingRequestStatus': GenericRequestStatus,
                        }
