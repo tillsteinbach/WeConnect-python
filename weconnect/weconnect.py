@@ -83,7 +83,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__refreshTimer = None
         self.__vehicles = AddressableDict(localAddress='vehicles', parent=self)
         self.__stations = AddressableDict(localAddress='chargingStations', parent=self)
-        self.__cache = dict()
+        self.__cache = {}
         self.fixAPI = fixAPI
         self.maxAge = maxAge
         self.maxAgePictures = maxAgePictures
@@ -98,7 +98,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.tokenfile = tokenfile
         if self.tokenfile:
             try:
-                with open(self.tokenfile, 'r') as file:
+                with open(self.tokenfile, 'r', encoding='utf8') as file:
                     tokens = requests.utils.cookiejar_from_dict(json.load(file))
 
                 if 'idToken' in tokens and all(key in tokens['idToken'] for key in ('type', 'token', 'expires')):
@@ -155,14 +155,14 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def persistTokens(self):
         if self.tokenfile:
             try:
-                with open(self.tokenfile, 'w') as file:
+                with open(self.tokenfile, 'w', encoding='utf8') as file:
                     json.dump({'idToken': self.__token, 'refreshToken': self.__rToken, 'accessToken': self.__aToken}, file, cls=DateTimeEncoder)
                 LOG.info('Writing tokenfile %s', self.tokenfile)
             except ValueError as err:  # pragma: no cover
                 LOG.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
 
     def persistCacheAsJson(self, filename):
-        with open(filename, 'w') as file:
+        with open(filename, 'w', encoding='utf8') as file:
             json.dump(self.__cache, file, cls=DateTimeEncoder)
         LOG.info('Writing cachefile %s', filename)
 
@@ -173,7 +173,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         else:
             self.maxAgePictures = maxAgePictures
 
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf8') as file:
             self.__cache = json.load(file)
         LOG.info('Reading cachefile %s', filename)
 
@@ -223,7 +223,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         # Find all inputs and put those in formData dictionary
         inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-        formData = dict()
+        formData = {}
         for match in re.finditer(inputRegex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
                 formData[match.groupdict()['name']] = match.groupdict()['value']
@@ -268,7 +268,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         # Find all inputs and put those in formData dictionary
         inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-        form2Data = dict()
+        form2Data = {}
         for match in re.finditer(inputRegex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
                 form2Data[match.groupdict()['name']] = match.groupdict()['value']
@@ -465,7 +465,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
         if data is not None:
             if 'data' in data and data['data']:
-                vins = list()
+                vins = []
                 for vehicleDict in data['data']:
                     if 'vin' not in vehicleDict:
                         break
@@ -577,7 +577,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
             if data is not None:
                 if 'chargingStations' in data and data['chargingStations']:
-                    ids = list()
+                    ids = []
                     for stationDict in data['chargingStations']:
                         if 'id' not in stationDict:
                             break

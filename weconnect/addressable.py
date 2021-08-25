@@ -212,13 +212,13 @@ class AddressableAttribute(AddressableLeaf):
 
     def saveToFile(self, filename):
         if filename.endswith(('.txt', '.TXT', '.text')):
-            with open(filename, mode='w') as file:
+            with open(filename, mode='w', encoding='utf8') as file:
                 if self.valueType == Image.Image:
                     file.write(imgToASCIIArt(self.value, columns=120, mode=ascii_magic.Modes.ASCII))
                 else:
                     file.write(str(self))
         elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
-            with open(filename, mode='w') as file:
+            with open(filename, mode='w', encoding='utf8') as file:
                 if self.valueType == Image.Image:
                     html = """<!DOCTYPE html><head><title>ASCII art</title></head><body><pre style="display: inline-block; border-width: 4px 6px;
  border-color: black; border-style: solid; background-color:black; font-size: 8px;">"""
@@ -313,7 +313,7 @@ class AddressableObject(AddressableLeaf):
         parent,
     ):
         super().__init__(localAddress, parent)
-        self.__children = dict()
+        self.__children = {}
 
     @AddressableLeaf.enabled.setter
     def enabled(self, setEnabled):
