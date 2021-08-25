@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 
 ## [0.19.2] - 2021-08-20
 ### Fixed
+- Fix setting float values from int input
+
+## [0.19.2] - 2021-08-20
+### Fixed
 - Fixed bad gateway error with parking position when car is driving
 
 ## [0.19.1] - 2021-08-19

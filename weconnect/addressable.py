@@ -299,6 +299,10 @@ class ChangeableAttribute(AddressableAttribute):
                         valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType])
                 raise ValueError(f'id {self.getGlobalAddress()} cannot be set to value {newValue}.'
                                  f' You need to provide it in the correct format {valueFormat}') from vErr
+        elif isinstance(newValue, int) and self.valueType != int:
+            if self.valueType == float:
+                newValue = float(newValue)
+
         self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
 
 
