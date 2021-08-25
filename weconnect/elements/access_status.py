@@ -16,7 +16,7 @@ class AccessStatus(GenericStatus):
         fromDict=None,
         fixAPI=True,
     ):
-        self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None, valueType=str)
+        self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None, valueType=AccessStatus.OverallState)
         self.doors = AddressableDict(localAddress='doors', parent=self)
         self.windows = AddressableDict(localAddress='windows', parent=self)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
@@ -26,7 +26,12 @@ class AccessStatus(GenericStatus):
         LOG.debug('Update access status from dict')
 
         if 'overallStatus' in fromDict:
-            self.overallStatus.setValueWithCarTime(fromDict['overallStatus'], lastUpdateFromCar=None, fromServer=True)
+            try:
+                self.overallStatus.setValueWithCarTime(
+                    AccessStatus.OverallState(fromDict['overallStatus']), lastUpdateFromCar=None, fromServer=True)
+            except ValueError:
+                self.overallStatus.setValueWithCarTime(AccessStatus.OverallState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                LOG.warning('An unsupported overallStatus: %s was provided, please report this as a bug', fromDict['overallStatus'])
         else:
             self.overallStatus.enabled = False
 
@@ -63,7 +68,7 @@ class AccessStatus(GenericStatus):
 
     def __str__(self):
         string = super().__str__()
-        string += f'\n\tOverall Status: {self.overallStatus.value}'
+        string += f'\n\tOverall Status: {self.overallStatus.value.value}'
         string += f'\n\tDoors: {len(self.doors)} items'
         for door in self.doors.values():
             string += f'\n\t\t{door}'
@@ -71,6 +76,12 @@ class AccessStatus(GenericStatus):
         for window in self.windows.values():
             string += f'\n\t\t{window}'
         return string
+
+    class OverallState(Enum):
+        SAFE = 'safe'
+        UNSAFE = 'unsafe'
+        INVALID = 'invalid'
+        UNKNOWN = 'unknown overall state'
 
     class Door(AddressableObject):
         def __init__(
