@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Fix controls for charging
 
 ### Added
+- New error state: fail_vehicle_is_offline
 
 ## [0.19.2] - 2021-08-20
 ### Fixed

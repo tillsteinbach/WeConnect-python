@@ -167,6 +167,7 @@ class GenericStatus(AddressableObject):
             POLLING_TIMEOUT = 'polling_timeout'
             IN_PROGRESS = 'in_progress'
             QUEUED = 'queued'
+            FAIL_VEHICLE_IS_OFFLINE = 'fail_vehicle_is_offline'
             UNKNOWN = 'unknown status'
 
     class StatusError(AddressableObject):
