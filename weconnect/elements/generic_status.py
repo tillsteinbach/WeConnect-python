@@ -168,6 +168,7 @@ class GenericStatus(AddressableObject):
             IN_PROGRESS = 'in_progress'
             QUEUED = 'queued'
             FAIL_VEHICLE_IS_OFFLINE = 'fail_vehicle_is_offline'
+            FAIL_IGNITION_ON = 'fail_ignition_on'
             UNKNOWN = 'unknown status'
 
     class StatusError(AddressableObject):
