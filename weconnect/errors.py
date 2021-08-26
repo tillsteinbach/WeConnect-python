@@ -16,3 +16,7 @@ class AuthentificationError(Exception):
 
 class APICompatibilityError(Exception):
     pass
+
+
+class APIError(Exception):
+    pass
