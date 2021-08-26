@@ -70,5 +70,4 @@ class GenericRequestStatus(GenericStatus):
         TIMEOUT = 'timeout'
         FAIL_VEHICLE_IS_OFFLINE = 'fail_vehicle_is_offline'
         FAIL_IGNITION_ON = 'fail_ignition_on'
-        DELAYED = 'delayed'
         UNKNOWN = 'unknown status'
