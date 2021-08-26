@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, NoReturn, Optional, Dict, List, Set, Any, Tuple, Union, Type, TypeVar, Generic, Final
+from typing import Callable, NoReturn, Optional, Dict, List, Set, Any, Tuple, Union, Type, TypeVar, Generic
 
 import logging
 from datetime import datetime, timezone
@@ -10,7 +10,8 @@ import ascii_magic  # type: ignore
 
 from weconnect.util import toBool, imgToASCIIArt
 
-LOG: Final[logging.Logger] = logging.getLogger("weconnect")
+
+LOG: logging.Logger = logging.getLogger("weconnect")
 
 
 class AddressableLeaf():

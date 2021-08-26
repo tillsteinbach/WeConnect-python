@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Final, Dict, List, Any, Optional, Union, cast, Match
+from typing import Dict, List, Any, Optional, Union, cast, Match
 
 import string
 import random
@@ -40,7 +40,7 @@ class DateTimeEncoder(json.JSONEncoder):
 
 
 class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes
-    DEFAULT_OPTIONS: Final[Dict[str, Any]] = {
+    DEFAULT_OPTIONS: Dict[str, Any] = {
         "headers": CaseInsensitiveDict({
             'accept': '*/*',
             'content-type': 'application/json',
@@ -197,7 +197,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def login(self) -> None:  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
         # Try to access page to be redirected to login form
-        tryLoginUrl: Final[str] = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
+        tryLoginUrl: str = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
             '&redirect_uri=weconnect://authenticated'
 
@@ -208,7 +208,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if 'Location' not in tryLoginResponse.headers:
             raise APICompatibilityError('No url for forwarding in response headers')
         # Login url is in response headers when response has status code see_others (303)
-        loginUrl: Final[str] = tryLoginResponse.headers['Location']
+        loginUrl: str = tryLoginResponse.headers['Location']
 
         # Retrieve login page
         loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
@@ -217,7 +217,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                                         f' status code: {loginResponse.status_code}')
 
         # Find login form on page to obtain inputs
-        emailFormRegex: Final = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+        emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             r'(?P<formContent>.+?(?=</form>))</form>'
         match: Optional[Match[str]] = re.search(emailFormRegex, loginResponse.text, flags=re.DOTALL)
         if match is None:
@@ -226,7 +226,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         target: str = match.groupdict()['formAction']
 
         # Find all inputs and put those in formData dictionary
-        inputRegex: Final = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
+        inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
         formData: Dict[str, str] = {}
         for match in re.finditer(inputRegex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
@@ -238,7 +238,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         formData['email'] = self.username
 
         # build url from form action
-        login2Url: Final[str] = 'https://identity.vwgroup.io' + target
+        login2Url: str = 'https://identity.vwgroup.io' + target
 
         loginHeadersForm: CaseInsensitiveDict = self.DEFAULT_OPTIONS['loginHeaders']
         loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -250,28 +250,28 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                                         f' status code: {login2Response.status_code}')
 
         # Find credentials form on page to obtain inputs
-        credentialsFormRegex: Final = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+        credentialsFormRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             r'(?P<formContent>.+?(?=</form>))</form>'
         match = re.search(credentialsFormRegex, login2Response.text, flags=re.DOTALL)
         if match is None:
-            formErrorRegex: Final = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
+            formErrorRegex = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
                 r'(?P<errorMessage>.+?(?=</span>))</span>.*</div>'
             errorMatch: Optional[Match[str]] = re.search(formErrorRegex, login2Response.text, flags=re.DOTALL)
             if errorMatch is not None:
                 raise AuthentificationError(errorMatch.groupdict()['errorMessage'])
 
-            accountNotFoundRegex: Final = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
+            accountNotFoundRegex = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
                 r'(?P<errorMessage>.+?(?=</div>))</div>.*</div>.*</div>'
             errorMatch = re.search(accountNotFoundRegex, login2Response.text, flags=re.DOTALL)
             if errorMatch is not None:
-                errorMessage: Final[str] = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
+                errorMessage: str = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
                 raise AuthentificationError(errorMessage)
             raise APICompatibilityError('No credentials form found')
         # retrieve target url from form
         target = match.groupdict()['formAction']
 
         # Find all inputs and put those in formData dictionary
-        input2Regex: Final = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
+        input2Regex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
         form2Data: Dict[str, str] = {}
         for match in re.finditer(input2Regex, match.groupdict()['formContent']):
             if match.groupdict()['name']:
@@ -281,7 +281,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         form2Data['password'] = self.password
 
         # build url from form action
-        login3Url: Final[str] = 'https://identity.vwgroup.io' + target
+        login3Url: str = 'https://identity.vwgroup.io' + target
 
         # Post form content and retrieve userId in forwarding Location
         login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
@@ -349,8 +349,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if all(key in params for key in ('state', 'id_token', 'access_token', 'code')):
 
             # Get Tokens
-            tokenUrl: Final[str] = 'https://login.apps.emea.vwapps.io/login/v1'
-            redirerctUri: Final[str] = 'weconnect://authenticated'
+            tokenUrl: str = 'https://login.apps.emea.vwapps.io/login/v1'
+            redirerctUri: str = 'weconnect://authenticated'
 
             body: str = json.dumps(
                 {
@@ -381,7 +381,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__refreshToken()
 
     def __refreshToken(self) -> None:
-        url: Final[str] = 'https://login.apps.emea.vwapps.io/refresh/v1'
+        url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
 
         refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
         if refreshResponse.status_code == requests.codes['unauthorized']:
@@ -443,7 +443,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
         cacheDate: Optional[datetime] = None
-        url: Final = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
+        url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
         if not force and (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)

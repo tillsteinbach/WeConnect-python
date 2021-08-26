@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Dict, Any, List, Final
+from typing import TYPE_CHECKING, Optional, Dict, Any, List
 
 from enum import Enum
 import logging
@@ -12,7 +12,7 @@ from weconnect.util import robustTimeParse, toBool
 from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableList, AddressableDict
 from weconnect.elements.control_operation import ControlOperation
 
-LOG: Final[logging.Logger] = logging.getLogger("weconnect")
+LOG: logging.Logger = logging.getLogger("weconnect")
 
 
 class GenericStatus(AddressableObject):
