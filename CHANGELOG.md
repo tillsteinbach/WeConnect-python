@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+- Added new error state delayed
 
 ## [0.20.2] - 2021-08-26
 ### added
