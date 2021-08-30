@@ -327,7 +327,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if 'Location' not in afterLoginResponse.headers:
                 if consentURL is not None:
                     raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
-                                                ' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
+                                                f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
                 raise APICompatibilityError('No Location for forwarding in response headers')
 
             afterLoginUrl = afterLoginResponse.headers['Location']

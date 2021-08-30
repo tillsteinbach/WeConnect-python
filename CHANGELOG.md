@@ -3,15 +3,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.20.3] - 2021-08-30
+### Fixed
+- Display of consent url fixed
+
+### Added
 - Added new error state delayed
 
 ## [0.20.2] - 2021-08-26
-### added
+### Added
 - New error messages for parking position
 - Started to add typing information
 
 ## [0.20.1] - 2021-08-26
-### added
+### Added
 - New error state: fail_ignition_on
 
 ## [0.20.0] - 2021-08-25
@@ -253,7 +259,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.3...HEAD
+[0.20.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.3
 [0.20.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.2
 [0.20.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.1
 [0.20.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.0
