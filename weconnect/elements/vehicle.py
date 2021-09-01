@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any, Type, Final, Optional, cast, TYPE_CHECKING
+from typing import Dict, Any, Type, Optional, cast, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime, timedelta
 import base64
@@ -36,7 +36,7 @@ from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 
-LOG: Final[logging.Logger] = logging.getLogger("weconnect")
+LOG: logging.Logger = logging.getLogger("weconnect")
 
 
 class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attributes
@@ -364,7 +364,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     def updatePictures(self) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
         cacheDate: Optional[datetime] = None
-        url: Final[str] = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
+        url: str = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
         if self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache:
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
