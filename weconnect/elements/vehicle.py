@@ -320,7 +320,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif statusResponse.status_code == codes['bad_request'] \
                     or statusResponse.status_code == codes['no_content'] \
                     or statusResponse.status_code == codes['not_found'] \
-                    or statusResponse.status_code == codes['bad_gateway']:
+                    or statusResponse.status_code == codes['bad_gateway'] \
+                    or statusResponse.status_code == codes['forbidden']:
                 try:
                     data = statusResponse.json()
                 except json.JSONDecodeError:
