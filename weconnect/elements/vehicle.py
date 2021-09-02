@@ -272,7 +272,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 for statusId, error in data['error'].items():
                     if statusId in self.statuses:
                         self.statuses[statusId].updateError(fromDict=error)
-                    elif status in keyClassMap:
+                    elif statusId in keyClassMap:
                         self.statuses[statusId] = keyClassMap[statusId](vehicle=self, parent=self.statuses, statusId=statusId,
                                                                         fromDict=None, fixAPI=self.fixAPI)
                         self.statuses[statusId].updateError(fromDict=error)
