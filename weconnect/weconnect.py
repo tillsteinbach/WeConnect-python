@@ -475,12 +475,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         break
                     vin: str = vehicleDict['vin']
                     vins.append(vin)
-                    if vin not in self.__vehicles:
-                        vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict,
-                                          fixAPI=self.fixAPI, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
-                        self.__vehicles[vin] = vehicle
-                    else:
-                        self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+                    try:
+                        if vin not in self.__vehicles:
+                            vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict,
+                                              fixAPI=self.fixAPI, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+                            self.__vehicles[vin] = vehicle
+                        else:
+                            self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+                    except RetrievalError as retrievalError:
+                        LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
                 # delete those vins that are not anymore available
                 for vin in [vin for vin in vins if vin not in self.__vehicles]:
                     del self.__vehicles[vin]
