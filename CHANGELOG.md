@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.20.6] - 2021-09-02
+### Fixed
+- Allow forbidden (403) return code for parking position
+- Continue fetching data even if retrieval for one car fails
+
 ## [0.20.5] - 2021-09-02
 ### Fixed
 - Fixed UnboundLocalError in condition GDC_MISSING
@@ -268,7 +273,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.5...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.6...HEAD
+[0.20.6]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.6
 [0.20.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.5
 [0.20.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.4
 [0.20.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.3
