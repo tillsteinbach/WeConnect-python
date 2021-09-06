@@ -70,7 +70,7 @@ class WindowHeatingStatus(GenericStatus):
             else:
                 LOG.error('Window is missing windowLocation attribute')
 
-            if 'windowHeatingState' in fromDict:
+            if 'windowHeatingState' in fromDict and fromDict['windowHeatingState']:
                 try:
                     self.windowHeatingState.setValueWithCarTime(WindowHeatingStatus.Window.WindowHeatingState(
                         fromDict['windowHeatingState']), lastUpdateFromCar=None, fromServer=True)

@@ -117,7 +117,7 @@ class GenericStatus(AddressableObject):
         def update(self, fromDict: Dict[str, Any]) -> None:
             LOG.debug('Update Status Target from dict')
 
-            if 'status' in fromDict:
+            if 'status' in fromDict and fromDict['status']:
                 try:
                     self.status.setValueWithCarTime(GenericStatus.Target.Status(
                         fromDict['status']), lastUpdateFromCar=None, fromServer=True)
@@ -129,7 +129,7 @@ class GenericStatus(AddressableObject):
             else:
                 self.status.enabled = False
 
-            if 'operation' in fromDict:
+            if 'operation' in fromDict and fromDict['operation']:
                 try:
                     self.operation.setValueWithCarTime(ControlOperation(
                         fromDict['operation']), lastUpdateFromCar=None, fromServer=True)

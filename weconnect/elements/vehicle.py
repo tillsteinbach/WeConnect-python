@@ -86,7 +86,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.vin.enabled = False
 
-            if 'role' in fromDict:
+            if 'role' in fromDict and fromDict['role']:
                 try:
                     self.role.setValueWithCarTime(Vehicle.User.Role(fromDict['role']), lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
@@ -95,7 +95,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.role.enabled = False
 
-            if 'enrollmentStatus' in fromDict:
+            if 'enrollmentStatus' in fromDict and fromDict['enrollmentStatus']:
                 try:
                     self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus(fromDict['enrollmentStatus']), lastUpdateFromCar=None,
                                                               fromServer=True)
@@ -572,7 +572,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.id.enabled = False
 
-            if 'role' in fromDict:
+            if 'role' in fromDict and fromDict['role']:
                 try:
                     self.role.setValueWithCarTime(Vehicle.User.Role(fromDict['role']), lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
@@ -586,7 +586,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.roleReseted.enabled = False
 
-            if 'enrollmentStatus' in fromDict:
+            if 'enrollmentStatus' in fromDict and fromDict['enrollmentStatus']:
                 try:
                     self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus(fromDict['enrollmentStatus']), lastUpdateFromCar=None,
                                                               fromServer=True)

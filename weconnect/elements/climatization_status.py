@@ -32,7 +32,7 @@ class ClimatizationStatus(GenericStatus):
         else:
             self.remainingClimatisationTime_min.enabled = False
 
-        if 'climatisationState' in fromDict:
+        if 'climatisationState' in fromDict and fromDict['climatisationState']:
             try:
                 self.climatisationState.setValueWithCarTime(
                     ClimatizationStatus.ClimatizationState(fromDict['climatisationState']), lastUpdateFromCar=None,

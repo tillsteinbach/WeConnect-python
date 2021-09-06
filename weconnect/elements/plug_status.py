@@ -26,7 +26,7 @@ class PlugStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Plug status from dict')
 
-        if 'plugConnectionState' in fromDict:
+        if 'plugConnectionState' in fromDict and fromDict['plugConnectionState']:
             try:
                 self.plugConnectionState.setValueWithCarTime(
                     PlugStatus.PlugConnectionState(fromDict['plugConnectionState']), lastUpdateFromCar=None,
@@ -39,7 +39,7 @@ class PlugStatus(GenericStatus):
         else:
             self.plugConnectionState.enabled = False
 
-        if 'plugLockState' in fromDict:
+        if 'plugLockState' in fromDict and fromDict['plugLockState']:
             try:
                 self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState(fromDict['plugLockState']),
                                                        lastUpdateFromCar=None, fromServer=True)

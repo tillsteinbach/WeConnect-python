@@ -39,7 +39,7 @@ class ChargingStatus(GenericStatus):
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
 
-        if 'chargingState' in fromDict:
+        if 'chargingState' in fromDict and fromDict['chargingState']:
             try:
                 self.chargingState.setValueWithCarTime(ChargingStatus.ChargingState(fromDict['chargingState']),
                                                        lastUpdateFromCar=None)
@@ -51,7 +51,7 @@ class ChargingStatus(GenericStatus):
         else:
             self.chargingState.enabled = False
 
-        if 'chargeMode' in fromDict:
+        if 'chargeMode' in fromDict and fromDict['chargeMode']:
             try:
                 self.chargeMode.setValueWithCarTime(ChargingStatus.ChargeMode(fromDict['chargeMode']), lastUpdateFromCar=None)
             except ValueError:

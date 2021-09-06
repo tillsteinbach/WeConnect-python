@@ -26,7 +26,7 @@ class ChargeMode(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update ChargeMode status from dict')
 
-        if 'preferredChargeMode' in fromDict:
+        if 'preferredChargeMode' in fromDict and fromDict['preferredChargeMode']:
             try:
                 self.preferredChargeMode.setValueWithCarTime(
                     ChargeMode.ChargeModeEnum(fromDict['preferredChargeMode']), lastUpdateFromCar=None,

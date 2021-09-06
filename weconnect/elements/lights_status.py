@@ -67,7 +67,7 @@ class LightsStatus(GenericStatus):
             else:
                 LOG.error('Light is missing name attribute')
 
-            if 'status' in fromDict:
+            if 'status' in fromDict and fromDict['status']:
                 try:
                     self.status.setValueWithCarTime(LightsStatus.Light.LightState(fromDict['status']),
                                                     lastUpdateFromCar=None, fromServer=True)

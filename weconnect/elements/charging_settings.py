@@ -34,7 +34,7 @@ class ChargingSettings(GenericSettings):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Charging settings from dict')
 
-        if 'maxChargeCurrentAC' in fromDict:
+        if 'maxChargeCurrentAC' in fromDict and fromDict['maxChargeCurrentAC']:
             try:
                 self.maxChargeCurrentAC.setValueWithCarTime(ChargingSettings.MaximumChargeCurrent(
                     fromDict['maxChargeCurrentAC']), lastUpdateFromCar=None, fromServer=True)
@@ -46,7 +46,7 @@ class ChargingSettings(GenericSettings):
         else:
             self.maxChargeCurrentAC.enabled = False
 
-        if 'autoUnlockPlugWhenCharged' in fromDict:
+        if 'autoUnlockPlugWhenCharged' in fromDict and fromDict['autoUnlockPlugWhenCharged']:
             try:
                 self.autoUnlockPlugWhenCharged.setValueWithCarTime(ChargingSettings.UnlockPlugState(
                     fromDict['autoUnlockPlugWhenCharged']), lastUpdateFromCar=None, fromServer=True)

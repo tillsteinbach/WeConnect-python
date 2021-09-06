@@ -25,7 +25,7 @@ class AccessStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update access status from dict')
 
-        if 'overallStatus' in fromDict:
+        if 'overallStatus' in fromDict and fromDict['overallStatus']:
             try:
                 self.overallStatus.setValueWithCarTime(
                     AccessStatus.OverallState(fromDict['overallStatus']), lastUpdateFromCar=None, fromServer=True)
@@ -106,7 +106,7 @@ class AccessStatus(GenericStatus):
             else:
                 LOG.error('Door is missing name attribute')
 
-            if 'status' in fromDict:
+            if 'status' in fromDict and fromDict['status']:
                 if 'locked' in fromDict['status']:
                     self.lockState.setValueWithCarTime(
                         AccessStatus.Door.LockState.LOCKED, lastUpdateFromCar=None, fromServer=True)
@@ -180,7 +180,7 @@ class AccessStatus(GenericStatus):
             else:
                 LOG.error('Window is missing name attribute')
 
-            if 'status' in fromDict:
+            if 'status' in fromDict and fromDict['status']:
                 if 'open' in fromDict['status']:
                     self.openState.setValueWithCarTime(
                         AccessStatus.Window.OpenState.OPEN, lastUpdateFromCar=None, fromServer=True)

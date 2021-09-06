@@ -27,7 +27,7 @@ class RangeStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Climatization settings from dict')
 
-        if 'carType' in fromDict:
+        if 'carType' in fromDict and fromDict['carType']:
             try:
                 self.carType.setValueWithCarTime(RangeStatus.CarType(
                     fromDict['carType']), lastUpdateFromCar=None, fromServer=True)
@@ -92,7 +92,7 @@ class RangeStatus(GenericStatus):
         def update(self, fromDict):
             LOG.debug('Update Engine from dict')
 
-            if 'type' in fromDict:
+            if 'type' in fromDict and fromDict['type']:
                 try:
                     self.type.setValueWithCarTime(RangeStatus.Engine.EngineType(fromDict['type']),
                                                   lastUpdateFromCar=None, fromServer=True)

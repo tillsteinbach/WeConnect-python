@@ -24,7 +24,7 @@ class LVBatteryStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update lv battery status from dict')
 
-        if 'batterySupport' in fromDict:
+        if 'batterySupport' in fromDict and fromDict['batterySupport']:
             try:
                 self.batterySupport.setValueWithCarTime(
                     LVBatteryStatus.BatterySupport(fromDict['batterySupport']), lastUpdateFromCar=None,
