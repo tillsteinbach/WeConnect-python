@@ -202,10 +202,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                    raise RetrievalError('Could not retrieve vehicle status data even after re-authorization.'
                                          f' Status Code was: {statusResponse.status_code}')
             else:
-                raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
+                raise RetrievalError(f'Could not retrieve vehicle status data. Status Code was: {statusResponse.status_code}')
 
             if self.weConnect.cache is not None:
                 self.weConnect.cache[url] = (data, str(datetime.utcnow()))
@@ -315,7 +315,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                    raise RetrievalError('Could not retrieve parking position even after re-authorization.'
                                          f' Status Code was: {statusResponse.status_code}')
             elif statusResponse.status_code == codes['bad_request'] \
                     or statusResponse.status_code == codes['no_content'] \
@@ -327,7 +327,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 except json.JSONDecodeError:
                     data = None
             else:
-                raise RetrievalError(f'Could not retrieve data. Status Code was: {statusResponse.status_code}')
+                raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
         if data is not None:
             if 'data' in data:
                 if 'parkingPosition' in self.statuses:
@@ -390,9 +390,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    raise RetrievalError('Could not retrieve data even after re-authorization.'
+                    raise RetrievalError('Could not retrieve vehicle images even after re-authorization.'
                                          f' Status Code was: {imageResponse.status_code}')
-                raise RetrievalError(f'Could not retrieve data. Status Code was: {imageResponse.status_code}')
+                raise RetrievalError(f'Could not retrieve vehicle images. Status Code was: {imageResponse.status_code}')
         if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
             for image in data['data']:
                 img = None
@@ -425,9 +425,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                 imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
                                 self.weConnect.cache[imageurl] = (imgStr, str(datetime.utcnow()))
                         else:
-                            raise RetrievalError('Could not retrieve data even after re-authorization.'
+                            raise RetrievalError('Could not retrieve vehicle image even after re-authorization.'
                                                  f' Status Code was: {imageDownloadResponse.status_code}')
-                        raise RetrievalError(f'Could not retrieve data. Status Code was: {imageDownloadResponse.status_code}')
+                        raise RetrievalError(f'Could not retrieve vehicle image. Status Code was: {imageDownloadResponse.status_code}')
                     else:
                         LOG.warning('Failed downloading picture %s with status code %d will try again in next update', image['id'],
                                     imageDownloadResponse.status_code)
