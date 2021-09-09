@@ -185,8 +185,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 statusResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
-            except exceptions.ConnectionError as conenctionError:
-                raise RetrievalError from conenctionError
+            except exceptions.ConnectionError as connectionError:
+                raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
             if statusResponse.status_code in (codes['ok'], codes['multiple_status']):
@@ -196,7 +196,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif statusResponse.status_code == codes['unauthorized']:
                 LOG.info('Server asks for new authorization')
                 self.weConnect.login()
-                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                try:
+                    statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                except exceptions.ConnectionError as connectionError:
+                    raise RetrievalError from connectionError
+                except exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if statusResponse.status_code == codes['ok']:
                     data = statusResponse.json()
                     if self.weConnect.cache is not None:
@@ -298,8 +303,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 statusResponse = self.weConnect.session.get(url, allow_redirects=False)
-            except exceptions.ConnectionError as conenctionError:
-                raise RetrievalError from conenctionError
+            except exceptions.ConnectionError as connectionError:
+                raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
             if statusResponse.status_code == codes['ok']:
@@ -309,7 +314,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif statusResponse.status_code == codes['unauthorized']:
                 LOG.info('Server asks for new authorization')
                 self.weConnect.login()
-                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                try:
+                    statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                except exceptions.ConnectionError as connectionError:
+                    raise RetrievalError from connectionError
+                except exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if statusResponse.status_code == codes['ok']:
                     data = statusResponse.json()
                     if self.weConnect.cache is not None:
@@ -373,8 +383,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 imageResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
-            except exceptions.ConnectionError as conenctionError:
-                raise RetrievalError from conenctionError
+            except exceptions.ConnectionError as connectionError:
+                raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
             if imageResponse.status_code == codes['ok']:
@@ -384,7 +394,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             elif imageResponse.status_code == codes['unauthorized']:
                 LOG.info('Server asks for new authorization')
                 self.weConnect.login()
-                imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+                try:
+                    imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+                except exceptions.ConnectionError as connectionError:
+                    raise RetrievalError from connectionError
+                except exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if imageResponse.status_code == codes['ok']:
                     data = imageResponse.json()
                     if self.weConnect.cache is not None:
@@ -405,7 +420,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     cacheDate = datetime.fromisoformat(cacheDateString)
                 if img is None or self.weConnect.maxAgePictures is None \
                         or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(days=1))):
-                    imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                    try:
+                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                    except exceptions.ConnectionError as connectionError:
+                        raise RetrievalError from connectionError
+                    except exceptions.ReadTimeout as timeoutError:
+                        raise RetrievalError from timeoutError
                     if imageDownloadResponse.status_code == codes['ok']:
                         img = Image.open(imageDownloadResponse.raw)
                         if self.weConnect.cache is not None:
@@ -416,7 +436,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     elif imageDownloadResponse.status_code == codes['unauthorized']:
                         LOG.info('Server asks for new authorization')
                         self.weConnect.login()
-                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                        try:
+                            imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                        except exceptions.ConnectionError as connectionError:
+                            raise RetrievalError from connectionError
+                        except exceptions.ReadTimeout as timeoutError:
+                            raise RetrievalError from timeoutError
                         if imageDownloadResponse.status_code == codes['ok']:
                             img = Image.open(imageDownloadResponse.raw)
                             if self.weConnect.cache is not None:

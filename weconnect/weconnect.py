@@ -380,10 +380,18 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
             self.__refreshToken()
 
-    def __refreshToken(self) -> None:
+    def __refreshToken(self) -> None:  # noqa C901
         url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
 
-        refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
+        try:
+            refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
+        except requests.exceptions.RequestException:
+            if self.__refreshTimer and self.__refreshTimer.is_alive():
+                self.__refreshTimer.cancel()
+            self.__refreshTimer = threading.Timer(60, self.__refreshToken)
+            self.__refreshTimer.daemon = True
+            self.__refreshTimer.start()
+            LOG.info('Token could not be refreshed, will try again after 60 seconds.')
         if refreshResponse.status_code == requests.codes['unauthorized']:
             self.login()
         elif refreshResponse.status_code == requests.codes['ok']:
@@ -459,7 +467,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             elif vehiclesResponse.status_code == requests.codes['unauthorized']:
                 LOG.info('Server asks for new authorization')
                 self.login()
-                vehiclesResponse = self.__session.get(url, allow_redirects=False)
+                try:
+                    vehiclesResponse = self.__session.get(url, allow_redirects=False)
+                except requests.exceptions.ConnectionError as conenctionError:
+                    raise RetrievalError from conenctionError
+                except requests.exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if vehiclesResponse.status_code == requests.codes['ok']:
                     data = vehiclesResponse.json()
                 else:
@@ -527,7 +540,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             elif stationsResponse.status_code == requests.codes['unauthorized']:
                 LOG.info('Server asks for new authorization')
                 self.login()
-                stationsResponse = self.__session.get(url, allow_redirects=False)
+                try:
+                    stationsResponse = self.__session.get(url, allow_redirects=False)
+                except requests.exceptions.ConnectionError as conenctionError:
+                    raise RetrievalError from conenctionError
+                except requests.exceptions.ReadTimeout as timeoutError:
+                    raise RetrievalError from timeoutError
                 if stationsResponse.status_code == requests.codes['ok']:
                     data = stationsResponse.json()
                 else:
@@ -576,7 +594,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 elif stationsResponse.status_code == requests.codes['unauthorized']:
                     LOG.info('Server asks for new authorization')
                     self.login()
-                    stationsResponse = self.__session.get(url, allow_redirects=False)
+                    try:
+                        stationsResponse = self.__session.get(url, allow_redirects=False)
+                    except requests.exceptions.ConnectionError as conenctionError:
+                        raise RetrievalError from conenctionError
+                    except requests.exceptions.ReadTimeout as timeoutError:
+                        raise RetrievalError from timeoutError
                     if stationsResponse.status_code == requests.codes['ok']:
                         data = stationsResponse.json()
                     else:
