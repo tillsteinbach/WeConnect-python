@@ -121,7 +121,14 @@ class RangeStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.type.value.value} SoC: {self.currentSOC_pct.value} % ({self.remainingRange_km.value} km)'  # pylint: disable=no-member
+            string = ""
+            if self.type.enabled:
+                string += f"{self.type.value.value} "
+            if self.currentSOC_pct.enabled:
+                string += f" SoC: {self.currentSOC_pct.value}%"
+            if self.remainingRange_km.enabled:
+                string += f" ({self.remainingRange_km.value} km)"
+            return string
 
         class EngineType(Enum,):
             GASOLINE = 'gasoline'
