@@ -392,6 +392,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__refreshTimer.daemon = True
             self.__refreshTimer.start()
             LOG.info('Token could not be refreshed, will try again after 60 seconds.')
+            return
         if refreshResponse.status_code == requests.codes['unauthorized']:
             self.login()
         elif refreshResponse.status_code == requests.codes['ok']:
