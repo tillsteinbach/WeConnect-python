@@ -12,8 +12,10 @@ from datetime import datetime, timedelta, timezone
 from urllib import parse
 
 import requests
+from urllib3.util.retry import Retry
 from requests.cookies import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
+from requests.adapters import HTTPAdapter
 
 from weconnect.elements.vehicle import Vehicle
 from weconnect.elements.charging_station import ChargingStation
@@ -74,7 +76,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         maxAge: Optional[int] = None,
         maxAgePictures: Optional[int] = None,
         updateCapabilities: bool = True,
-        updatePictures: bool = True
+        updatePictures: bool = True,
+        numRetries: int = 3
     ) -> None:
         super().__init__(localAddress='', parent=None)
         self.username: str = username
@@ -99,6 +102,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.useLocale: Optional[str] = locale.getlocale()[0]
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
+
+        # Retry on internal server error (500)
+        retries = Retry(total=numRetries,
+                        backoff_factor=0.1,
+                        status_forcelist=[500])
+        self.__session.mount('https://', HTTPAdapter(max_retries=retries))
 
         self.tokenfile: Optional[str] = tokenfile
         if self.tokenfile:
