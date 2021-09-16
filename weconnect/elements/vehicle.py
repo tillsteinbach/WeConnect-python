@@ -189,6 +189,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
+            except exceptions.RetryError as retryError:
+                raise RetrievalError from retryError
             if statusResponse.status_code in (codes['ok'], codes['multiple_status']):
                 data = statusResponse.json()
                 if self.weConnect.cache is not None:
@@ -202,6 +204,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
                     raise RetrievalError from timeoutError
+                except exceptions.RetryError as retryError:
+                    raise RetrievalError from retryError
                 if statusResponse.status_code == codes['ok']:
                     data = statusResponse.json()
                     if self.weConnect.cache is not None:
@@ -307,6 +311,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
+            except exceptions.RetryError as retryError:
+                raise RetrievalError from retryError
             if statusResponse.status_code == codes['ok']:
                 data = statusResponse.json()
                 if self.weConnect.cache is not None:
@@ -320,6 +326,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
                     raise RetrievalError from timeoutError
+                except exceptions.RetryError as retryError:
+                    raise RetrievalError from retryError
                 if statusResponse.status_code == codes['ok']:
                     data = statusResponse.json()
                     if self.weConnect.cache is not None:
@@ -387,6 +395,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
                 raise RetrievalError from timeoutError
+            except exceptions.RetryError as retryError:
+                raise RetrievalError from retryError
             if imageResponse.status_code == codes['ok']:
                 data = imageResponse.json()
                 if self.weConnect.cache is not None:
@@ -400,6 +410,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
                     raise RetrievalError from timeoutError
+                except exceptions.RetryError as retryError:
+                    raise RetrievalError from retryError
                 if imageResponse.status_code == codes['ok']:
                     data = imageResponse.json()
                     if self.weConnect.cache is not None:
@@ -426,6 +438,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         raise RetrievalError from connectionError
                     except exceptions.ReadTimeout as timeoutError:
                         raise RetrievalError from timeoutError
+                    except exceptions.RetryError as retryError:
+                        raise RetrievalError from retryError
                     if imageDownloadResponse.status_code == codes['ok']:
                         img = Image.open(imageDownloadResponse.raw)
                         if self.weConnect.cache is not None:
@@ -442,6 +456,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             raise RetrievalError from connectionError
                         except exceptions.ReadTimeout as timeoutError:
                             raise RetrievalError from timeoutError
+                        except exceptions.RetryError as retryError:
+                            raise RetrievalError from retryError
                         if imageDownloadResponse.status_code == codes['ok']:
                             img = Image.open(imageDownloadResponse.raw)
                             if self.weConnect.cache is not None:
