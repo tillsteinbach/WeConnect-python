@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.20.11] - 2021-09-16
+### Fixed
+- Handling new exceptions coming from retries
+
 ## [0.20.10] - 2021-09-15
 ### Added
 - Will retry a request 3 times to try to make instable server connection more stable
@@ -289,7 +293,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.10...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.11...HEAD
+[0.20.11]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.11
 [0.20.10]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.10
 [0.20.9]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.9
 [0.20.8]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.8
