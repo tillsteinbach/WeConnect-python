@@ -258,7 +258,8 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                         raise ValueError('Attribute is no image and cannot be converted to one')
             else:
                 raise ValueError('I cannot recognize the target file extension')
-        raise ValueError('I cannot save None value')
+        else:
+            raise ValueError('I cannot save None value')
 
     def __str__(self) -> str:
         if isinstance(self.value, Enum):

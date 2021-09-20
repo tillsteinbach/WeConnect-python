@@ -1,0 +1,2 @@
+graft weconnect/badges
+global-exclude *.pyc

@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import Dict, Any, Type, Optional, cast, TYPE_CHECKING
+from typing import Dict, Set, Any, Type, Optional, cast, TYPE_CHECKING
+import os
 from enum import Enum
 from datetime import datetime, timedelta
 import base64
@@ -68,6 +69,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.fixAPI: bool = fixAPI
 
         self.__carImages: Dict[str, Image.Image] = {}
+        self.__badges: Dict[Vehicle.Badge, Image.Image] = {}
         self.pictures: AddressableDict[str, Image.Image] = AddressableDict(localAddress='pictures', parent=self)
 
         self.update(fromDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
@@ -170,6 +172,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
         self.updateStatus(updateCapabilities=updateCapabilities, force=force)
         if updatePictures:
+            for badge in Vehicle.Badge:
+                badgeImg: Image = Image.open(f'{os.path.dirname(__file__)}/../badges/{badge.value}.png')
+                badgeImg.thumbnail((100, 100))
+                self.__badges[badge] = badgeImg
+
             self.updatePictures()
 
     def updateStatus(self, updateCapabilities: bool = True, force: bool = False):  # noqa: C901 # pylint: disable=too-many-branches
@@ -488,8 +495,19 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if 'car_birdview' in self.__carImages:
             img: Image = self.__carImages['car_birdview']
 
+            badges: Set[Vehicle.Badge] = set()
+
             if 'accessStatus' in self.statuses:
                 accessStatus: AccessStatus = cast(AccessStatus, self.statuses['accessStatus'])
+
+                if accessStatus.overallStatus.enabled:
+                    if accessStatus.overallStatus.value == AccessStatus.OverallState.SAFE:
+                        badges.add(Vehicle.Badge.LOCKED)
+                    elif accessStatus.overallStatus.value == AccessStatus.OverallState.UNSAFE:
+                        badges.add(Vehicle.Badge.UNLOCKED)
+                    else:
+                        badges.add(Vehicle.Badge.WARNING)
+
                 for name, door in accessStatus.doors.items():
                     doorNameMap: Dict[str, str] = {'frontLeft': 'door_left_front',
                                                    'frontRight': 'door_right_front',
@@ -498,10 +516,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     name = doorNameMap.get(name, name)
                     doorImageName: Optional[str] = None
 
-                    if door.openState.value in (AccessStatus.Door.OpenState.OPEN, AccessStatus.Door.OpenState.INVALID):
+                    if door.openState.value == AccessStatus.Door.OpenState.OPEN:
                         doorImageName = f'{name}_overlay'
                     elif door.openState.value == AccessStatus.Door.OpenState.CLOSED:
                         doorImageName = name
+                    elif door.openState.value in (AccessStatus.Door.OpenState.INVALID, AccessStatus.Door.OpenState.UNKNOWN):
+                        doorImageName = name
+                        badges.add(Vehicle.Badge.WARNING)
 
                     if doorImageName is not None and doorImageName in self.__carImages:
                         doorImage = self.__carImages[doorImageName].convert("RGBA")
@@ -516,10 +537,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     name = windowNameMap.get(name, name)
                     windowImageName: Optional[str] = None
 
-                    if window.openState.value in (AccessStatus.Window.OpenState.OPEN, AccessStatus.Window.OpenState.INVALID):
+                    if window.openState.value == AccessStatus.Window.OpenState.OPEN:
                         windowImageName = f'{name}_overlay'
                     elif window.openState.value == AccessStatus.Window.OpenState.CLOSED:
-                        windowImageName = f'{name}'
+                        windowImageName = name
+                    elif window.openState.value in (AccessStatus.Window.OpenState.INVALID, AccessStatus.Window.OpenState.UNKNOWN):
+                        windowImageName = name
+                        badges.add(Vehicle.Badge.WARNING)
 
                     if windowImageName is not None and windowImageName in self.__carImages:
                         windowImage = self.__carImages[windowImageName].convert("RGBA")
@@ -541,7 +565,48 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             lightImage = self.__carImages[lightImageName].convert("RGBA")
                             img.paste(lightImage, (0, 0), lightImage)
 
+            if 'chargingStatus' in self.statuses:
+                chargingStatus: ChargingStatus = cast(ChargingStatus, self.statuses['chargingStatus'])
+                if chargingStatus.chargingState == ChargingStatus.ChargingState.CHARGING:
+                    badges.add(Vehicle.Badge.CHARGING)
+
+            if 'plugStatus' in self.statuses:
+                plugStatus: PlugStatus = cast(PlugStatus, self.statuses['plugStatus'])
+                if plugStatus.plugConnectionState == PlugStatus.PlugConnectionState.CONNECTED:
+                    badges.add(Vehicle.Badge.CONNECTED)
+
+            if 'climatisationStatus' in self.statuses:
+                climatisationStatus: ClimatizationStatus = cast(ClimatizationStatus, self.statuses['climatisationStatus'])
+                if climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.COOLING:
+                    badges.add(Vehicle.Badge.COOLING)
+                elif climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.HEATING:
+                    badges.add(Vehicle.Badge.HEATING)
+                elif climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.VENTILATION:
+                    badges.add(Vehicle.Badge.VENTILATING)
+
             self.__carImages['status'] = img
+
+            imgWithBadges = img.copy()
+            badgeoffset = 0
+            for badge in badges:
+                badgeImage = self.__badges[badge].convert("RGBA")
+                imgWithBadges.paste(badgeImage, (0, badgeoffset), badgeImage)
+                badgeoffset += 110
+
+            self.__carImages['statusWithBadge'] = imgWithBadges
+
+            # Car with badges
+            if 'car_34view' in self.__carImages:
+                carWithBadges = self.__carImages['car_34view'].copy()
+
+                badgeoffset = 0
+                for badge in badges:
+                    badgeImage = self.__badges[badge].convert("RGBA")
+                    carWithBadges.paste(badgeImage, (0, badgeoffset), badgeImage)
+                    badgeoffset += 110
+
+                self.__carImages['carWithBadge'] = carWithBadges
+
         else:
             LOG.info('Could not update status picture as birdview image could not be retrieved')
             if 'status' in self.__carImages:
@@ -557,6 +622,30 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             if 'status' in self.__carImages:
                 self.pictures['status'] = AddressableAttribute(localAddress='status', parent=self.pictures, value=self.__carImages['status'],
                                                                valueType=Image.Image)
+
+        if 'statusWithBadge' in self.pictures:
+            if 'statusWithBadge' in self.__carImages:
+                self.pictures['statusWithBadge'].setValueWithCarTime(self.__carImages['statusWithBadge'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.pictures['statusWithBadge'].setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+                self.pictures['statusWithBadge'].enabled = False
+        else:
+            if 'statusWithBadge' in self.__carImages:
+                self.pictures['statusWithBadge'] = AddressableAttribute(localAddress='statusWithBadge', parent=self.pictures,
+                                                                        value=self.__carImages['statusWithBadge'],
+                                                                        valueType=Image.Image)
+
+        if 'carWithBadge' in self.pictures:
+            if 'carWithBadge' in self.__carImages:
+                self.pictures['carWithBadge'].setValueWithCarTime(self.__carImages['carWithBadge'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.pictures['carWithBadge'].setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+                self.pictures['carWithBadge'].enabled = False
+        else:
+            if 'carWithBadge' in self.__carImages:
+                self.pictures['carWithBadge'] = AddressableAttribute(localAddress='carWithBadge', parent=self.pictures,
+                                                                     value=self.__carImages['carWithBadge'],
+                                                                     valueType=Image.Image)
 
     def __str__(self) -> str:  # noqa: C901
         returnString: str = ''
@@ -586,6 +675,17 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 if status.enabled:
                     returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
         return returnString
+
+    class Badge(Enum):
+        CHARGING = 'charging'
+        CONNECTED = 'connected'
+        COOLING = 'cooling'
+        HEATING = 'heating'
+        LOCKED = 'locked'
+        PARKING = 'parking'
+        UNLOCKED = 'locked'
+        VENTILATING = 'ventilating'
+        WARNING = 'warning'
 
     class User(AddressableObject):
         def __init__(

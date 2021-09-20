@@ -19,6 +19,11 @@ setup(
     author='Till Steinbach',
     keywords='weconnect, we connect, carnet, car net, volkswagen, vw, telemetry',
     url='https://github.com/tillsteinbach/WeConnect-python',
+    project_urls={
+        'Funding': 'https://github.com/sponsors/tillsteinbach',
+        'Source': 'https://github.com/tillsteinbach/WeConnect-python',
+        'Bug Tracker': 'https://github.com/tillsteinbach/WeConnect-python/issues'
+    },
     license='MIT',
     install_requires=INSTALL_REQUIRED,
     classifiers=[
