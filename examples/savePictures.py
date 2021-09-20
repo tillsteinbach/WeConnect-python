@@ -23,6 +23,7 @@ def main():
             element (AddressableObject): Object for which an event occured
             flags (AddressableLeaf.ObserverEvent): Information about the type of the event
         """
+        del flags
         if isinstance(element, addressable.AddressableAttribute) and element.valueType == Image.Image:
             element.saveToFile(f'{args.outputDir}/{element.localAddress}.png')
 

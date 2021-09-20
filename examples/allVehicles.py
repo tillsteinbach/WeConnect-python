@@ -21,6 +21,7 @@ def main():
     weConnect.update()
     print('#  print results')
     for vin, vehicle in weConnect.vehicles.items():
+        del vin
         print(vehicle)
     print('#  done')
 
