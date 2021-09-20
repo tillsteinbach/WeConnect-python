@@ -294,8 +294,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         # Post form content and retrieve userId in forwarding Location
         login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
-        if login3Response.status_code != requests.codes['found'] \
-                and login3Response.status_code != requests.codes['see_other']:
+        if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
             raise APICompatibilityError('Forwarding expected (status code 302),'
                                         f' but got status code {login3Response.status_code}')
         if 'Location' not in login3Response.headers:
@@ -311,7 +310,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 'login.error.throttled': 'Login throttled, probably too many wrong logins. You have to wait some'
                                          ' minutes until a new login attempt is possible'
             }
-            if params['error'] in errorMessages.keys():
+            if params['error'] in errorMessages:
                 error = errorMessages[params['error']]
             else:
                 error = params['error']
@@ -437,9 +436,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             self.__refreshTimer.daemon = True
             self.__refreshTimer.start()
             LOG.info('Token refreshed')
-        elif refreshResponse.status_code == requests.codes['internal_server_error'] \
-                or refreshResponse.status_code == requests.codes['service_unavailable'] \
-                or refreshResponse.status_code == requests.codes['gateway_timeout']:
+        elif refreshResponse.status_code in (requests.codes['internal_server_error'], requests.codes['service_unavailable'], requests.codes['gateway_timeout']):
             if self.__refreshTimer and self.__refreshTimer.is_alive():
                 self.__refreshTimer.cancel()
             self.__refreshTimer = threading.Timer(60, self.__refreshToken)
