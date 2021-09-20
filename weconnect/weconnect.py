@@ -26,22 +26,49 @@ LOG = logging.getLogger("weconnect")
 
 
 class BearerAuth(requests.auth.AuthBase):
+    """Requests auth class for Bearer token authentification header"""
+
     def __init__(self, token: str) -> None:
+        """Intialize authentification class from token
+
+        Args:
+            token (str): token to be used
+        """
         self.token = token
 
     def __call__(self, r: requests.PreparedRequest) -> requests.PreparedRequest:
+        """Internally used in requests to prepare a request with authentification
+
+        Args:
+            r (requests.PreparedRequest): The request to prepare
+
+        Returns:
+            requests.PreparedRequest: Request with authentification header
+        """
         r.headers["authorization"] = "Bearer " + self.token
         return r
 
 
 class DateTimeEncoder(json.JSONEncoder):
+    """Datetime object encode used for json serialization"""
+
     def default(self, o: datetime) -> str:
+        """Serialize datetime object to isodate string
+
+        Args:
+            o (datetime): datetime object
+
+        Returns:
+            str: object represented as isoformat string
+        """
         if isinstance(o, datetime):
             return o.isoformat()
         return json.JSONEncoder.default(self, o)
 
 
 class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes
+    """Main class used to interact with WeConnect"""
+
     DEFAULT_OPTIONS: Dict[str, Any] = {
         "headers": CaseInsensitiveDict({
             'accept': '*/*',
@@ -79,6 +106,25 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         updatePictures: bool = True,
         numRetries: int = 3
     ) -> None:
+        """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
+           If loginOnInit is true also an initial fetch of data is performed.
+
+        Args:
+            username (str): Username used with WeConnect. This is your volkswagen user.
+            password (str): Password used with WeConnect. This is your volkswagen password.
+            tokenfile (Optional[str], optional): Optional file to read/write token from/to. Defaults to None.
+            updateAfterLogin (bool, optional): Update data from WeConnect after logging in (If set to false, update needs to be called manually).
+            Defaults to True.
+            loginOnInit (bool, optional): Login after initialization (If set to false, login needs to be called manually). Defaults to True.
+            refreshTokens (bool, optional): Refresh tokens every 3600 seconds. Defaults to True.
+            fixAPI (bool, optional): Automatically fix known issues with the WeConnect responses. Defaults to True.
+            maxAge (Optional[int], optional): Maximum age of the cache before date is fetched again. None means no caching. Defaults to None.
+            maxAgePictures (Optional[int], optional):  Maximum age of the pictures in the cache before date is fetched again. None means no caching.
+            Defaults to None.
+            updateCapabilities (bool, optional): Also update the information about the cars capabilities. Defaults to True.
+            updatePictures (bool, optional):  Also fetch and update pictures. Defaults to True.
+            numRetries (int, optional): Number of retries when http requests are failing. Defaults to 3.
+        """
         super().__init__(localAddress='', parent=None)
         self.username: str = username
         self.password: str = password
