@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 
 from weconnect.addressable import AddressableLeaf, ChangeableAttribute
@@ -20,6 +21,10 @@ class ClimatizationSettings(GenericSettings):
             localAddress='targetTemperature_K', parent=self, value=None, valueType=float)
         self.targetTemperature_C = ChangeableAttribute(
             localAddress='targetTemperature_C', parent=self, value=None, valueType=float)
+        self.targetTemperature_F = ChangeableAttribute(
+            localAddress='targetTemperature_F', parent=self, value=None, valueType=float)
+        self.unitInCar = ChangeableAttribute(
+            localAddress='unitInCar', parent=self, value=None, valueType=ClimatizationSettings.UnitInCar)
         self.climatisationWithoutExternalPower = ChangeableAttribute(
             localAddress='climatisationWithoutExternalPower', parent=self, value=None, valueType=bool)
         self.climatizationAtUnlock = ChangeableAttribute(
@@ -64,21 +69,40 @@ class ClimatizationSettings(GenericSettings):
             self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
             priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
 
-    def update(self, fromDict, ignoreAttributes=None):
+    def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Climatization settings from dict')
 
-        if 'targetTemperature_K' in fromDict:
+        if 'targetTemperature_K' in fromDict and fromDict['targetTemperature_K'] is not None:
             self.targetTemperature_K.setValueWithCarTime(
                 float(fromDict['targetTemperature_K']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.targetTemperature_K.enabled = False
 
-        if 'targetTemperature_C' in fromDict:
+        if 'targetTemperature_C' in fromDict and fromDict['targetTemperature_C'] is not None:
             self.targetTemperature_C.setValueWithCarTime(
                 float(fromDict['targetTemperature_C']), lastUpdateFromCar=None, fromServer=True)
         else:
             self.targetTemperature_C.enabled = False
+
+        if 'targetTemperature_F' in fromDict and fromDict['targetTemperature_F'] is not None:
+            self.targetTemperature_F.setValueWithCarTime(
+                float(fromDict['targetTemperature_F']), lastUpdateFromCar=None, fromServer=True)
+        else:
+            self.targetTemperature_F.enabled = False
+
+        if 'unitInCar' in fromDict and fromDict['unitInCar']:
+            try:
+                self.unitInCar.setValueWithCarTime(
+                    ClimatizationSettings.UnitInCar(fromDict['unitInCar']), lastUpdateFromCar=None,
+                    fromServer=True)
+            except ValueError:
+                self.unitInCar.setValueWithCarTime(ClimatizationSettings.UnitInCar.UNKNOWN,
+                                                   lastUpdateFromCar=None, fromServer=True)
+                LOG.warning('An unsupported unitInCar: %s was provided,'
+                            ' please report this as a bug', fromDict['unitInCar'])
+        else:
+            self.unitInCar.enabled = False
 
         if 'climatisationWithoutExternalPower' in fromDict:
             self.climatisationWithoutExternalPower.setValueWithCarTime(
@@ -125,6 +149,8 @@ class ClimatizationSettings(GenericSettings):
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + [
             'targetTemperature_K',
             'targetTemperature_C',
+            'targetTemperature_F',
+            'unitInCar',
             'climatisationWithoutExternalPower',
             'climatizationAtUnlock',
             'windowHeatingEnabled',
@@ -133,11 +159,16 @@ class ClimatizationSettings(GenericSettings):
             'zoneRearLeftEnabled',
             'zoneRearRightEnabled']))
 
-    def __str__(self):
+    def __str__(self):  # noqa: C901
         string = super().__str__()
         if self.targetTemperature_C.enabled:
-            string += f'\n\tTarget Temperature: {self.targetTemperature_C.value} °C ' \
-                f'({self.targetTemperature_K.value}°K)'
+            string += f'\n\tTarget Temperature in °C: {self.targetTemperature_C.value} °C '
+        if self.targetTemperature_F.enabled:
+            string += f'\n\tTarget Temperature in °F: {self.targetTemperature_F.value} °F '
+        if self.targetTemperature_K.enabled:
+            string += f'\n\tTarget Temperature in °K: {self.targetTemperature_K.value} °K '
+        if self.unitInCar.enabled:
+            string += f'\n\tTemperature unit in car: {self.unitInCar.value.value}'
         if self.climatisationWithoutExternalPower.enabled:
             string += f'\n\tClimatization without external Power: {self.climatisationWithoutExternalPower.value}'
         if self.climatizationAtUnlock.enabled:
@@ -153,3 +184,8 @@ class ClimatizationSettings(GenericSettings):
         if self.zoneRearRightEnabled.enabled:
             string += f'\n\tHeating Rear Right Seat: {self.zoneRearRightEnabled.value}'
         return string
+
+    class UnitInCar(Enum,):
+        CELSIUS = 'celsius'
+        FARENHEIT = 'farenheit'
+        UNKNOWN = 'unknown unit'

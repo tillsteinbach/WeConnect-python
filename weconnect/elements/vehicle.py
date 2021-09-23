@@ -34,6 +34,7 @@ from weconnect.elements.parking_position import ParkingPosition
 from weconnect.elements.plug_status import PlugStatus
 from weconnect.elements.range_status import RangeStatus
 from weconnect.elements.window_heating_status import WindowHeatingStatus
+from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 
@@ -245,6 +246,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                        'climatisationSettingsRequestStatus': GenericRequestStatus,
                                                        'climatisationTimersRequestStatus': GenericRequestStatus,
                                                        'chargingRequestStatus': GenericRequestStatus,
+                                                       'rangeMeasurements': GenericStatus,
+                                                       'odometerMeasurement': OdometerMeasurement
                                                        }
         if data is not None and 'data' in data and data['data']:
             for key, className in keyClassMap.items():
