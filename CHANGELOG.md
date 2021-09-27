@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.20.14] - 2021-09-27
+### Fixed
+- Fixed resetting of parkingposition while driving
+
 ## [0.20.13] - 2021-09-23
 ### Added
 - New attributes: electricRange, gasolineRange
@@ -305,7 +309,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.13...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.20.14...HEAD
+[0.20.14]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.14
 [0.20.13]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.13
 [0.20.12]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.12
 [0.20.11]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.11
