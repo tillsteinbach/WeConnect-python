@@ -357,39 +357,39 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     data = None
             else:
                 raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
-        if data is not None:
-            if 'data' in data:
+
+        if data is not None and 'data' in data:
+            if 'parkingPosition' in self.statuses:
+                self.statuses['parkingPosition'].update(fromDict=data['data'])
+            else:
+                self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                   parent=self.statuses,
+                                                                   statusId='parkingPosition',
+                                                                   fromDict=data['data'])
+        elif 'parkingPosition' in self.statuses:
+            parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
+            parkingPosition.latitude.enabled = False
+            parkingPosition.longitude.enabled = False
+            parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+            parkingPosition.carCapturedTimestamp.enabled = False
+            parkingPosition.enabled = False
+
+        # error handling
+        if data is not None and 'error' in data and data['error']:
+            if isinstance(data['error'], Dict):
                 if 'parkingPosition' in self.statuses:
-                    self.statuses['parkingPosition'].update(fromDict=data['data'])
+                    self.statuses['parkingPosition'].updateError(fromDict=data['error'])
                 else:
                     self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
                                                                        parent=self.statuses,
                                                                        statusId='parkingPosition',
-                                                                       fromDict=data['data'])
-            elif 'parkingPosition' in self.statuses:
-                parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
-                parkingPosition.latitude.enabled = False
-                parkingPosition.longitude.enabled = False
-                parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
-                parkingPosition.carCapturedTimestamp.enabled = False
-                parkingPosition.enabled = False
-
-            # error handling
-            if 'error' in data and data['error']:
-                if isinstance(data['error'], Dict):
-                    if 'parkingPosition' in self.statuses:
-                        self.statuses['parkingPosition'].updateError(fromDict=data['error'])
-                    else:
-                        self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                           parent=self.statuses,
-                                                                           statusId='parkingPosition',
-                                                                           fromDict=None)
-                        self.statuses['parkingPosition'].updateError(fromDict=data['error'])
-                else:
-                    raise RetrievalError(data['error'])
+                                                                       fromDict=None)
+                    self.statuses['parkingPosition'].updateError(fromDict=data['error'])
             else:
-                if 'parkingPosition' in self.statuses:
-                    self.statuses['parkingPosition'].error.reset()
+                raise RetrievalError(data['error'])
+        else:
+            if 'parkingPosition' in self.statuses:
+                self.statuses['parkingPosition'].error.reset()
 
     def updatePictures(self) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None

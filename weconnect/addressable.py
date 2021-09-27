@@ -84,7 +84,7 @@ class AddressableLeaf():
                 observer(element=self, flags=self.onCompleteNotifyFlags)
             if len(observers) > 0:
                 LOG.debug('%s: Notify called on update complete with flags: %s for %d observers', self.getGlobalAddress(),
-                        self.onCompleteNotifyFlags, len(observers))
+                          self.onCompleteNotifyFlags, len(observers))
             self.onCompleteNotifyFlags = None
 
     @property
