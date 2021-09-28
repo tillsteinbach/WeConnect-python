@@ -571,22 +571,27 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             if 'chargingStatus' in self.statuses:
                 chargingStatus: ChargingStatus = cast(ChargingStatus, self.statuses['chargingStatus'])
-                if chargingStatus.chargingState == ChargingStatus.ChargingState.CHARGING:
+                if chargingStatus.chargingState.value == ChargingStatus.ChargingState.CHARGING:
                     badges.add(Vehicle.Badge.CHARGING)
 
             if 'plugStatus' in self.statuses:
                 plugStatus: PlugStatus = cast(PlugStatus, self.statuses['plugStatus'])
-                if plugStatus.plugConnectionState == PlugStatus.PlugConnectionState.CONNECTED:
+                if plugStatus.plugConnectionState.value == PlugStatus.PlugConnectionState.CONNECTED:
                     badges.add(Vehicle.Badge.CONNECTED)
 
             if 'climatisationStatus' in self.statuses:
                 climatisationStatus: ClimatizationStatus = cast(ClimatizationStatus, self.statuses['climatisationStatus'])
-                if climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.COOLING:
+                if climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.COOLING:
                     badges.add(Vehicle.Badge.COOLING)
-                elif climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.HEATING:
+                elif climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.HEATING:
                     badges.add(Vehicle.Badge.HEATING)
-                elif climatisationStatus.climatisationState == ClimatizationStatus.ClimatizationState.VENTILATION:
+                elif climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.VENTILATION:
                     badges.add(Vehicle.Badge.VENTILATING)
+
+            if 'parkingPosition' in self.statuses:
+                parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
+                if parkingPosition.latitude.enabled and parkingPosition.latitude.value is not None:
+                    badges.add(Vehicle.Badge.PARKING)
 
             self.__carImages['status'] = img
 
