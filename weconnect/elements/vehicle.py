@@ -248,7 +248,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                        'climatisationTimersRequestStatus': GenericRequestStatus,
                                                        'chargingRequestStatus': GenericRequestStatus,
                                                        'rangeMeasurements': RangeMeasurements,
-                                                       'odometerMeasurement': OdometerMeasurement
+                                                       'odometerMeasurement': OdometerMeasurement,
+                                                       'oilLevelStatus': GenericStatus
                                                        }
         if data is not None and 'data' in data and data['data']:
             for key, className in keyClassMap.items():
@@ -296,6 +297,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         self.statuses[statusId] = keyClassMap[statusId](vehicle=self, parent=self.statuses, statusId=statusId,
                                                                         fromDict=None, fixAPI=self.fixAPI)
                         self.statuses[statusId].updateError(fromDict=error)
+                    else:
+                        LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), statusId, error)
                 for statusId, status in {statusId: status for statusId, status in self.statuses.items()
                                          if statusId not in data['error']}.items():
                     status.error.reset()
