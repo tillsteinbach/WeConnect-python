@@ -155,7 +155,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         # Retry on internal server error (500)
         retries = Retry(total=numRetries,
                         backoff_factor=0.1,
-                        status_forcelist=[500])
+                        status_forcelist=[500],
+                        raise_on_status=False)
         self.__session.mount('https://', HTTPAdapter(max_retries=retries))
 
         self.tokenfile: Optional[str] = tokenfile
@@ -522,7 +523,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                 raise RetrievalError from timeoutError
             except requests.exceptions.RetryError as retryError:
-                self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code), 'Could not fetch vehicles due to server error')
                 raise RetrievalError from retryError
             if vehiclesResponse.status_code == requests.codes['ok']:
                 data = vehiclesResponse.json()
@@ -538,11 +538,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
-                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code), 'Could not fetch vehicles due to server error')
                     raise RetrievalError from retryError
                 if vehiclesResponse.status_code == requests.codes['ok']:
                     data = vehiclesResponse.json()
                 else:
+                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {vehiclesResponse.status_code}')
             else:
@@ -605,8 +605,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                 raise RetrievalError from timeoutError
             except requests.exceptions.RetryError as retryError:
-                self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code),
-                                 'Could not fetch charging stations due to server error')
                 raise RetrievalError from retryError
             if stationsResponse.status_code == requests.codes['ok']:
                 data = stationsResponse.json()
@@ -622,12 +620,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
-                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code),
-                                     'Could not fetch charging stations due to server error')
                     raise RetrievalError from retryError
                 if stationsResponse.status_code == requests.codes['ok']:
                     data = stationsResponse.json()
                 else:
+                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(stationsResponse.status_code),
+                                     'Could not fetch charging stations due to server error')
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {stationsResponse.status_code}')
             else:
@@ -671,8 +669,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
-                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code),
-                                     'Could not fetch charging stations due to server error')
                     raise RetrievalError from retryError
                 if stationsResponse.status_code == requests.codes['ok']:
                     data = stationsResponse.json()
@@ -688,12 +684,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging station due to timeout')
                         raise RetrievalError from timeoutError
                     except requests.exceptions.RetryError as retryError:
-                        self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(retryError.response.status_code),
-                                         'Could not fetch charging station due to server error')
                         raise RetrievalError from retryError
                     if stationsResponse.status_code == requests.codes['ok']:
                         data = stationsResponse.json()
                     else:
+                        self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(stationsResponse.status_code),
+                                         'Could not fetch charging stations due to server error')
                         raise RetrievalError('Could not retrieve data even after re-authorization.'
                                              f' Status Code was: {stationsResponse.status_code}')
                 else:
