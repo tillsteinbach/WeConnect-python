@@ -3,10 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
-
 ### Added
 - Possibility to register for error callbacks
+- Records time necessary to retrieve data
+
+### Fixed
+- Climate settings
 
 ## [0.20.15] - 2021-09-28
 ### Fixed
