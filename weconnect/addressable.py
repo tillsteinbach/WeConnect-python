@@ -340,10 +340,10 @@ class AliasChangeableAttribute(ChangeableAttribute):
                          lastUpdateFromCar=lastUpdateFromCar)
         self.targetAttribute = targetAttribute
         self.conversion = conversion
-    
+
     @AddressableAttribute.value.setter
     def value(self, newValue):
-        ChangeableAttribute.value.fset(self, newValue)
+        ChangeableAttribute.value.fset(self, newValue)  # pylint: disable=no-member
         convertedNewValue = self.conversion(self.value)
         self.targetAttribute.setValueWithCarTime(newValue=convertedNewValue,
                                                  lastUpdateFromCar=None)
