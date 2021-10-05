@@ -1,7 +1,7 @@
 from enum import Enum
 import logging
 
-from weconnect.addressable import AddressableLeaf, ChangeableAttribute
+from weconnect.addressable import AddressableLeaf, ChangeableAttribute, AddressableAttribute, AliasChangeableAttribute
 from weconnect.elements.generic_settings import GenericSettings
 from weconnect.util import toBool
 
@@ -17,13 +17,19 @@ class ClimatizationSettings(GenericSettings):
         fromDict=None,
         fixAPI=True,
     ):
+        def celsiusToKelvin(value):
+            return value + 273.15
+
+        def farenheitToKelvin(value):
+            return 273.5 + ((value - 32.0) * (5.0 / 9.0))
+
         self.targetTemperature_K = ChangeableAttribute(
             localAddress='targetTemperature_K', parent=self, value=None, valueType=float)
-        self.targetTemperature_C = ChangeableAttribute(
-            localAddress='targetTemperature_C', parent=self, value=None, valueType=float)
-        self.targetTemperature_F = ChangeableAttribute(
-            localAddress='targetTemperature_F', parent=self, value=None, valueType=float)
-        self.unitInCar = ChangeableAttribute(
+        self.targetTemperature_C = AliasChangeableAttribute(localAddress='targetTemperature_C', parent=self, value=None,
+                                                            targetAttribute=self.targetTemperature_K, conversion=celsiusToKelvin, valueType=float)
+        self.targetTemperature_F = AliasChangeableAttribute(localAddress='targetTemperature_F', parent=self, value=None,
+                                                            targetAttribute=self.targetTemperature_K, conversion=farenheitToKelvin, valueType=float)
+        self.unitInCar = AddressableAttribute(
             localAddress='unitInCar', parent=self, value=None, valueType=ClimatizationSettings.UnitInCar)
         self.climatisationWithoutExternalPower = ChangeableAttribute(
             localAddress='climatisationWithoutExternalPower', parent=self, value=None, valueType=bool)
@@ -41,9 +47,6 @@ class ClimatizationSettings(GenericSettings):
             localAddress='zoneRearRightEnabled', parent=self, value=None, valueType=bool)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
-        self.targetTemperature_C.addObserver(
-            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
-            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
         self.targetTemperature_K.addObserver(
             self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
             priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)

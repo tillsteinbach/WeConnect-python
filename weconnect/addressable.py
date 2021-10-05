@@ -324,6 +324,31 @@ class ChangeableAttribute(AddressableAttribute):
         self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
 
 
+class AliasChangeableAttribute(ChangeableAttribute):
+    def __init__(
+        self,
+        localAddress: str,
+        parent: AddressableObject,
+        value,
+        targetAttribute: ChangeableAttribute,
+        conversion,
+        valueType=str,
+        lastUpdateFromCar: Optional[datetime] = None,
+    ) -> None:
+        super().__init__(localAddress=localAddress, parent=parent,
+                         value=value, valueType=valueType,
+                         lastUpdateFromCar=lastUpdateFromCar)
+        self.targetAttribute = targetAttribute
+        self.conversion = conversion
+    
+    @AddressableAttribute.value.setter
+    def value(self, newValue):
+        ChangeableAttribute.value.fset(self, newValue)
+        convertedNewValue = self.conversion(self.value)
+        self.targetAttribute.setValueWithCarTime(newValue=convertedNewValue,
+                                                 lastUpdateFromCar=None)
+
+
 class AddressableObject(AddressableLeaf):
     def __init__(
         self,

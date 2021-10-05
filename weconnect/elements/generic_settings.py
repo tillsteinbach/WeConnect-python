@@ -4,7 +4,7 @@ import logging
 import json
 import requests
 
-from weconnect.addressable import AddressableLeaf, ChangeableAttribute
+from weconnect.addressable import AddressableLeaf, ChangeableAttribute, AliasChangeableAttribute
 from weconnect.elements.generic_status import GenericStatus
 from weconnect.errors import SetterError
 
@@ -20,7 +20,7 @@ class GenericSettings(GenericStatus):
             url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/{setting}/settings'
             settingsDict = dict()
             for child in self.getLeafChildren():
-                if isinstance(child, ChangeableAttribute):
+                if isinstance(child, ChangeableAttribute) and not isinstance(child, AliasChangeableAttribute):
                     if isinstance(child.value, Enum):  # pylint: disable=no-member # this is a fales positive
                         settingsDict[child.getLocalAddress()] = child.value.value  # pylint: disable=no-member # this is a fales positive
                     else:
