@@ -147,6 +147,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.searchRadius: Optional[int] = None
         self.market: Optional[str] = None
         self.useLocale: Optional[str] = locale.getlocale()[0]
+        self.__elapsed: List[timedelta] = []
 
         self.__errorObservers: Set[Tuple[Callable[[Optional[Any], WeConnect.ErrorEventType], None], WeConnect.ErrorEventType]] = set()
 
@@ -502,6 +503,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         return self.__vehicles
 
     def update(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False) -> None:
+        self.__elapsed.clear()
         self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force)
         self.updateChargingStations(force=force)
         self.updateComplete()
@@ -516,6 +518,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
                 vehiclesResponse: requests.Response = self.__session.get(url, allow_redirects=True)
+                self.recordElapsed(vehiclesResponse.elapsed)
             except requests.exceptions.ConnectionError as connectionError:
                 self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                 raise RetrievalError from connectionError
@@ -531,6 +534,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.login()
                 try:
                     vehiclesResponse = self.__session.get(url, allow_redirects=False)
+                    self.recordElapsed(vehiclesResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                     raise RetrievalError from connectionError
@@ -598,6 +602,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
                 stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
+                self.recordElapsed(stationsResponse.elapsed)
             except requests.exceptions.ConnectionError as connectionError:
                 self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                 raise RetrievalError from connectionError
@@ -613,6 +618,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.login()
                 try:
                     stationsResponse = self.__session.get(url, allow_redirects=False)
+                    self.recordElapsed(stationsResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
@@ -662,6 +668,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
                 try:
                     stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
+                    self.recordElapsed(stationsResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
@@ -677,6 +684,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.login()
                     try:
                         stationsResponse = self.__session.get(url, allow_redirects=False)
+                        self.recordElapsed(stationsResponse.elapsed)
                     except requests.exceptions.ConnectionError as connectionError:
                         self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging station due to connection problem')
                         raise RetrievalError from connectionError
@@ -757,3 +765,18 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         for observer in observers:
             observer(element=element, errortype=errortype, detail=detail, message=message)
         LOG.debug('%s: Notify called for errors with type: %s for %d observers', self.getGlobalAddress(), errortype, len(observers))
+
+    def recordElapsed(self, elapsed: timedelta) -> None:
+        self.__elapsed.append(elapsed)
+
+    def getMinElapsed(self) -> timedelta:
+        return min(self.__elapsed)
+
+    def getMaxElapsed(self) -> timedelta:
+        return max(self.__elapsed)
+
+    def getAvgElapsed(self) -> timedelta:
+        return sum(self.__elapsed, timedelta()) / len(self.__elapsed)
+
+    def getTotalElapsed(self) -> timedelta:
+        return sum(self.__elapsed, timedelta())

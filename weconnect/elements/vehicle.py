@@ -194,6 +194,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 statusResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
+                self.weConnect.recordElapsed(statusResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
                 self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicle status due to connection problem')
                 raise RetrievalError from connectionError
@@ -211,6 +212,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.weConnect.login()
                 try:
                     statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                    self.weConnect.recordElapsed(statusResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
                     self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch vehicle status due to connection problem')
@@ -330,6 +332,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                self.weConnect.recordElapsed(statusResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
                 self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                            'Could not fetch parking position due to connection problem')
@@ -348,6 +351,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.weConnect.login()
                 try:
                     statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                    self.weConnect.recordElapsed(statusResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
                     self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch parking position due to connection problem')
@@ -424,6 +428,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
             try:
                 imageResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
+                self.weConnect.recordElapsed(imageResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
                 self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                            'Could not fetch vehicle image list due to connection problem')
@@ -442,6 +447,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.weConnect.login()
                 try:
                     imageResponse = self.weConnect.session.get(url, allow_redirects=False)
+                    self.weConnect.recordElapsed(imageResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
                     self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch vehicle image list due to connection problem')
@@ -477,6 +483,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(days=1))):
                     try:
                         imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                        self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                     except exceptions.ConnectionError as connectionError:
                         self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                                    'Could not fetch vehicle image due to connection problem')
@@ -498,6 +505,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         self.weConnect.login()
                         try:
                             imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                            self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                         except exceptions.ConnectionError as connectionError:
                             self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
                                                        'Could not fetch vehicle image due to connection problem')
