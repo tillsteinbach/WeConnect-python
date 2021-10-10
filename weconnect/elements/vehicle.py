@@ -38,6 +38,7 @@ from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.elements.range_measurements import RangeMeasurements
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
+from weconnect.weconnect_errors import ErrorEventType
 
 LOG: logging.Logger = logging.getLogger("weconnect")
 
@@ -196,10 +197,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 statusResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
                 self.weConnect.recordElapsed(statusResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicle status due to connection problem')
+                self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicle status due to connection problem')
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle status due to timeout')
+                self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle status due to timeout')
                 raise RetrievalError from timeoutError
             except exceptions.RetryError as retryError:
                 raise RetrievalError from retryError
@@ -214,11 +215,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     statusResponse = self.weConnect.session.get(url, allow_redirects=False)
                     self.weConnect.recordElapsed(statusResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                    self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch vehicle status due to connection problem')
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle status due to timeout')
+                    self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle status due to timeout')
                     raise RetrievalError from timeoutError
                 except exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
@@ -227,12 +228,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(statusResponse.status_code),
+                    self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                                'Could not fetch vehicle status due to server error')
                     raise RetrievalError('Could not retrieve vehicle status data even after re-authorization.'
                                          f' Status Code was: {statusResponse.status_code}')
             else:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(statusResponse.status_code),
+                self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                            'Could not fetch vehicle status due to server error')
                 raise RetrievalError(f'Could not retrieve vehicle status data. Status Code was: {statusResponse.status_code}')
 
@@ -334,11 +335,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 statusResponse = self.weConnect.session.get(url, allow_redirects=False)
                 self.weConnect.recordElapsed(statusResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                            'Could not fetch parking position due to connection problem')
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
+                self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
                 raise RetrievalError from timeoutError
             except exceptions.RetryError as retryError:
                 raise RetrievalError from retryError
@@ -353,11 +354,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     statusResponse = self.weConnect.session.get(url, allow_redirects=False)
                     self.weConnect.recordElapsed(statusResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                    self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch parking position due to connection problem')
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
+                    self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
                     raise RetrievalError from timeoutError
                 except exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
@@ -366,7 +367,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(statusResponse.status_code),
+                    self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                                'Could not fetch parking position due to server error')
                     raise RetrievalError('Could not retrieve parking position even after re-authorization.'
                                          f' Status Code was: {statusResponse.status_code}')
@@ -380,7 +381,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 except json.JSONDecodeError:
                     data = None
             else:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(statusResponse.status_code),
+                self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                            'Could not fetch parking position due to server error')
                 raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
 
@@ -430,11 +431,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 imageResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
                 self.weConnect.recordElapsed(imageResponse.elapsed)
             except exceptions.ConnectionError as connectionError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                            'Could not fetch vehicle image list due to connection problem')
                 raise RetrievalError from connectionError
             except exceptions.ReadTimeout as timeoutError:
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image list due to timeout')
+                self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image list due to timeout')
                 raise RetrievalError from timeoutError
             except exceptions.RetryError as retryError:
                 raise RetrievalError from retryError
@@ -449,11 +450,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     imageResponse = self.weConnect.session.get(url, allow_redirects=False)
                     self.weConnect.recordElapsed(imageResponse.elapsed)
                 except exceptions.ConnectionError as connectionError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                    self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                                'Could not fetch vehicle image list due to connection problem')
                     raise RetrievalError from connectionError
                 except exceptions.ReadTimeout as timeoutError:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image list due to timeout')
+                    self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image list due to timeout')
                     raise RetrievalError from timeoutError
                 except exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
@@ -462,11 +463,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
                 else:
-                    self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(imageResponse.status_code),
+                    self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageResponse.status_code),
                                                'Could not fetch vehicle image list due to server error')
                     raise RetrievalError('Could not retrieve vehicle images even after re-authorization.'
                                          f' Status Code was: {imageResponse.status_code}')
-                self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(imageResponse.status_code),
+                self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageResponse.status_code),
                                            'Could not fetch vehicle image list due to server error')
                 raise RetrievalError(f'Could not retrieve vehicle images. Status Code was: {imageResponse.status_code}')
         if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
@@ -485,11 +486,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                         self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                     except exceptions.ConnectionError as connectionError:
-                        self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                        self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                                    'Could not fetch vehicle image due to connection problem')
                         raise RetrievalError from connectionError
                     except exceptions.ReadTimeout as timeoutError:
-                        self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
+                        self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
                         raise RetrievalError from timeoutError
                     except exceptions.RetryError as retryError:
                         raise RetrievalError from retryError
@@ -507,11 +508,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                             self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                         except exceptions.ConnectionError as connectionError:
-                            self.weConnect.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection',
+                            self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
                                                        'Could not fetch vehicle image due to connection problem')
                             raise RetrievalError from connectionError
                         except exceptions.ReadTimeout as timeoutError:
-                            self.weConnect.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
+                            self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
                             raise RetrievalError from timeoutError
                         except exceptions.RetryError as retryError:
                             raise RetrievalError from retryError
@@ -523,11 +524,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                 imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
                                 self.weConnect.cache[imageurl] = (imgStr, str(datetime.utcnow()))
                         else:
-                            self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
+                            self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
                                                        'Could not fetch vehicle image due to server error')
                             raise RetrievalError('Could not retrieve vehicle image even after re-authorization.'
                                                  f' Status Code was: {imageDownloadResponse.status_code}')
-                        self.weConnect.notifyError(self, WeConnect.ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
+                        self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
                                                    'Could not fetch vehicle image due to server error')
                         raise RetrievalError(f'Could not retrieve vehicle image. Status Code was: {imageDownloadResponse.status_code}')
                     else:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Dict, List, Set, Tuple, Callable, Any, Optional, Union, cast, Match
 
-from enum import Flag, auto
+import os
 import string
 import random
 import re
@@ -22,6 +22,7 @@ from weconnect.elements.vehicle import Vehicle
 from weconnect.elements.charging_station import ChargingStation
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
 from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError
+from weconnect.weconnect_errors import ErrorEventType
 
 LOG = logging.getLogger("weconnect")
 
@@ -149,7 +150,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.useLocale: Optional[str] = locale.getlocale()[0]
         self.__elapsed: List[timedelta] = []
 
-        self.__errorObservers: Set[Tuple[Callable[[Optional[Any], WeConnect.ErrorEventType], None], WeConnect.ErrorEventType]] = set()
+        self.__errorObservers: Set[Tuple[Callable[[Optional[Any], ErrorEventType], None], ErrorEventType]] = set()
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
 
@@ -237,8 +238,13 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         else:
             self.maxAgePictures = maxAgePictures
 
-        with open(filename, 'r', encoding='utf8') as file:
-            self.__cache = json.load(file)
+        try:
+            with open(filename, 'r', encoding='utf8') as file:
+                self.__cache = json.load(file)
+        except json.decoder.JSONDecodeError:
+            LOG.error('Cachefile %s seems corrupted will delete it and try to create a new one. '
+                      'If this problem persists please check if a problem with your disk exists.', filename)
+            os.remove(filename)
         LOG.info('Reading cachefile %s', filename)
 
     def fillCacheFromJsonString(self, jsonString, maxAge: int, maxAgePictures: Optional[int] = None) -> None:
@@ -445,7 +451,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         try:
             refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
         except requests.exceptions.RequestException as e:
-            self.notifyError(self, WeConnect.ErrorEventType.HTTP, e.response.status_code, 'Could not refresh token due to error')
+            self.notifyError(self, ErrorEventType.HTTP, e.response.status_code, 'Could not refresh token due to error')
             if self.__refreshTimer and self.__refreshTimer.is_alive():
                 self.__refreshTimer.cancel()
             self.__refreshTimer = threading.Timer(60, self.__refreshToken)
@@ -520,10 +526,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 vehiclesResponse: requests.Response = self.__session.get(url, allow_redirects=True)
                 self.recordElapsed(vehiclesResponse.elapsed)
             except requests.exceptions.ConnectionError as connectionError:
-                self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
+                self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                 raise RetrievalError from connectionError
             except requests.exceptions.ReadTimeout as timeoutError:
-                self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
+                self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                 raise RetrievalError from timeoutError
             except requests.exceptions.RetryError as retryError:
                 raise RetrievalError from retryError
@@ -536,17 +542,17 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     vehiclesResponse = self.__session.get(url, allow_redirects=False)
                     self.recordElapsed(vehiclesResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                     raise RetrievalError from connectionError
                 except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
+                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
                 if vehiclesResponse.status_code == requests.codes['ok']:
                     data = vehiclesResponse.json()
                 else:
-                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
+                    self.notifyError(self, ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {vehiclesResponse.status_code}')
             else:
@@ -604,10 +610,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
                 self.recordElapsed(stationsResponse.elapsed)
             except requests.exceptions.ConnectionError as connectionError:
-                self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
+                self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                 raise RetrievalError from connectionError
             except requests.exceptions.ReadTimeout as timeoutError:
-                self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
+                self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                 raise RetrievalError from timeoutError
             except requests.exceptions.RetryError as retryError:
                 raise RetrievalError from retryError
@@ -620,17 +626,17 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     stationsResponse = self.__session.get(url, allow_redirects=False)
                     self.recordElapsed(stationsResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
                 except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
+                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
                 if stationsResponse.status_code == requests.codes['ok']:
                     data = stationsResponse.json()
                 else:
-                    self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(stationsResponse.status_code),
+                    self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
                                      'Could not fetch charging stations due to server error')
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {stationsResponse.status_code}')
@@ -670,10 +676,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
                     self.recordElapsed(stationsResponse.elapsed)
                 except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
                 except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
+                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
                 except requests.exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
@@ -686,17 +692,17 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         stationsResponse = self.__session.get(url, allow_redirects=False)
                         self.recordElapsed(stationsResponse.elapsed)
                     except requests.exceptions.ConnectionError as connectionError:
-                        self.notifyError(self, WeConnect.ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging station due to connection problem')
+                        self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging station due to connection problem')
                         raise RetrievalError from connectionError
                     except requests.exceptions.ReadTimeout as timeoutError:
-                        self.notifyError(self, WeConnect.ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging station due to timeout')
+                        self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging station due to timeout')
                         raise RetrievalError from timeoutError
                     except requests.exceptions.RetryError as retryError:
                         raise RetrievalError from retryError
                     if stationsResponse.status_code == requests.codes['ok']:
                         data = stationsResponse.json()
                     else:
-                        self.notifyError(self, WeConnect.ErrorEventType.HTTP, str(stationsResponse.status_code),
+                        self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
                                          'Could not fetch charging stations due to server error')
                         raise RetrievalError('Could not retrieve data even after re-authorization.'
                                              f' Status Code was: {stationsResponse.status_code}')
@@ -734,25 +740,19 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             returnString += f'Charging Station: {stationId}\n{station}\n'
         return returnString
 
-    class ErrorEventType(Flag):
-        HTTP = auto()
-        TIMEOUT = auto()
-        CONNECTION = auto()
-        ALL = HTTP | TIMEOUT | CONNECTION
-
-    def addErrorObserver(self, observer: Callable, errortype: WeConnect.ErrorEventType) -> None:
+    def addErrorObserver(self, observer: Callable, errortype: ErrorEventType) -> None:
         self.__errorObservers.add((observer, errortype))
         LOG.debug('%s: Error event observer added for type: %s', self.getGlobalAddress(), errortype)
 
-    def removeErrorObserver(self, observer: Callable, errortype: Optional[WeConnect.ErrorEventType] = None) -> None:
+    def removeErrorObserver(self, observer: Callable, errortype: Optional[ErrorEventType] = None) -> None:
         self.__errorObservers = filter(lambda observerEntry: observerEntry[0] == observer
                                        or (errortype is not None and observerEntry[1] == errortype), self.__errorObservers)
 
     def getErrorObservers(self, errortype) -> List[Any]:
         return [observerEntry[0] for observerEntry in self.getErrorObserverEntries(errortype)]
 
-    def getErrorObserverEntries(self, errortype: WeConnect.ErrorEventType) -> List[Any]:
-        observers: Set[Tuple[Callable, WeConnect.ErrorEventType]] = set()
+    def getErrorObserverEntries(self, errortype: ErrorEventType) -> List[Any]:
+        observers: Set[Tuple[Callable, ErrorEventType]] = set()
         for observerEntry in self.__errorObservers:
             observer, observertype = observerEntry
             del observer
@@ -760,7 +760,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 observers.add(observerEntry)
         return observers
 
-    def notifyError(self, element, errortype: WeConnect.ErrorEventType, detail: string, message: string = None) -> None:
+    def notifyError(self, element, errortype: ErrorEventType, detail: string, message: string = None) -> None:
         observers: List[Callable] = self.getErrorObservers(errortype)
         for observer in observers:
             observer(element=element, errortype=errortype, detail=detail, message=message)
