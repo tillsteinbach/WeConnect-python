@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.21.1] - 2021-10-10
+### Fixed
+- Fixes error recording
+- Will delete cache if file is corrupted
+
 ## [0.21.0] - 2021-10-06
 ### Added
 - Possibility to register for error callbacks
@@ -321,7 +326,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.21.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.21.1...HEAD
+[0.21.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.21.1
 [0.21.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.21.0
 [0.20.15]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.15
 [0.20.14]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.20.14
