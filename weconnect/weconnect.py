@@ -556,6 +556,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {vehiclesResponse.status_code}')
             else:
+                self.notifyError(self, ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
                 raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
         if data is not None:
             if 'data' in data and data['data']:
@@ -641,6 +642,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     raise RetrievalError('Could not retrieve data even after re-authorization.'
                                          f' Status Code was: {stationsResponse.status_code}')
             else:
+                self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
+                                 'Could not fetch charging stations due to server error')
                 raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
         if data is not None:
             if 'chargingStations' in data and data['chargingStations']:
@@ -707,6 +710,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         raise RetrievalError('Could not retrieve data even after re-authorization.'
                                              f' Status Code was: {stationsResponse.status_code}')
                 else:
+                    self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
+                                     'Could not fetch charging stations due to server error')
                     raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
             if data is not None:
                 if 'chargingStations' in data and data['chargingStations']:
