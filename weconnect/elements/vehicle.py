@@ -427,7 +427,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
         if data is None or self.weConnect.maxAge is None \
-                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
+                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
             try:
                 imageResponse: Response = self.weConnect.session.get(url, allow_redirects=False)
                 self.weConnect.recordElapsed(imageResponse.elapsed)
@@ -482,7 +482,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     img = Image.open(io.BytesIO(img))
                     cacheDate = datetime.fromisoformat(cacheDateString)
                 if img is None or self.weConnect.maxAgePictures is None \
-                        or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(days=1))):
+                        or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
                     try:
                         imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                         self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
