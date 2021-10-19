@@ -576,7 +576,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     except RetrievalError as retrievalError:
                         LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
                 # delete those vins that are not anymore available
-                for vin in [vin for vin in vins if vin not in self.__vehicles]:
+                for vin in [vin for vin in self.__vehicles if vin not in vins]:
                     del self.__vehicles[vin]
 
                 self.__cache[url] = (data, str(datetime.utcnow()))
@@ -775,13 +775,21 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__elapsed.append(elapsed)
 
     def getMinElapsed(self) -> timedelta:
+        if len(self.__elapsed) == 0:
+            return None
         return min(self.__elapsed)
 
     def getMaxElapsed(self) -> timedelta:
+        if len(self.__elapsed) == 0:
+            return None
         return max(self.__elapsed)
 
     def getAvgElapsed(self) -> timedelta:
+        if len(self.__elapsed) == 0:
+            return None
         return sum(self.__elapsed, timedelta()) / len(self.__elapsed)
 
     def getTotalElapsed(self) -> timedelta:
+        if len(self.__elapsed) == 0:
+            return None
         return sum(self.__elapsed, timedelta())
