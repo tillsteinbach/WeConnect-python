@@ -744,7 +744,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         HEATING = 'heating'
         LOCKED = 'locked'
         PARKING = 'parking'
-        UNLOCKED = 'locked'
+        UNLOCKED = 'unlocked'
         VENTILATING = 'ventilating'
         WARNING = 'warning'
 
