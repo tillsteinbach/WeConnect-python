@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Fixed
+- Fix when refreshing of tokens fail, start retry procedure
 
 ## [0.21.5] - 2021-10-21
 ### Fixed

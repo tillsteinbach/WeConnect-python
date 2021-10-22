@@ -447,11 +447,21 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def __refreshToken(self) -> None:  # noqa C901
         url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
-
+        failed = False
         try:
             refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.ConnectionError:
+            self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not refresh token due to connection problem')
+            failed = True
+        except requests.exceptions.ReadTimeout:
+            self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not refresh token due to timeout')
+            failed = True
+        except requests.exceptions.RetryError:
+            failed = True
+        except requests.exceptions.HTTPError as e:
             self.notifyError(self, ErrorEventType.HTTP, e.response.status_code, 'Could not refresh token due to error')
+            failed = True
+        if failed:
             if self.__refreshTimer and self.__refreshTimer.is_alive():
                 self.__refreshTimer.cancel()
             self.__refreshTimer = threading.Timer(60, self.__refreshToken)
