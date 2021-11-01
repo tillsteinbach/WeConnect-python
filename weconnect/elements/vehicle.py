@@ -62,6 +62,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.enrollmentStatus: AddressableAttribute[Vehicle.User.EnrollmentStatus] = AddressableAttribute(localAddress='enrollmentStatus', parent=self,
                                                                                                           value=None,
                                                                                                           valueType=Vehicle.User.EnrollmentStatus)
+        self.userRoleStatus: AddressableAttribute[Vehicle.User.UserRoleStatus] = AddressableAttribute(localAddress='userRoleStatus', parent=self,
+                                                                                                      value=None,
+                                                                                                      valueType=Vehicle.User.UserRoleStatus)
         self.model: AddressableAttribute[str] = AddressableAttribute(localAddress='model', parent=self, value=None, valueType=str)
         self.nickname: AddressableAttribute[str] = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
@@ -112,6 +115,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     LOG.warning('An unsupported enrollment Status: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
             else:
                 self.enrollmentStatus.enabled = False
+
+            if 'userRoleStatus' in fromDict and fromDict['userRoleStatus']:
+                try:
+                    self.userRoleStatus.setValueWithCarTime(Vehicle.User.UserRoleStatus(fromDict['userRoleStatus']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.userRoleStatus.setValueWithCarTime(Vehicle.User.UserRoleStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported userRoleStatus: %s was provided, please report this as a bug', fromDict['userRoleStatus'])
+            else:
+                self.userRoleStatus.enabled = False
 
             if 'model' in fromDict:
                 self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None, fromServer=True)
@@ -166,6 +178,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                if key not in ['vin',
                                               'role',
                                               'enrollmentStatus',
+                                              'userRoleStatus',
                                               'model',
                                               'nickname',
                                               'capabilities',
@@ -720,6 +733,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             returnString += f'Role:              {self.role.value.value}\n'  # pylint: disable=no-member
         if self.enrollmentStatus.enabled and self.enrollmentStatus.value is not None:
             returnString += f'Enrollment Status: {self.enrollmentStatus.value.value}\n'  # pylint: disable=no-member
+        if self.userRoleStatus.enabled and self.userRoleStatus.value is not None:
+            returnString += f'User Role Status:  {self.userRoleStatus.value.value}\n'  # pylint: disable=no-member
         if self.coUsers.enabled:
             returnString += f'Co-Users: {len(self.coUsers)} items\n'
             for coUser in self.coUsers:
@@ -820,4 +835,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             NOT_STARTED = 'NOT_STARTED'
             COMPLETED = 'COMPLETED'
             GDC_MISSING = 'GDC_MISSING'
+            UNKNOWN = 'UNKNOWN'
+
+        class UserRoleStatus(Enum,):
+            ENABLED = 'ENABLED'
             UNKNOWN = 'UNKNOWN'
