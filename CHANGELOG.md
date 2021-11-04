@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.22.1] - 2021-11-04
+### Fixed
+- Fixed ChunkedEncodingError when server is terminating the connection
+
 ## [0.22.0] - 2021-11-01
 ### Added
 - Added new userRoleStatus attribute
@@ -349,7 +353,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.22.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.22.1...HEAD
+[0.22.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.22.1
 [0.22.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.22.0
 [0.21.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.21.5
 [0.21.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.21.4

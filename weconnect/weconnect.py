@@ -453,6 +453,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         except requests.exceptions.ConnectionError:
             self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not refresh token due to connection problem')
             failed = True
+        except requests.exceptions.ChunkedEncodingError:
+            self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                             'Could not refresh token due to connection problem with chunked encoding')
+            failed = True
         except requests.exceptions.ReadTimeout:
             self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not refresh token due to timeout')
             failed = True
@@ -538,6 +542,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             except requests.exceptions.ConnectionError as connectionError:
                 self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                 raise RetrievalError from connectionError
+            except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                 'Could not refresh token due to connection problem with chunked encoding')
+                raise RetrievalError from chunkedEncodingError
             except requests.exceptions.ReadTimeout as timeoutError:
                 self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                 raise RetrievalError from timeoutError
@@ -554,6 +562,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
                     raise RetrievalError from connectionError
+                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                     'Could not refresh token due to connection problem with chunked encoding')
+                    raise RetrievalError from chunkedEncodingError
                 except requests.exceptions.ReadTimeout as timeoutError:
                     self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
                     raise RetrievalError from timeoutError
@@ -623,6 +635,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             except requests.exceptions.ConnectionError as connectionError:
                 self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                 raise RetrievalError from connectionError
+            except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                 'Could not refresh token due to connection problem with chunked encoding')
+                raise RetrievalError from chunkedEncodingError
             except requests.exceptions.ReadTimeout as timeoutError:
                 self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                 raise RetrievalError from timeoutError
@@ -639,6 +655,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
+                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                     'Could not refresh token due to connection problem with chunked encoding')
+                    raise RetrievalError from chunkedEncodingError
                 except requests.exceptions.ReadTimeout as timeoutError:
                     self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
@@ -668,7 +688,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__cache[url] = (data, str(datetime.utcnow()))
         return chargingStationMap
 
-    def updateChargingStations(self, force: bool = False) -> None:  # noqa: C901
+    def updateChargingStations(self, force: bool = False) -> None:  # noqa: C901 # pylint: disable=too-many-branches
         if self.latitude is not None and self.longitude is not None:
             data: Optional[Dict[str, Any]] = None
             cacheDate: Optional[datetime] = None
@@ -691,6 +711,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 except requests.exceptions.ConnectionError as connectionError:
                     self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
                     raise RetrievalError from connectionError
+                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                     'Could not refresh token due to connection problem with chunked encoding')
+                    raise RetrievalError from chunkedEncodingError
                 except requests.exceptions.ReadTimeout as timeoutError:
                     self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
                     raise RetrievalError from timeoutError
@@ -707,6 +731,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     except requests.exceptions.ConnectionError as connectionError:
                         self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging station due to connection problem')
                         raise RetrievalError from connectionError
+                    except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                        self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                         'Could not refresh token due to connection problem with chunked encoding')
+                        raise RetrievalError from chunkedEncodingError
                     except requests.exceptions.ReadTimeout as timeoutError:
                         self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging station due to timeout')
                         raise RetrievalError from timeoutError
