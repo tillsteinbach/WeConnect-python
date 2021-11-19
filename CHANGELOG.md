@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.23.0] - 2021-11-19
+### Added
+- Add new Charging State CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING (thanks to [gordoncrossley](https://github.com/gordoncrossley) for reporting)
+
 ## [0.22.1] - 2021-11-04
 ### Fixed
 - Fixed ChunkedEncodingError when server is terminating the connection
