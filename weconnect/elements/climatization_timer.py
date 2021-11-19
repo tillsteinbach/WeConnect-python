@@ -77,7 +77,7 @@ class ClimatizationTimer(GenericStatus):
 
             if 'id' in fromDict:
                 self.id = fromDict['id']
-                self.localAddress = self.id
+                self.localAddress = str(self.id)
             else:
                 LOG.error('Timer is missing id attribute')
 
