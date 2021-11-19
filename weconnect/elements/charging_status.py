@@ -100,6 +100,7 @@ class ChargingStatus(GenericStatus):
     class ChargingState(Enum,):
         OFF = 'off'
         READY_FOR_CHARGING = 'readyForCharging'
+        CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING = 'chargePurposeReachedAndNotConservationCharging'
         CHARGING = 'charging'
         ERROR = 'error'
         UNKNOWN = 'unknown charging state'
