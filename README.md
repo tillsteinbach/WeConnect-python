@@ -36,3 +36,6 @@ Please feel free to open an issue at [GitHub Issue page](https://github.com/till
 
 ## Credits
 Inspired by [TA2k/ioBroker.vw-connect](https://github.com/TA2k/ioBroker.vw-connect/) that gave me a point to start working with the API
+
+## Seat, Cupra, Skoda IV, ...
+In an effort to try to make WeConnect-python also to work with latest generation of vehicles from other volkswagen brands I'm looking for users to temporarily share access to their accounts. If you are willing to support please send me a message.
