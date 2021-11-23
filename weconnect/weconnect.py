@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple, Callable, Any, Optional, Union, cast, Match
+from typing import Dict, List, Set, Tuple, Callable, Any, Optional, Union, cast, Match, NamedTuple
 
+from enum import Enum
 import os
 import string
 import random
@@ -71,26 +72,64 @@ class DateTimeEncoder(json.JSONEncoder):
 class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes
     """Main class used to interact with WeConnect"""
 
+    class Brand(Enum):
+        VW = 'vw'
+        SEAT = 'seat'
+
+    class BrandOptions(NamedTuple):
+        appUri: str
+        clientId: str
+        headers: CaseInsensitiveDict
+        loginHeaders: CaseInsensitiveDict
+
     DEFAULT_OPTIONS: Dict[str, Any] = {
-        "headers": CaseInsensitiveDict({
-            'accept': '*/*',
-            'content-type': 'application/json',
-            'content-version': '1',
-            'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
-            'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
-            'accept-language': 'de-de',
-        }),
-        "loginHeaders": CaseInsensitiveDict({
-            'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
-                          'Chrome/74.0.3729.185 Mobile Safari/537.36',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
-                      'application/signed-exchange;v=b3',
-            'accept-language': 'en-US,en;q=0.9',
-            'accept-encoding': 'gzip, deflate',
-            'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
-            'upgrade-insecure-requests': '1',
-        }),
-        "refreshBeforeExpires": 30
+    }
+
+    BRAND_OPTIONS: Dict[Brand, Dict[str, Any]] = {
+        Brand.VW: BrandOptions(
+            appUri='weconnect://authenticated',
+            clientId='a24fba63-34b3-4d43-b181-942111e6bda8@apps_vw-dilab_com',
+            headers=CaseInsensitiveDict({
+                'accept': '*/*',
+                'content-type': 'application/json',
+                'content-version': '1',
+                'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
+                'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
+                'accept-language': 'de-de',
+            }),
+            loginHeaders=CaseInsensitiveDict({
+                'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
+                'Chrome/74.0.3729.185 Mobile Safari/537.36',
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
+                'application/signed-exchange;v=b3',
+                'accept-language': 'en-US,en;q=0.9',
+                'accept-encoding': 'gzip, deflate',
+                'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
+                'upgrade-insecure-requests': '1',
+            })
+        ),
+        Brand.SEAT: BrandOptions(
+            appUri='cupra://oauth-callback',
+            clientId='3c756d46-f1ba-4d78-9f9a-cff0d5292d51@apps_vw-dilab_com',
+            headers=CaseInsensitiveDict({
+                'accept': '*/*',
+                'content-type': 'application/json',
+                'content-version': '1',
+                'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
+                'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
+                'accept-language': 'de-de',
+            }),
+            loginHeaders=CaseInsensitiveDict({
+                'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
+                'Chrome/74.0.3729.185 Mobile Safari/537.36',
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
+                'application/signed-exchange;v=b3',
+                'accept-language': 'en-US,en;q=0.9',
+                'accept-encoding': 'gzip, deflate',
+                'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
+                'upgrade-insecure-requests': '1',
+            })
+        )
     }
 
     def __init__(  # noqa: C901 # pylint: disable=too-many-arguments
@@ -106,7 +145,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         maxAgePictures: Optional[int] = None,
         updateCapabilities: bool = True,
         updatePictures: bool = True,
-        numRetries: int = 3
+        numRetries: int = 3,
+        brand=Brand.VW
     ) -> None:
         """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
            If loginOnInit is true also an initial fetch of data is performed.
@@ -149,10 +189,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.market: Optional[str] = None
         self.useLocale: Optional[str] = locale.getlocale()[0]
         self.__elapsed: List[timedelta] = []
+        self.brand = brand
 
         self.__errorObservers: Set[Tuple[Callable[[Optional[Any], ErrorEventType], None], ErrorEventType]] = set()
 
-        self.__session.headers = self.DEFAULT_OPTIONS['headers']
+        self.__session.headers = self.BRAND_OPTIONS[self.brand].headers
 
         # Retry on internal server error (500)
         retries = Retry(total=numRetries,
@@ -265,7 +306,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         # Try to access page to be redirected to login form
         tryLoginUrl: str = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
-            '&redirect_uri=weconnect://authenticated'
+            f'&redirect_uri={self.BRAND_OPTIONS[self.brand].appUri}&client_id=3c756d46-f1ba-4d78-9f9a-cff0d5292d51@apps_vw-dilab_com'
 
         tryLoginResponse: requests.Response = self.__session.get(tryLoginUrl, allow_redirects=False)
         if tryLoginResponse.status_code != requests.codes['see_other']:
@@ -277,7 +318,13 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         loginUrl: str = tryLoginResponse.headers['Location']
 
         # Retrieve login page
-        loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
+        loginUrl = f'https://identity.vwgroup.io/oidc/v1/authorize?nonce=' \
+            f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
+            f'&redirect_uri={self.BRAND_OPTIONS[self.brand].appUri}&client_id={self.BRAND_OPTIONS[self.brand].clientId}&scope=openid+profile+badge+cars+dealers+vin&response_type=code+id_token+token&state=97d17c37b3b9bfbce5ca52c39a9f693887cb6e66faeb76b4d4b4e7cc77b3bf25'
+
+
+        loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.BRAND_OPTIONS[self.brand].loginHeaders, allow_redirects=True)
+        
         if loginResponse.status_code != requests.codes['ok']:
             raise APICompatibilityError('Retrieving login page was not successfull,'
                                         f' status code: {loginResponse.status_code}')
@@ -306,7 +353,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         # build url from form action
         login2Url: str = 'https://identity.vwgroup.io' + target
 
-        loginHeadersForm: CaseInsensitiveDict = self.DEFAULT_OPTIONS['loginHeaders']
+        loginHeadersForm: CaseInsensitiveDict = self.BRAND_OPTIONS[self.brand].loginHeaders
         loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
 
         # Post form content and retrieve credentials page
@@ -387,7 +434,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if 'consent' in afterLoginUrl:
                 consentURL = afterLoginUrl
             afterLoginResponse = self.__session.get(
-                afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+                afterLoginUrl, headers=self.BRAND_OPTIONS[self.brand].loginHeaders, allow_redirects=False)
 
             if 'Location' not in afterLoginResponse.headers:
                 if consentURL is not None:
@@ -397,10 +444,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
             afterLoginUrl = afterLoginResponse.headers['Location']
 
-            if afterLoginUrl.startswith('weconnect://authenticated#'):
+            if afterLoginUrl.startswith('weconnect://authenticated#') or afterLoginUrl.startswith('cupra://oauth-callback'):
                 break
 
-        params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
+        print(afterLoginUrl)
+
+        if self.brand == WeConnect.Brand.VW:
+            params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
+        elif self.brand == WeConnect.Brand.SEAT:
+            params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('oauth-callback#', 'oauth-callback?')).query))
 
         if all(key in params for key in ('token_type', 'id_token', 'expires_in')):
             self.__token = {
@@ -411,23 +463,34 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             if cast(str, self.__token['type']).casefold() == 'Bearer'.casefold():
                 self.__session.auth = BearerAuth(cast(str, self.__token['token']))
 
+        print(params)
         if all(key in params for key in ('state', 'id_token', 'access_token', 'code')):
 
             # Get Tokens
-            tokenUrl: str = 'https://login.apps.emea.vwapps.io/login/v1'
-            redirerctUri: str = 'weconnect://authenticated'
+            #tokenUrl: str = 'https://login.apps.emea.vwapps.io/login/v1'
 
-            body: str = json.dumps(
-                {
-                    'state': params['state'],
-                    'id_token': params['id_token'],
-                    'redirect_uri': redirerctUri,
-                    'region': 'emea',
-                    'access_token': params['access_token'],
-                    'authorizationCode': params['code'],
-                })
+            #body: str = json.dumps(
+            #    {
+            #        'state': params['state'],
+            #        'id_token': params['id_token'],
+            #        'redirect_uri': self.BRAND_OPTIONS[self.brand].appUri,
+            #        'region': 'emea',
+            #        'access_token': params['access_token'],
+            #        'authorizationCode': params['code'],
+            #    })
+            
+            tokenUrl: str = 'https://identity.vwgroup.io/oidc/v1/token'
 
-            tokenResponse = self.__session.post(tokenUrl, data=body, allow_redirects=False)
+            body: Dict[str, str] = {
+                    'client_id': self.BRAND_OPTIONS[self.brand].clientId,
+                    'redirect_uri': self.BRAND_OPTIONS[self.brand].appUri,
+                    'code': params['code'],
+                    'grant_type': 'authorization_code',
+                }
+
+            from requests.auth import HTTPBasicAuth
+            tokenResponse = self.__session.post(tokenUrl, data=body, headers=self.BRAND_OPTIONS[self.brand].loginHeaders, allow_redirects=False, auth=HTTPBasicAuth(self.BRAND_OPTIONS[self.brand].clientId, 'eb8814e641c81a2640ad62eeccec11c98effc9bccd4269ab7af338b50a94b3a2'))
+            print(tokenResponse.json())
             data = tokenResponse.json()
             if 'idToken' in data:
                 self.__token['type'] = 'Bearer'
@@ -442,6 +505,20 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__rToken['type'] = 'Bearer'
                 self.__rToken['token'] = data['refreshToken']
                 self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+            
+            if 'id_token' in data:
+                self.__token['type'] = 'Bearer'
+                self.__token['token'] = data['id_token']
+                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                self.__session.auth = BearerAuth(cast(str, self.__token['token']))
+            if 'access_token' in data:
+                self.__aToken['type'] = 'Bearer'
+                self.__aToken['token'] = data['access_token']
+                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+            if 'refresh_token' in data:
+                self.__rToken['type'] = 'Bearer'
+                self.__rToken['token'] = data['refresh_token']
+                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
 
             self.__refreshToken()
 
@@ -449,7 +526,20 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
         failed = False
         try:
-            refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
+            tokenUrl: str = 'https://identity.vwgroup.io/oidc/v1/token'
+
+            body: Dict[str, str] = {
+                    'client_id': self.BRAND_OPTIONS[self.brand].clientId,
+                    'redirect_uri': self.BRAND_OPTIONS[self.brand].appUri,
+                    'refresh_token': self.__rToken['token'],
+                    'grant_type': 'refresh_token',
+                }
+
+            from requests.auth import HTTPBasicAuth
+            refreshResponse = self.__session.post(tokenUrl, data=body, headers=self.BRAND_OPTIONS[self.brand].loginHeaders, allow_redirects=False, auth=HTTPBasicAuth(self.BRAND_OPTIONS[self.brand].clientId, 'eb8814e641c81a2640ad62eeccec11c98effc9bccd4269ab7af338b50a94b3a2'))
+            print(refreshResponse.json())
+            #refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
+            #print(refreshResponse.text)
         except requests.exceptions.ConnectionError:
             self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not refresh token due to connection problem')
             failed = True
@@ -483,6 +573,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__token['token'] = data['idToken']
                 self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
                 self.__session.auth = BearerAuth(cast(str, self.__token['token']))
+            elif 'id_token' in data:
+                self.__token['type'] = 'Bearer'
+                self.__token['token'] = data['id_token']
+                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                self.__session.auth = BearerAuth(cast(str, self.__token['token']))
             else:
                 LOG.error('No id token received')
 
@@ -492,12 +587,22 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
                 # THe access token is prefered to be used
                 self.__session.auth = BearerAuth(cast(str, self.__aToken['token']))
+            elif 'access_token' in data:
+                self.__aToken['type'] = 'Bearer'
+                self.__aToken['token'] = data['access_token']
+                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                # THe access token is prefered to be used
+                self.__session.auth = BearerAuth(cast(str, self.__aToken['token']))
             else:
                 LOG.error('No access token received')
 
             if 'refreshToken' in data:
                 self.__rToken['type'] = 'Bearer'
                 self.__rToken['token'] = data['refreshToken']
+                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+            elif 'refresh_token' in data:
+                self.__rToken['type'] = 'Bearer'
+                self.__rToken['token'] = data['refresh_token']
                 self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
             else:
                 LOG.error('No refresh token received')
@@ -532,6 +637,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         data: Optional[Dict[str, Any]] = None
         cacheDate: Optional[datetime] = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
+        url = 'https://ola.prod.code.seat.cloud.vwgroup.com/v1/users/090db380-7e9a-4a99-a1d3-9958e464314c/garage/vehicles'
         if not force and (self.maxAge is not None and url in self.__cache):
             data, cacheDateString = self.__cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
