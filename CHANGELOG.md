@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.24.0] - 2021-11-25
+### Added
+- Add new Charging State CHARGE_PURPOSE_REACHED_CONSERVATION (thanks to [gordoncrossley](https://github.com/gordoncrossley) for reporting)
+
 ## [0.23.1] - 2021-11-19
 ### Fixed
 - Fixed addressing of timers
@@ -361,7 +365,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.23.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.24.0
 [0.23.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.23.1
 [0.23.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.23.0
 [0.22.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.22.1
