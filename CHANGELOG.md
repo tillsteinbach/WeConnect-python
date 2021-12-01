@@ -3,7 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Added
+- Add new status fail_battery_low
+- Add new attributes readinessStatus, readinessBatterySupportStatus and devicePlatform
 
 ## [0.24.0] - 2021-11-25
 ### Added
