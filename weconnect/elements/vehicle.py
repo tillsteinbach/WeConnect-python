@@ -36,6 +36,7 @@ from weconnect.elements.range_status import RangeStatus
 from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.elements.range_measurements import RangeMeasurements
+from weconnect.elements.readiness_status import ReadinessStatus
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
@@ -66,6 +67,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                       value=None,
                                                                                                       valueType=Vehicle.User.UserRoleStatus)
         self.model: AddressableAttribute[str] = AddressableAttribute(localAddress='model', parent=self, value=None, valueType=str)
+        self.devicePlatform: AddressableAttribute[Vehicle.DevicePlatform] = AddressableAttribute(localAddress='devicePlatform', parent=self,
+                                                                                                 value=None,
+                                                                                                 valueType=Vehicle.DevicePlatform)
         self.nickname: AddressableAttribute[str] = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
         self.statuses: AddressableDict[str, GenericStatus] = AddressableDict(localAddress='status', parent=self)
@@ -129,6 +133,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.model.enabled = False
+            
+            if 'devicePlatform' in fromDict and fromDict['devicePlatform']:
+                try:
+                    self.devicePlatform.setValueWithCarTime(Vehicle.DevicePlatform(fromDict['devicePlatform']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.devicePlatform.setValueWithCarTime(Vehicle.DevicePlatform.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported devicePlatform: %s was provided, please report this as a bug', fromDict['devicePlatform'])
+            else:
+                self.devicePlatform.enabled = False
 
             if 'nickname' in fromDict:
                 self.nickname.setValueWithCarTime(fromDict['nickname'], lastUpdateFromCar=None, fromServer=True)
@@ -180,6 +193,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                               'enrollmentStatus',
                                               'userRoleStatus',
                                               'model',
+                                              'devicePlatform',
                                               'nickname',
                                               'capabilities',
                                               'images',
@@ -283,7 +297,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                        'rangeMeasurements': RangeMeasurements,
                                                        'odometerMeasurement': OdometerMeasurement,
                                                        'oilLevelStatus': GenericStatus,
-                                                       'measurements': GenericStatus
+                                                       'measurements': GenericStatus,
+                                                       'readinessBatterySupportStatus': GenericStatus,
+                                                       'readinessStatus': ReadinessStatus
                                                        }
         if data is not None and 'data' in data and data['data']:
             for key, className in keyClassMap.items():
@@ -759,6 +775,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             returnString += f'VIN:               {self.vin.value}\n'
         if self.model.enabled and self.model.value is not None:
             returnString += f'Model:             {self.model.value}\n'
+        if self.devicePlatform.enabled and self.devicePlatform.value is not None:
+            returnString += f'Device Platform:   {self.devicePlatform.value.value}\n'
         if self.nickname.enabled and self.nickname.value is not None:
             returnString += f'Nickname:          {self.nickname.value}\n'
         if self.role.enabled and self.role.value is not None:
@@ -794,6 +812,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         UNLOCKED = 'unlocked'
         VENTILATING = 'ventilating'
         WARNING = 'warning'
+
+    class DevicePlatform(Enum,):
+        MBB_ODP = 'MBB_ODP'
+        WCAR = 'WCAR'
+        UNKNOWN = 'UNKNOWN'
 
     class User(AddressableObject):
         def __init__(
@@ -872,3 +895,4 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         class UserRoleStatus(Enum,):
             ENABLED = 'ENABLED'
             UNKNOWN = 'UNKNOWN'
+
