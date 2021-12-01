@@ -133,7 +133,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None, fromServer=True)
             else:
                 self.model.enabled = False
-            
+
             if 'devicePlatform' in fromDict and fromDict['devicePlatform']:
                 try:
                     self.devicePlatform.setValueWithCarTime(Vehicle.DevicePlatform(fromDict['devicePlatform']), lastUpdateFromCar=None, fromServer=True)
@@ -895,4 +895,3 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         class UserRoleStatus(Enum,):
             ENABLED = 'ENABLED'
             UNKNOWN = 'UNKNOWN'
-
