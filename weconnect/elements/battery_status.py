@@ -36,7 +36,7 @@ class BatteryStatus(GenericStatus):
             if self.fixAPI and cruisingRangeElectric_km == 0x3FFF:
                 cruisingRangeElectric_km = None
                 LOG.info('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
-                            ' of 16383 km.', self.getGlobalAddress())
+                         ' of 16383 km.', self.getGlobalAddress())
             self.cruisingRangeElectric_km.setValueWithCarTime(
                 cruisingRangeElectric_km, lastUpdateFromCar=None, fromServer=True)
         else:
