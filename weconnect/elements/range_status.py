@@ -138,4 +138,5 @@ class RangeStatus(GenericStatus):
     class CarType(Enum,):
         ELECTRIC = 'electric'
         HYBRID = 'hybrid'
+        GASOLINE = 'gasoline'
         UNKNOWN = 'unknown open state'
