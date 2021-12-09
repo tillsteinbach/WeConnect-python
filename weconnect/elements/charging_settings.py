@@ -84,6 +84,7 @@ class ChargingSettings(GenericSettings):
     class UnlockPlugState(ControlInputEnum,):
         OFF = 'off'
         ON = 'on'
+        PERMANENT = 'permanent'
         UNKNOWN = 'unknown'
 
         @classmethod
