@@ -10,11 +10,13 @@ def main():
         description='Example retrieving all vehciles in the account')
     parser.add_argument('-u', '--username', help='Username of Volkswagen id', required=True)
     parser.add_argument('-p', '--password', help='Password of Volkswagen id', required=True)
+    parser.add_argument('-b', '--brand', help='Brand if other (e.g. seat)', required=False, type=weconnect.WeConnect.Brand,
+                        choices=list(weconnect.WeConnect.Brand), default=weconnect.WeConnect.Brand.VW)
 
     args = parser.parse_args()
 
     print('#  Initialize WeConnect')
-    weConnect = weconnect.WeConnect(username=args.username, password=args.password, updateAfterLogin=False, loginOnInit=False)
+    weConnect = weconnect.WeConnect(username=args.username, password=args.password, updateAfterLogin=False, loginOnInit=False, brand=args.brand)
     print('#  Login')
     weConnect.login()
     print('#  update')

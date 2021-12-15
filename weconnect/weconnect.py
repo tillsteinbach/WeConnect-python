@@ -77,6 +77,9 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         VW = 'vw'
         SEAT = 'seat'
 
+        def __str__(self):
+            return self.value
+
     class BrandOptions(NamedTuple):
         appUri: str
         clientId: str
