@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.27.1] - 2021-12-16
+### Fixed
+- Fixed exception when WeConnect Server unnecessarily asks for a new login
+
 ## [0.27.0] - 2021-12-09
 ### Added
 - added UnlockPlugState permanent
@@ -382,7 +386,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.27.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.27.1...HEAD
+[0.27.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.27.1
 [0.27.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.27.0
 [0.26.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.26.0
 [0.25.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.25.1

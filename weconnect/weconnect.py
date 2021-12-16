@@ -276,131 +276,134 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         # Login url is in response headers when response has status code see_others (303)
         loginUrl: str = tryLoginResponse.headers['Location']
 
-        # Retrieve login page
-        loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
-        if loginResponse.status_code != requests.codes['ok']:
-            raise APICompatibilityError('Retrieving login page was not successfull,'
-                                        f' status code: {loginResponse.status_code}')
+        if loginUrl.startswith('weconnect://authenticated#'):
+            params = dict(parse.parse_qsl(parse.urlsplit(loginUrl.replace('authenticated#', 'authenticated?')).query))
+        else:
+            # Retrieve login page
+            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
+            if loginResponse.status_code != requests.codes['ok']:
+                raise APICompatibilityError('Retrieving login page was not successfull,'
+                                            f' status code: {loginResponse.status_code}')
 
-        # Find login form on page to obtain inputs
-        emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
-            r'(?P<formContent>.+?(?=</form>))</form>'
-        match: Optional[Match[str]] = re.search(emailFormRegex, loginResponse.text, flags=re.DOTALL)
-        if match is None:
-            raise APICompatibilityError('No login email form found')
-        # retrieve target url from form
-        target: str = match.groupdict()['formAction']
+            # Find login form on page to obtain inputs
+            emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+                r'(?P<formContent>.+?(?=</form>))</form>'
+            match: Optional[Match[str]] = re.search(emailFormRegex, loginResponse.text, flags=re.DOTALL)
+            if match is None:
+                raise APICompatibilityError('No login email form found')
+            # retrieve target url from form
+            target: str = match.groupdict()['formAction']
 
-        # Find all inputs and put those in formData dictionary
-        inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-        formData: Dict[str, str] = {}
-        for match in re.finditer(inputRegex, match.groupdict()['formContent']):
-            if match.groupdict()['name']:
-                formData[match.groupdict()['name']] = match.groupdict()['value']
-        if not all(x in ['_csrf', 'relayState', 'hmac', 'email'] for x in formData):
-            raise APICompatibilityError('Could not find all required input fields in login page')
+            # Find all inputs and put those in formData dictionary
+            inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
+            formData: Dict[str, str] = {}
+            for match in re.finditer(inputRegex, match.groupdict()['formContent']):
+                if match.groupdict()['name']:
+                    formData[match.groupdict()['name']] = match.groupdict()['value']
+            if not all(x in ['_csrf', 'relayState', 'hmac', 'email'] for x in formData):
+                raise APICompatibilityError('Could not find all required input fields in login page')
 
-        # Set email to the provided username
-        formData['email'] = self.username
+            # Set email to the provided username
+            formData['email'] = self.username
 
-        # build url from form action
-        login2Url: str = 'https://identity.vwgroup.io' + target
+            # build url from form action
+            login2Url: str = 'https://identity.vwgroup.io' + target
 
-        loginHeadersForm: CaseInsensitiveDict = self.DEFAULT_OPTIONS['loginHeaders']
-        loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
+            loginHeadersForm: CaseInsensitiveDict = self.DEFAULT_OPTIONS['loginHeaders']
+            loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
 
-        # Post form content and retrieve credentials page
-        login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
-        if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
-            raise APICompatibilityError('Retrieving credentials page was not successfull,'
-                                        f' status code: {login2Response.status_code}')
+            # Post form content and retrieve credentials page
+            login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
+            if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
+                raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                                            f' status code: {login2Response.status_code}')
 
-        # Find credentials form on page to obtain inputs
-        credentialsFormRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
-            r'(?P<formContent>.+?(?=</form>))</form>'
-        match = re.search(credentialsFormRegex, login2Response.text, flags=re.DOTALL)
-        if match is None:
-            formErrorRegex = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
-                r'(?P<errorMessage>.+?(?=</span>))</span>.*</div>'
-            errorMatch: Optional[Match[str]] = re.search(formErrorRegex, login2Response.text, flags=re.DOTALL)
-            if errorMatch is not None:
-                raise AuthentificationError(errorMatch.groupdict()['errorMessage'])
+            # Find credentials form on page to obtain inputs
+            credentialsFormRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
+                r'(?P<formContent>.+?(?=</form>))</form>'
+            match = re.search(credentialsFormRegex, login2Response.text, flags=re.DOTALL)
+            if match is None:
+                formErrorRegex = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
+                    r'(?P<errorMessage>.+?(?=</span>))</span>.*</div>'
+                errorMatch: Optional[Match[str]] = re.search(formErrorRegex, login2Response.text, flags=re.DOTALL)
+                if errorMatch is not None:
+                    raise AuthentificationError(errorMatch.groupdict()['errorMessage'])
 
-            accountNotFoundRegex = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
-                r'(?P<errorMessage>.+?(?=</div>))</div>.*</div>.*</div>'
-            errorMatch = re.search(accountNotFoundRegex, login2Response.text, flags=re.DOTALL)
-            if errorMatch is not None:
-                errorMessage: str = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
-                raise AuthentificationError(errorMessage)
-            raise APICompatibilityError('No credentials form found')
-        # retrieve target url from form
-        target = match.groupdict()['formAction']
+                accountNotFoundRegex = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
+                    r'(?P<errorMessage>.+?(?=</div>))</div>.*</div>.*</div>'
+                errorMatch = re.search(accountNotFoundRegex, login2Response.text, flags=re.DOTALL)
+                if errorMatch is not None:
+                    errorMessage: str = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
+                    raise AuthentificationError(errorMessage)
+                raise APICompatibilityError('No credentials form found')
+            # retrieve target url from form
+            target = match.groupdict()['formAction']
 
-        # Find all inputs and put those in formData dictionary
-        input2Regex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-        form2Data: Dict[str, str] = {}
-        for match in re.finditer(input2Regex, match.groupdict()['formContent']):
-            if match.groupdict()['name']:
-                form2Data[match.groupdict()['name']] = match.groupdict()['value']
-        if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
-            raise APICompatibilityError('Could not find all required input fields in login page')
-        form2Data['password'] = self.password
+            # Find all inputs and put those in formData dictionary
+            input2Regex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
+            form2Data: Dict[str, str] = {}
+            for match in re.finditer(input2Regex, match.groupdict()['formContent']):
+                if match.groupdict()['name']:
+                    form2Data[match.groupdict()['name']] = match.groupdict()['value']
+            if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
+                raise APICompatibilityError('Could not find all required input fields in login page')
+            form2Data['password'] = self.password
 
-        # build url from form action
-        login3Url: str = 'https://identity.vwgroup.io' + target
+            # build url from form action
+            login3Url: str = 'https://identity.vwgroup.io' + target
 
-        # Post form content and retrieve userId in forwarding Location
-        login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
-        if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
-            raise APICompatibilityError('Forwarding expected (status code 302),'
-                                        f' but got status code {login3Response.status_code}')
-        if 'Location' not in login3Response.headers:
-            raise APICompatibilityError('No url for forwarding in response headers')
+            # Post form content and retrieve userId in forwarding Location
+            login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
+            if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
+                raise APICompatibilityError('Forwarding expected (status code 302),'
+                                            f' but got status code {login3Response.status_code}')
+            if 'Location' not in login3Response.headers:
+                raise APICompatibilityError('No url for forwarding in response headers')
 
-        # Parse parametes from forwarding url
-        params: Dict[str, str] = dict(parse.parse_qsl(parse.urlsplit(login3Response.headers['Location']).query))
+            # Parse parametes from forwarding url
+            params: Dict[str, str] = dict(parse.parse_qsl(parse.urlsplit(login3Response.headers['Location']).query))
 
-        # Check if error
-        if 'error' in params and params['error']:
-            errorMessages: Dict[str, str] = {
-                'login.errors.password_invalid': 'Password is invalid',
-                'login.error.throttled': 'Login throttled, probably too many wrong logins. You have to wait some'
-                                         ' minutes until a new login attempt is possible'
-            }
-            if params['error'] in errorMessages:
-                error = errorMessages[params['error']]
-            else:
-                error = params['error']
-            raise AuthentificationError(error)
+            # Check if error
+            if 'error' in params and params['error']:
+                errorMessages: Dict[str, str] = {
+                    'login.errors.password_invalid': 'Password is invalid',
+                    'login.error.throttled': 'Login throttled, probably too many wrong logins. You have to wait some'
+                                             ' minutes until a new login attempt is possible'
+                }
+                if params['error'] in errorMessages:
+                    error = errorMessages[params['error']]
+                else:
+                    error = params['error']
+                raise AuthentificationError(error)
 
-        # Check for user id
-        if 'userId' not in params or not params['userId']:
-            if 'updated' in params and params['updated'] == 'dataprivacy':
-                raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
-            raise APICompatibilityError('No user id provided')
-        self.__userId = params['userId']  # pylint: disable=unused-private-member
+            # Check for user id
+            if 'userId' not in params or not params['userId']:
+                if 'updated' in params and params['updated'] == 'dataprivacy':
+                    raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
+                raise APICompatibilityError('No user id provided')
+            self.__userId = params['userId']  # pylint: disable=unused-private-member
 
-        # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
-        afterLoginUrl: str = login3Response.headers['Location']
-        consentURL: Optional[str] = None
-        while True:
-            if 'consent' in afterLoginUrl:
-                consentURL = afterLoginUrl
-            afterLoginResponse = self.__session.get(
-                afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+            # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
+            afterLoginUrl: str = login3Response.headers['Location']
+            consentURL: Optional[str] = None
+            while True:
+                if 'consent' in afterLoginUrl:
+                    consentURL = afterLoginUrl
+                afterLoginResponse = self.__session.get(
+                    afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
 
-            if 'Location' not in afterLoginResponse.headers:
-                if consentURL is not None:
-                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
-                                                f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
-                raise APICompatibilityError('No Location for forwarding in response headers')
+                if 'Location' not in afterLoginResponse.headers:
+                    if consentURL is not None:
+                        raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
+                                                    f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
+                    raise APICompatibilityError('No Location for forwarding in response headers')
 
-            afterLoginUrl = afterLoginResponse.headers['Location']
+                afterLoginUrl = afterLoginResponse.headers['Location']
 
-            if afterLoginUrl.startswith('weconnect://authenticated#'):
-                break
+                if afterLoginUrl.startswith('weconnect://authenticated#'):
+                    break
 
-        params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
+            params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
 
         if all(key in params for key in ('token_type', 'id_token', 'expires_in')):
             self.__token = {
