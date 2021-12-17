@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 - new plug states
 - new engine and car types
 
+### Changed
+- Only fetch parking position if the capability is enabled
+
 ## [0.27.2] - 2021-12-16
 - No changes, just a new version number for pypi
 

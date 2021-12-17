@@ -361,37 +361,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         # Controls
         self.controls.update()
 
-        data = None
-        cacheDate = None
-        url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-        if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
-            data, cacheDateString = self.weConnect.cache[url]
-            cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or self.weConnect.maxAge is None \
-                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
-            try:
-                statusResponse = self.weConnect.session.get(url, allow_redirects=False)
-                self.weConnect.recordElapsed(statusResponse.elapsed)
-            except exceptions.ConnectionError as connectionError:
-                self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
-                                           'Could not fetch parking position due to connection problem')
-                raise RetrievalError from connectionError
-            except exceptions.ChunkedEncodingError as chunkedEncodingError:
-                self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                           'Could not refresh token due to connection problem with chunked encoding')
-                raise RetrievalError from chunkedEncodingError
-            except exceptions.ReadTimeout as timeoutError:
-                self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
-                raise RetrievalError from timeoutError
-            except exceptions.RetryError as retryError:
-                raise RetrievalError from retryError
-            if statusResponse.status_code == codes['ok']:
-                data = statusResponse.json()
-                if self.weConnect.cache is not None:
-                    self.weConnect.cache[url] = (data, str(datetime.utcnow()))
-            elif statusResponse.status_code == codes['unauthorized']:
-                LOG.info('Server asks for new authorization')
-                self.weConnect.login()
+        if not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None):
+            data = None
+            cacheDate = None
+            url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
+            if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
+                data, cacheDateString = self.weConnect.cache[url]
+                cacheDate = datetime.fromisoformat(cacheDateString)
+            if data is None or self.weConnect.maxAge is None \
+                    or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAge))):
                 try:
                     statusResponse = self.weConnect.session.get(url, allow_redirects=False)
                     self.weConnect.recordElapsed(statusResponse.elapsed)
@@ -412,40 +390,63 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     data = statusResponse.json()
                     if self.weConnect.cache is not None:
                         self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                elif statusResponse.status_code == codes['unauthorized']:
+                    LOG.info('Server asks for new authorization')
+                    self.weConnect.login()
+                    try:
+                        statusResponse = self.weConnect.session.get(url, allow_redirects=False)
+                        self.weConnect.recordElapsed(statusResponse.elapsed)
+                    except exceptions.ConnectionError as connectionError:
+                        self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
+                                                   'Could not fetch parking position due to connection problem')
+                        raise RetrievalError from connectionError
+                    except exceptions.ChunkedEncodingError as chunkedEncodingError:
+                        self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                                   'Could not refresh token due to connection problem with chunked encoding')
+                        raise RetrievalError from chunkedEncodingError
+                    except exceptions.ReadTimeout as timeoutError:
+                        self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch parking position due to timeout')
+                        raise RetrievalError from timeoutError
+                    except exceptions.RetryError as retryError:
+                        raise RetrievalError from retryError
+                    if statusResponse.status_code == codes['ok']:
+                        data = statusResponse.json()
+                        if self.weConnect.cache is not None:
+                            self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                    else:
+                        self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
+                                                   'Could not fetch parking position due to server error')
+                        raise RetrievalError('Could not retrieve parking position even after re-authorization.'
+                                             f' Status Code was: {statusResponse.status_code}')
+                elif statusResponse.status_code == codes['bad_request'] \
+                        or statusResponse.status_code == codes['no_content'] \
+                        or statusResponse.status_code == codes['not_found'] \
+                        or statusResponse.status_code == codes['bad_gateway'] \
+                        or statusResponse.status_code == codes['forbidden']:
+                    try:
+                        data = statusResponse.json()
+                    except json.JSONDecodeError:
+                        data = None
                 else:
                     self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                                'Could not fetch parking position due to server error')
-                    raise RetrievalError('Could not retrieve parking position even after re-authorization.'
-                                         f' Status Code was: {statusResponse.status_code}')
-            elif statusResponse.status_code == codes['bad_request'] \
-                    or statusResponse.status_code == codes['no_content'] \
-                    or statusResponse.status_code == codes['not_found'] \
-                    or statusResponse.status_code == codes['bad_gateway'] \
-                    or statusResponse.status_code == codes['forbidden']:
-                try:
-                    data = statusResponse.json()
-                except json.JSONDecodeError:
-                    data = None
-            else:
-                self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
-                                           'Could not fetch parking position due to server error')
-                raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
+                    raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
 
-        if data is not None and 'data' in data:
-            if 'parkingPosition' in self.statuses:
-                self.statuses['parkingPosition'].update(fromDict=data['data'])
-            else:
-                self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                   parent=self.statuses,
-                                                                   statusId='parkingPosition',
-                                                                   fromDict=data['data'])
-        elif 'parkingPosition' in self.statuses:
-            parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
-            parkingPosition.latitude.enabled = False
-            parkingPosition.longitude.enabled = False
-            parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
-            parkingPosition.carCapturedTimestamp.enabled = False
-            parkingPosition.enabled = False
+            if data is not None and 'data' in data:
+                if 'parkingPosition' in self.statuses:
+                    self.statuses['parkingPosition'].update(fromDict=data['data'])
+                else:
+                    self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                       parent=self.statuses,
+                                                                       statusId='parkingPosition',
+                                                                       fromDict=data['data'])
+            elif 'parkingPosition' in self.statuses:
+                parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
+                parkingPosition.latitude.enabled = False
+                parkingPosition.longitude.enabled = False
+                parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+                parkingPosition.carCapturedTimestamp.enabled = False
+                parkingPosition.enabled = False
 
         # error handling
         if data is not None and 'error' in data and data['error']:
