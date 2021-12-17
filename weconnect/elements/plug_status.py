@@ -66,9 +66,13 @@ class PlugStatus(GenericStatus):
     class PlugConnectionState(Enum,):
         CONNECTED = 'connected'
         DISCONNECTED = 'disconnected'
+        INVALID = 'invalid'
+        UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown unlock plug state'
 
     class PlugLockState(Enum,):
         LOCKED = 'locked'
         UNLOCKED = 'unlocked'
+        INVALID = 'invalid'
+        UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown unlock plug state'
