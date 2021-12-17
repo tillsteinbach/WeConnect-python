@@ -46,4 +46,9 @@ class LVBatteryStatus(GenericStatus):
 
     class BatterySupport(Enum,):
         NOT_ALLOWED = 'notAllowed'
+        PENDING_DISABLED = 'pendingDisable'
+        DISABLED = 'disabled'
+        PENDING_ENABLED = 'pendingEnable'
+        ENABLED = 'enabled'
+        INVALID = 'invalid'
         UNKNOWN = 'unknown battery support'

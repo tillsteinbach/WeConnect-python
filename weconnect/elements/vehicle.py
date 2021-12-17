@@ -887,9 +887,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             UNKNOWN = 'UNKNOWN'
 
         class EnrollmentStatus(Enum,):
+            STARTED = 'STARTED'
             NOT_STARTED = 'NOT_STARTED'
             COMPLETED = 'COMPLETED'
             GDC_MISSING = 'GDC_MISSING'
+            INACTIVE = 'INACTIVE'
             UNKNOWN = 'UNKNOWN'
 
         class UserRoleStatus(Enum,):

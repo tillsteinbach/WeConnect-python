@@ -60,6 +60,10 @@ class ChargeMode(GenericStatus):
 
     class ChargeModeEnum(Enum,):
         MANUAL = 'manual'
+        TIMER = 'timer'
+        ONLY_OWN_CURRENT = 'onlyOwnCurrent'
+        PREFERRED_CHARGING_TIMES = 'preferredChargingTimes'
+        TIMER_CHARGING_WITH_CLIMATISATION = 'timerChargingWithClimatisation'
         INVALID = 'invalid'
         UNKNOWN = 'unknown charge mode'
 

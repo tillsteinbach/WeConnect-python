@@ -101,6 +101,7 @@ class ChargingStatus(GenericStatus):
         OFF = 'off'
         READY_FOR_CHARGING = 'readyForCharging'
         NOT_READY_FOR_CHARGING = 'notReadyForCharging'
+        CONSERVATION = 'conservation'
         CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING = 'chargePurposeReachedAndNotConservationCharging'
         CHARGE_PURPOSE_REACHED_CONSERVATION = 'chargePurposeReachedAndConservation'
         CHARGING = 'charging'
