@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - decoding of capability status
+- new charge modes
 
 ## [0.27.2] - 2021-12-16
 - No changes, just a new version number for pypi

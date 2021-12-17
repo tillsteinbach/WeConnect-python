@@ -100,6 +100,7 @@ class ChargingStatus(GenericStatus):
     class ChargingState(Enum,):
         OFF = 'off'
         READY_FOR_CHARGING = 'readyForCharging'
+        NOT_READY_FOR_CHARGING = 'notReadyForCharging'
         CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING = 'chargePurposeReachedAndNotConservationCharging'
         CHARGE_PURPOSE_REACHED_CONSERVATION = 'chargePurposeReachedAndConservation'
         CHARGING = 'charging'
@@ -110,4 +111,8 @@ class ChargingStatus(GenericStatus):
         MANUAL = 'manual'
         INVALID = 'invalid'
         OFF = 'off'
+        TIMER = 'timer'
+        ONLY_OWN_CURRENT = 'onlyOwnCurrent'
+        PREFERRED_CHARGING_TIMES = 'preferredChargingTimes'
+        TIMER_CHARGING_WITH_CLIMATISATION = 'timerChargingWithClimatisation'
         UNKNOWN = 'unknown charge mode'
