@@ -133,10 +133,18 @@ class RangeStatus(GenericStatus):
         class EngineType(Enum,):
             GASOLINE = 'gasoline'
             ELECTRIC = 'electric'
-            UNKNOWN = 'unknown open state'
+            PETROL = 'petrol'
+            CNG = 'cng'
+            LPG = 'lpg'
+            INVALID = 'invalid'
+            UNKNOWN = 'unknown engine type'
 
     class CarType(Enum,):
         ELECTRIC = 'electric'
         HYBRID = 'hybrid'
         GASOLINE = 'gasoline'
-        UNKNOWN = 'unknown open state'
+        PETROL = 'petrol'
+        CNG = 'cng'
+        LPG = 'lpg'
+        INVALID = 'invalid'
+        UNKNOWN = 'unknown car type'
