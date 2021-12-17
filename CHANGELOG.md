@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Added
+- decoding of capability status
 
 ## [0.27.2] - 2021-12-16
 - No changes, just a new version number for pypi

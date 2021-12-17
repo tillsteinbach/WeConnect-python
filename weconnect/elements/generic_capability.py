@@ -1,3 +1,4 @@
+from enum import IntEnum
 import logging
 from datetime import datetime
 
@@ -36,7 +37,14 @@ class GenericCapability(AddressableObject):
             self.id.enabled = False
 
         if 'status' in fromDict:
-            self.status.setValueWithCarTime(fromDict['status'], lastUpdateFromCar=None, fromServer=True)
+            statuses = []
+            for status in fromDict['status']:
+                try:
+                    statuses.append(GenericCapability.Status(status))
+                except ValueError:
+                    statuses.append(GenericCapability.Status(GenericCapability.Status.UNKNOWN))
+                    LOG.warning('An unsupported status: %s was provided, please report this as a bug', status)
+            self.status.setValueWithCarTime(statuses, lastUpdateFromCar=None, fromServer=True)
         else:
             self.status.enabled = False
 
@@ -57,7 +65,33 @@ class GenericCapability(AddressableObject):
             LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self):
-        returnString = f'[{self.id.value}] Status: {self.status.value} disabling: {self.userDisablingAllowed.value}'
+        returnString = f'[{self.id.value}]'
+        if self.status.enabled and self.status.value is not None:
+            returnString += f' Status: {", ".join([status.name for status in self.status.value])}'
+        returnString += f' disabling: {self.userDisablingAllowed.value}'
         if self.expirationDate.enabled:
             returnString += f' (expires {self.expirationDate.value.isoformat()})'  # pylint: disable=no-member
         return returnString
+
+    class Status(IntEnum):
+        UNKNOWN = 0
+        DEACTIVATED = 1001
+        INITIALLY_DISABLED = 1003
+        DISABLED_BY_USER = 1004
+        OFFLINE_MODE = 1005
+        WORKSHOP_MODE = 1006
+        MISSING_OPERATION = 1007
+        MISSING_SERVICE = 1008
+        PLAY_PROTECTION = 1009
+        POWER_BUDGET_REACHED = 1010
+        DEEP_SLEEP = 1011
+        LOCATION_DATA_DISABLED = 1013
+        LICENSE_INACTIVE = 2001
+        LICENSE_EXPIRED = 2002
+        MISSING_LICENSE = 2003
+        USER_NOT_VERIFIED = 3001
+        TERMS_AND_CONDITIONS_NOT_ACCEPTED = 3002
+        INSUFFICIENT_RIGHTS = 3003
+        CONSENT_MISSING = 3004
+        LIMITED_FEATURE = 3005
+        STATUS_UNSUPPORTED = 4001
