@@ -288,6 +288,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                        'maintenanceStatus': MaintenanceStatus,
                                                        'rangeStatus': RangeStatus,
                                                        'capabilityStatus': CapabilityStatus,
+                                                       'capabilitiesStatus': GenericStatus,
                                                        'climatisationTimer': ClimatizationTimer,
                                                        'climatisationRequestStatus': GenericRequestStatus,
                                                        'chargingSettingsRequestStatus': GenericRequestStatus,

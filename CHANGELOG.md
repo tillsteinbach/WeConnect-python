@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - new charge modes
 - new plug states
 - new engine and car types
+- new status capabilitiesStatus
 
 ### Changed
 - Only fetch parking position if the capability is enabled
