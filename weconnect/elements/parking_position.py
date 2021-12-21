@@ -23,19 +23,29 @@ class ParkingPosition(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update ParkingPosition from dict')
 
-        if 'lat' in fromDict:
-            self.latitude.setValueWithCarTime(float(fromDict['lat']), lastUpdateFromCar=None, fromServer=True)
-        elif 'latitude' in fromDict:
-            self.latitude.setValueWithCarTime(float(fromDict['latitude']), lastUpdateFromCar=None, fromServer=True)
+        # rename dict key to match new structure
+        if 'data' in fromDict:
+            fromDict['value'] = fromDict['data']
+            del fromDict['data']
+
+        if 'value' in fromDict:
+            if 'lat' in fromDict['value']:
+                self.latitude.setValueWithCarTime(float(fromDict['value']['lat']), lastUpdateFromCar=None, fromServer=True)
+            elif 'latitude' in fromDict['value']:
+                self.latitude.setValueWithCarTime(float(fromDict['value']['latitude']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.latitude.enabled = False
+
+            if 'lon' in fromDict['value']:
+                self.longitude.setValueWithCarTime(float(fromDict['value']['lon']), lastUpdateFromCar=None, fromServer=True)
+            elif 'longitude' in fromDict['value']:
+                self.longitude.setValueWithCarTime(float(fromDict['value']['longitude']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.longitude.enabled = False
         else:
             self.latitude.enabled = False
-
-        if 'lon' in fromDict:
-            self.longitude.setValueWithCarTime(float(fromDict['lon']), lastUpdateFromCar=None, fromServer=True)
-        elif 'longitude' in fromDict:
-            self.longitude.setValueWithCarTime(float(fromDict['longitude']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.longitude.enabled = False
+            self.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['latitude', 'longitude', 'lat', 'lon']))
 

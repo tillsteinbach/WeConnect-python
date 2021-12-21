@@ -36,6 +36,12 @@ class GenericStatus(AddressableObject):
         if fromDict is not None:
             self.update(fromDict=fromDict)
 
+    def hasError(self) -> bool:
+        return self.error.enabled
+
+    def hasRequests(self) -> bool:
+        return len(self.requests) > 0
+
     def update(self, fromDict: Dict[str, Any], ignoreAttributes: Optional[List[str]] = None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update status from dict')
@@ -64,6 +70,7 @@ class GenericStatus(AddressableObject):
                 if self.carCapturedTimestamp.value is None:
                     self.carCapturedTimestamp.enabled = False
             else:
+                self.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
                 self.carCapturedTimestamp.enabled = False
 
             if isinstance(fromDict['value'], Dict):
@@ -72,6 +79,7 @@ class GenericStatus(AddressableObject):
                                    }.items():
                     LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
         else:
+            self.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
             self.carCapturedTimestamp.enabled = False
 
         if 'error' in fromDict:

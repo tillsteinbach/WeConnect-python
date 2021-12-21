@@ -86,6 +86,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
         self.update(fromDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
 
+    def statusExists(self, domain: str, status: str) -> bool:
+        if domain in self.domains and status in self.domains[domain]:
+            return True
+        return False
+
     def update(  # noqa: C901  # pylint: disable=too-many-branches
         self,
         fromDict: Dict[str, Any] = None,
@@ -432,40 +437,16 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                'Could not fetch parking position due to server error')
                     raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
 
-            if data is not None and 'data' in data:
+            if data is not None:
                 if 'parking' not in self.domains:
                     self.domains['parking'] = AddressableDict(localAddress='parking', parent=self)
                 if 'parkingPosition' in self.domains['parking']:
-                    self.domains['parking']['parkingPosition'].update(fromDict=data['data'])
+                    self.domains['parking']['parkingPosition'].update(fromDict=data)
                 else:
                     self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
                                                                                  parent=self.domains['parking'],
                                                                                  statusId='parkingPosition',
-                                                                                 fromDict=data['data'])
-            elif 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
-                parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
-                parkingPosition.latitude.enabled = False
-                parkingPosition.longitude.enabled = False
-                parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
-                parkingPosition.carCapturedTimestamp.enabled = False
-                parkingPosition.enabled = False
-
-        # # error handling
-        if data is not None and 'error' in data and data['error']:
-            if isinstance(data['error'], Dict):
-                if 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
-                    self.domains['parking']['parkingPosition'].updateError(fromDict=data['error'])
-                else:
-                    self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                                 parent=self.self.domains['parking'],
-                                                                                 statusId='parkingPosition',
-                                                                                 fromDict=None)
-                    self.domains['parking']['parkingPosition'].updateError(fromDict=data['error'])
-            else:
-                raise RetrievalError(data['error'])
-        else:
-            if 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
-                self.domains['parking']['parkingPosition'].error.reset()
+                                                                                 fromDict=data)
 
     def updatePictures(self) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
