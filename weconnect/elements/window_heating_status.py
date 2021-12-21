@@ -23,18 +23,22 @@ class WindowHeatingStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update window heating status from dict')
 
-        if 'windowHeatingStatus' in fromDict and fromDict['windowHeatingStatus'] is not None:
-            for windowDict in fromDict['windowHeatingStatus']:
-                if 'windowLocation' in windowDict:
-                    if windowDict['windowLocation'] in self.windows:
-                        self.windows[windowDict['windowLocation']].update(fromDict=windowDict)
-                    else:
-                        self.windows[windowDict['windowLocation']] = WindowHeatingStatus.Window(
-                            fromDict=windowDict, parent=self.windows)
-            for windowName in [windowName for windowName in self.windows.keys()
-                               if windowName not in [window['windowLocation']
-                               for window in fromDict['windowHeatingStatus'] if 'windowLocation' in window]]:
-                del self.windows[windowName]
+        if 'value' in fromDict:
+            if 'windowHeatingStatus' in fromDict['value'] and fromDict['value']['windowHeatingStatus'] is not None:
+                for windowDict in fromDict['value']['windowHeatingStatus']:
+                    if 'windowLocation' in windowDict:
+                        if windowDict['windowLocation'] in self.windows:
+                            self.windows[windowDict['windowLocation']].update(fromDict=windowDict)
+                        else:
+                            self.windows[windowDict['windowLocation']] = WindowHeatingStatus.Window(
+                                fromDict=windowDict, parent=self.windows)
+                for windowName in [windowName for windowName in self.windows.keys()
+                                   if windowName not in [window['windowLocation']
+                                   for window in fromDict['value']['windowHeatingStatus'] if 'windowLocation' in window]]:
+                    del self.windows[windowName]
+            else:
+                self.windows.clear()
+                self.windows.enabled = False
         else:
             self.windows.clear()
             self.windows.enabled = False

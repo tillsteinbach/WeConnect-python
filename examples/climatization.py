@@ -25,10 +25,12 @@ def main():
 
     for vin, vehicle in weConnect.vehicles.items():
         if vin == args.vin:
-            if "climatisationStatus" in vehicle.statuses and vehicle.statuses["climatisationStatus"].enabled:
-                if vehicle.statuses["climatisationStatus"].climatisationState.enabled:
+            if "climatisation" in vehicle.domains \
+                    and "climatisationStatus" in vehicle.domains["climatisation"] \
+                    and vehicle.domains["climatisation"]["climatisationStatus"].enabled:
+                if vehicle.domains["climatisation"]["climatisationStatus"].climatisationState.enabled:
                     print('#  climatization status')
-                    print(vehicle.statuses["climatisationStatus"].climatisationState.value)
+                    print(vehicle.domains["climatisation"]["climatisationStatus"].climatisationState.value)
 
             if vehicle.controls.climatizationControl is not None and vehicle.controls.climatizationControl.enabled:
                 print('#  start climatization')

@@ -25,26 +25,31 @@ class ClimatizationTimer(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update climatization timer from dict')
 
-        if 'timers' in fromDict and fromDict['timers'] is not None:
-            for climatizationTimerDict in fromDict['timers']:
-                if 'id' in climatizationTimerDict:
-                    if climatizationTimerDict['id'] in self.timers:
-                        self.timers[climatizationTimerDict['id']].update(fromDict=climatizationTimerDict)
-                    else:
-                        self.timers[climatizationTimerDict['id']] = ClimatizationTimer.Timer(
-                            fromDict=climatizationTimerDict, parent=self.timers)
-            for timerId in [timerId for timerId in self.timers.keys()
-                            if timerId not in [timer['id']
-                            for timer in fromDict['timers'] if 'id' in timer]]:
-                del self.timers[timerId]
+        if 'value' in fromDict:
+            if 'timers' in fromDict['value'] and fromDict['value']['timers'] is not None:
+                for climatizationTimerDict in fromDict['value']['timers']:
+                    if 'id' in climatizationTimerDict:
+                        if climatizationTimerDict['id'] in self.timers:
+                            self.timers[climatizationTimerDict['id']].update(fromDict=climatizationTimerDict)
+                        else:
+                            self.timers[climatizationTimerDict['id']] = ClimatizationTimer.Timer(
+                                fromDict=climatizationTimerDict, parent=self.timers)
+                for timerId in [timerId for timerId in self.timers.keys()
+                                if timerId not in [timer['id']
+                                for timer in fromDict['value']['timers'] if 'id' in timer]]:
+                    del self.timers[timerId]
+            else:
+                self.timers.clear()
+                self.timers.enabled = False
+
+            if 'timeInCar' in fromDict['value']:
+                self.timeInCar.setValueWithCarTime(robustTimeParse(
+                    fromDict['value']['timeInCar']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.timeInCar.enabled = False
         else:
             self.timers.clear()
             self.timers.enabled = False
-
-        if 'timeInCar' in fromDict:
-            self.timeInCar.setValueWithCarTime(robustTimeParse(
-                fromDict['timeInCar']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.timeInCar.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['timers', 'timeInCar']))

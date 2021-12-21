@@ -25,42 +25,49 @@ class AccessStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update access status from dict')
 
-        if 'overallStatus' in fromDict and fromDict['overallStatus']:
-            try:
-                self.overallStatus.setValueWithCarTime(
-                    AccessStatus.OverallState(fromDict['overallStatus']), lastUpdateFromCar=None, fromServer=True)
-            except ValueError:
-                self.overallStatus.setValueWithCarTime(AccessStatus.OverallState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported overallStatus: %s was provided, please report this as a bug', fromDict['overallStatus'])
+        if 'value' in fromDict:
+            if 'overallStatus' in fromDict and fromDict['value']['overallStatus']:
+                try:
+                    self.overallStatus.setValueWithCarTime(
+                        AccessStatus.OverallState(fromDict['value']['overallStatus']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.overallStatus.setValueWithCarTime(AccessStatus.OverallState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported overallStatus: %s was provided, please report this as a bug', fromDict['value']['overallStatus'])
+            else:
+                self.overallStatus.enabled = False
+
+            if 'doors' in fromDict['value'] and fromDict['value']['doors'] is not None:
+                for doorDict in fromDict['value']['doors']:
+                    if 'name' in doorDict:
+                        if doorDict['name'] in self.doors:
+                            self.doors[doorDict['name']].update(fromDict=doorDict)
+                        else:
+                            self.doors[doorDict['name']] = AccessStatus.Door(fromDict=doorDict, parent=self.doors)
+                for doorName in [doorName for doorName in self.doors.keys()
+                                 if doorName not in [door['name'] for door in fromDict['value']['doors'] if 'name' in door]]:
+                    del self.doors[doorName]
+            else:
+                self.doors.clear()
+                self.doors.enabled = False
+
+            if 'windows' in fromDict['value'] and fromDict['value']['windows'] is not None:
+                for windowDict in fromDict['value']['windows']:
+                    if 'name' in windowDict:
+                        if windowDict['name'] in self.windows:
+                            self.windows[windowDict['name']].update(fromDict=windowDict)
+                        else:
+                            self.windows[windowDict['name']] = AccessStatus.Window(fromDict=windowDict, parent=self.windows)
+                for windowName in [windowName for windowName in self.windows.keys()
+                                   if windowName not in [window['name']
+                                   for window in fromDict['value']['windows'] if 'name' in window]]:
+                    del self.doors[windowName]
+            else:
+                self.windows.clear()
+                self.windows.enabled = False
         else:
             self.overallStatus.enabled = False
-
-        if 'doors' in fromDict and fromDict['doors'] is not None:
-            for doorDict in fromDict['doors']:
-                if 'name' in doorDict:
-                    if doorDict['name'] in self.doors:
-                        self.doors[doorDict['name']].update(fromDict=doorDict)
-                    else:
-                        self.doors[doorDict['name']] = AccessStatus.Door(fromDict=doorDict, parent=self.doors)
-            for doorName in [doorName for doorName in self.doors.keys()
-                             if doorName not in [door['name'] for door in fromDict['doors'] if 'name' in door]]:
-                del self.doors[doorName]
-        else:
             self.doors.clear()
             self.doors.enabled = False
-
-        if 'windows' in fromDict and fromDict['windows'] is not None:
-            for windowDict in fromDict['windows']:
-                if 'name' in windowDict:
-                    if windowDict['name'] in self.windows:
-                        self.windows[windowDict['name']].update(fromDict=windowDict)
-                    else:
-                        self.windows[windowDict['name']] = AccessStatus.Window(fromDict=windowDict, parent=self.windows)
-            for windowName in [windowName for windowName in self.windows.keys()
-                               if windowName not in [window['name']
-                               for window in fromDict['windows'] if 'name' in window]]:
-                del self.doors[windowName]
-        else:
             self.windows.clear()
             self.windows.enabled = False
 
@@ -68,13 +75,16 @@ class AccessStatus(GenericStatus):
 
     def __str__(self):
         string = super().__str__()
-        string += f'\n\tOverall Status: {self.overallStatus.value.value}'
-        string += f'\n\tDoors: {len(self.doors)} items'
-        for door in self.doors.values():
-            string += f'\n\t\t{door}'
-        string += f'\n\tWindows: {len(self.windows)} items'
-        for window in self.windows.values():
-            string += f'\n\t\t{window}'
+        if self.overallStatus is not None and self.overallStatus.enabled:
+            string += f'\n\tOverall Status: {self.overallStatus.value.value}'
+        if len(self.doors) > 0:
+            string += f'\n\tDoors: {len(self.doors)} items'
+            for door in self.doors.values():
+                string += f'\n\t\t{door}'
+        if len(self.windows) > 0:
+            string += f'\n\tWindows: {len(self.windows)} items'
+            for window in self.windows.values():
+                string += f'\n\t\t{window}'
         return string
 
     class OverallState(Enum):

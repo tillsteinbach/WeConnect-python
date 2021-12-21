@@ -23,16 +23,20 @@ class LightsStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update light status from dict')
 
-        if 'lights' in fromDict and fromDict['lights'] is not None:
-            for lightDict in fromDict['lights']:
-                if 'name' in lightDict:
-                    if lightDict['name'] in self.lights:
-                        self.lights[lightDict['name']].update(fromDict=lightDict)
-                    else:
-                        self.lights[lightDict['name']] = LightsStatus.Light(fromDict=lightDict, parent=self.lights)
-            for lightName in [lightName for lightName in self.lights.keys()
-                              if lightName not in [light['name'] for light in fromDict['lights'] if 'name' in light]]:
-                del self.lights[lightName]
+        if 'value' in fromDict:
+            if 'lights' in fromDict['value'] and fromDict['value']['lights'] is not None:
+                for lightDict in fromDict['value']['lights']:
+                    if 'name' in lightDict:
+                        if lightDict['name'] in self.lights:
+                            self.lights[lightDict['name']].update(fromDict=lightDict)
+                        else:
+                            self.lights[lightDict['name']] = LightsStatus.Light(fromDict=lightDict, parent=self.lights)
+                for lightName in [lightName for lightName in self.lights.keys()
+                                  if lightName not in [light['name'] for light in fromDict['value']['lights'] if 'name' in light]]:
+                    del self.lights[lightName]
+            else:
+                self.lights.clear()
+                self.lights.enabled = False
         else:
             self.lights.clear()
             self.lights.enabled = False
@@ -41,9 +45,10 @@ class LightsStatus(GenericStatus):
 
     def __str__(self):
         string = super().__str__()
-        string += f'\n\tLights: {len(self.lights)} items'
-        for light in self.lights.values():
-            string += f'\n\t\t{light}'
+        if len(self.lights) > 0:
+            string += f'\n\tLights: {len(self.lights)} items'
+            for light in self.lights.values():
+                string += f'\n\t\t{light}'
         return string
 
     class Light(AddressableObject):

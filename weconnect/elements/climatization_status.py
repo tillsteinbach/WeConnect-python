@@ -26,23 +26,27 @@ class ClimatizationStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Climatization status from dict')
 
-        if 'remainingClimatisationTime_min' in fromDict:
-            self.remainingClimatisationTime_min.setValueWithCarTime(int(fromDict['remainingClimatisationTime_min']),
-                                                                    lastUpdateFromCar=None, fromServer=True)
+        if 'value' in fromDict:
+            if 'remainingClimatisationTime_min' in fromDict['value']:
+                self.remainingClimatisationTime_min.setValueWithCarTime(int(fromDict['value']['remainingClimatisationTime_min']),
+                                                                        lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.remainingClimatisationTime_min.enabled = False
+
+            if 'climatisationState' in fromDict['value'] and fromDict['value']['climatisationState']:
+                try:
+                    self.climatisationState.setValueWithCarTime(
+                        ClimatizationStatus.ClimatizationState(fromDict['value']['climatisationState']), lastUpdateFromCar=None,
+                        fromServer=True)
+                except ValueError:
+                    self.climatisationState.setValueWithCarTime(ClimatizationStatus.ClimatizationState.UNKNOWN,
+                                                                lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported climatisationState: %s was provided,'
+                                ' please report this as a bug', fromDict['value']['climatisationState'])
+            else:
+                self.climatisationState.enabled = False
         else:
             self.remainingClimatisationTime_min.enabled = False
-
-        if 'climatisationState' in fromDict and fromDict['climatisationState']:
-            try:
-                self.climatisationState.setValueWithCarTime(
-                    ClimatizationStatus.ClimatizationState(fromDict['climatisationState']), lastUpdateFromCar=None,
-                    fromServer=True)
-            except ValueError:
-                self.climatisationState.setValueWithCarTime(ClimatizationStatus.ClimatizationState.UNKNOWN,
-                                                            lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported climatisationState: %s was provided,'
-                            ' please report this as a bug', fromDict['climatisationState'])
-        else:
             self.climatisationState.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(

@@ -24,14 +24,17 @@ class LVBatteryStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update lv battery status from dict')
 
-        if 'batterySupport' in fromDict and fromDict['batterySupport']:
-            try:
-                self.batterySupport.setValueWithCarTime(
-                    LVBatteryStatus.BatterySupport(fromDict['batterySupport']), lastUpdateFromCar=None,
-                    fromServer=True)
-            except ValueError:
-                self.batterySupport.setValueWithCarTime(LVBatteryStatus.BatterySupport.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported batterySupport: %s was provided, please report this as a bug', fromDict['batterySupport'])
+        if 'value' in fromDict:
+            if 'batterySupport' in fromDict['value'] and fromDict['value']['batterySupport']:
+                try:
+                    self.batterySupport.setValueWithCarTime(
+                        LVBatteryStatus.BatterySupport(fromDict['value']['batterySupport']), lastUpdateFromCar=None,
+                        fromServer=True)
+                except ValueError:
+                    self.batterySupport.setValueWithCarTime(LVBatteryStatus.BatterySupport.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported batterySupport: %s was provided, please report this as a bug', fromDict['value']['batterySupport'])
+            else:
+                self.batterySupport.enabled = False
         else:
             self.batterySupport.enabled = False
 

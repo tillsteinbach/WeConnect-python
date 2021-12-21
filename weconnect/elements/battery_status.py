@@ -25,21 +25,25 @@ class BatteryStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update battery status from dict')
 
-        if 'currentSOC_pct' in fromDict:
-            self.currentSOC_pct.setValueWithCarTime(
-                int(fromDict['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
+        if 'value' in fromDict:
+            if 'currentSOC_pct' in fromDict['value']:
+                self.currentSOC_pct.setValueWithCarTime(
+                    int(fromDict['value']['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.currentSOC_pct.enabled = False
+
+            if 'cruisingRangeElectric_km' in fromDict['value']:
+                cruisingRangeElectric_km = int(fromDict['value']['cruisingRangeElectric_km'])
+                if self.fixAPI and cruisingRangeElectric_km == 0x3FFF:
+                    cruisingRangeElectric_km = None
+                    LOG.info('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
+                             ' of 16383 km.', self.getGlobalAddress())
+                self.cruisingRangeElectric_km.setValueWithCarTime(
+                    cruisingRangeElectric_km, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.cruisingRangeElectric_km.enabled = False
         else:
             self.currentSOC_pct.enabled = False
-
-        if 'cruisingRangeElectric_km' in fromDict:
-            cruisingRangeElectric_km = int(fromDict['cruisingRangeElectric_km'])
-            if self.fixAPI and cruisingRangeElectric_km == 0x3FFF:
-                cruisingRangeElectric_km = None
-                LOG.info('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
-                         ' of 16383 km.', self.getGlobalAddress())
-            self.cruisingRangeElectric_km.setValueWithCarTime(
-                cruisingRangeElectric_km, lastUpdateFromCar=None, fromServer=True)
-        else:
             self.cruisingRangeElectric_km.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(

@@ -7,6 +7,7 @@ import base64
 import io
 import logging
 import json
+from weconnect.elements.generic_settings import GenericSettings
 from weconnect.elements.generic_status import GenericStatus
 
 from requests import Response, exceptions, codes
@@ -37,6 +38,7 @@ from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.elements.range_measurements import RangeMeasurements
 from weconnect.elements.readiness_status import ReadinessStatus
+from weconnect.elements.charging_profiles import ChargingProfiles
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
@@ -72,7 +74,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                  valueType=Vehicle.DevicePlatform)
         self.nickname: AddressableAttribute[str] = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
-        self.statuses: AddressableDict[str, GenericStatus] = AddressableDict(localAddress='status', parent=self)
+        self.domains: AddressableDict[str, AddressableDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
         self.images: AddressableAttribute[Dict[str, str]] = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
         self.coUsers: AddressableList[Vehicle.User] = AddressableList(localAddress='coUsers', parent=self)
         self.controls: Controls = Controls(localAddress='controls', vehicle=self, parent=self)
@@ -210,11 +212,69 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             self.updatePictures()
 
     def updateStatus(self, updateCapabilities: bool = True, force: bool = False):  # noqa: C901 # pylint: disable=too-many-branches
+        jobKeyClassMap: Dict[str, Dict[str, Type[GenericStatus]]] = {
+            'access': {
+                'accessStatus': AccessStatus
+            },
+            'automation': {
+                'climatisationTimer': ClimatizationTimer,
+                'climatisationTimersRequestStatus': GenericRequestStatus,
+                'chargingProfiles': ChargingProfiles,
+            },
+            'userCapabilities': {
+                'capabilitiesStatus': CapabilityStatus,
+            },
+            'charging': {
+                'batteryStatus': BatteryStatus,
+                'chargingStatus': ChargingStatus,
+                'chargingSettings': ChargingSettings,
+                'chargeMode': ChargeMode,
+                'plugStatus': PlugStatus,
+                'chargingRequestStatus': GenericRequestStatus,
+                'chargingSettingsRequestStatus': GenericRequestStatus,
+                'chargingCareSettings': GenericSettings,
+            },
+            'climatisation': {
+                'climatisationStatus': ClimatizationStatus,
+                'climatisationSettings': ClimatizationSettings,
+                'windowHeatingStatus': WindowHeatingStatus,
+                'climatisationRequestStatus': GenericRequestStatus,
+                'climatisationSettingsRequestStatus': GenericRequestStatus,
+            },
+            'fuelStatus': {
+                'rangeStatus': RangeStatus,
+            },
+            'vehicleLights': {
+                'lightsStatus': LightsStatus,
+            },
+            'lvBattery': {
+                'lvBatteryStatus': LVBatteryStatus,
+            },
+            'readiness': {
+                'readinessStatus': ReadinessStatus,
+                'readinessBatterySupportStatus': GenericStatus,
+            },
+            'maintenance': {  # todo: find right category
+                'maintenanceStatus': MaintenanceStatus,
+            },
+            'measurements': {
+                'rangeStatus': RangeMeasurements,
+                'odometerStatus': OdometerMeasurement,
+                'oilLevelStatus': GenericStatus,
+                'measurements': GenericStatus,
+            },
+            'batterySupport': {
+                'batterySupportStatus': GenericStatus,
+            }
+        }
         data: Optional[Dict[str, Any]] = None
         cacheDate: Optional[datetime] = None
         if self.vin.value is None:
             raise APIError('')
-        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/status'
+        jobs = list(jobKeyClassMap).copy()
+        if not updateCapabilities:
+            jobs.remove('userCapabilities')
+        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
         if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
@@ -274,90 +334,29 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             if self.weConnect.cache is not None:
                 self.weConnect.cache[url] = (data, str(datetime.utcnow()))
-        keyClassMap: Dict[str, Type[GenericStatus]] = {'accessStatus': AccessStatus,
-                                                       'batteryStatus': BatteryStatus,
-                                                       'lvBatteryStatus': LVBatteryStatus,
-                                                       'chargingStatus': ChargingStatus,
-                                                       'chargingSettings': ChargingSettings,
-                                                       'chargeMode': ChargeMode,
-                                                       'plugStatus': PlugStatus,
-                                                       'climatisationStatus': ClimatizationStatus,
-                                                       'climatisationSettings': ClimatizationSettings,
-                                                       'windowHeatingStatus': WindowHeatingStatus,
-                                                       'lightsStatus': LightsStatus,
-                                                       'maintenanceStatus': MaintenanceStatus,
-                                                       'rangeStatus': RangeStatus,
-                                                       'capabilityStatus': CapabilityStatus,
-                                                       'capabilitiesStatus': GenericStatus,
-                                                       'climatisationTimer': ClimatizationTimer,
-                                                       'climatisationRequestStatus': GenericRequestStatus,
-                                                       'chargingSettingsRequestStatus': GenericRequestStatus,
-                                                       'climatisationSettingsRequestStatus': GenericRequestStatus,
-                                                       'climatisationTimersRequestStatus': GenericRequestStatus,
-                                                       'chargingRequestStatus': GenericRequestStatus,
-                                                       'rangeMeasurements': RangeMeasurements,
-                                                       'odometerMeasurement': OdometerMeasurement,
-                                                       'oilLevelStatus': GenericStatus,
-                                                       'measurements': GenericStatus,
-                                                       'readinessBatterySupportStatus': GenericStatus,
-                                                       'readinessStatus': ReadinessStatus
-                                                       }
-        if data is not None and 'data' in data and data['data']:
-            for key, className in keyClassMap.items():
-                if key == 'capabilityStatus' and not updateCapabilities:
-                    continue
-                if key in data['data']:
-                    if key in self.statuses:
-                        LOG.debug('Status %s exists, updating it', key)
-                        self.statuses[key].update(fromDict=data['data'][key])
-                    else:
-                        LOG.debug('Status %s does not exist, creating it', key)
-                        self.statuses[key] = className(vehicle=self, parent=self.statuses, statusId=key,
-                                                       fromDict=data['data'][key], fixAPI=self.fixAPI)
 
-            # check that there is no additional status than the configured ones, except for "target" that we merge into
-            # the known ones
-            for key, value in {key: value for key, value in data['data'].items()
-                               if key not in list(keyClassMap.keys()) + ['target']}.items():
-                # TODO GenericStatus(parent=self.statuses, statusId=statusId, fromDict=statusDict)
-                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+        if data is not None:
+            for domain, keyClassMap in jobKeyClassMap.items():
+                if domain in data:
+                    if domain not in self.domains:
+                        self.domains[domain] = AddressableDict(localAddress=domain, parent=self)
+                    for key, className in keyClassMap.items():
+                        if key in data[domain]:
+                            if key in self.domains[domain]:
+                                LOG.debug('Status %s exists, updating it', key)
+                                self.domains[domain][key].update(fromDict=data[domain][key])
+                            else:
+                                LOG.debug('Status %s does not exist, creating it', key)
+                                self.domains[domain][key] = className(vehicle=self, parent=self.domains[domain], statusId=key,
+                                                                      fromDict=data[domain][key], fixAPI=self.fixAPI)
 
-            for status in self.statuses.values():
-                status.updateTarget(fromDict=None)
-            # target handling (we merge the target state into the statuses)
-            if 'target' in data['data']:
-                statusId: str
-                for statusId, target in data['data']['target'].items():
-                    if self.weConnect.fixAPI:
-                        statusAliasMap = {'climatisationTimersStatus': 'climatisationTimer'}
-                        statusId = statusAliasMap.get(statusId, statusId)
-                    if statusId in self.statuses:
-                        self.statuses[statusId].updateTarget(fromDict=target)
-                    else:
-                        LOG.warning('%s: got target %s with value %s for not existing status',
-                                    self.getGlobalAddress(), statusId, target)
-
-        # error handling
-        if data is not None and 'error' in data and data['error']:
-            if isinstance(data['error'], Dict):
-                error: Dict[str, Any]
-                for statusId, error in data['error'].items():
-                    if statusId in self.statuses:
-                        self.statuses[statusId].updateError(fromDict=error)
-                    elif statusId in keyClassMap:
-                        self.statuses[statusId] = keyClassMap[statusId](vehicle=self, parent=self.statuses, statusId=statusId,
-                                                                        fromDict=None, fixAPI=self.fixAPI)
-                        self.statuses[statusId].updateError(fromDict=error)
-                    else:
-                        LOG.warning('%s: Unknown attribute %s with value %s in error section', self.getGlobalAddress(), statusId, error)
-                for statusId, status in {statusId: status for statusId, status in self.statuses.items()
-                                         if statusId not in data['error']}.items():
-                    status.error.reset()
-            else:
-                raise RetrievalError(data['error'])
-        else:
-            for statusId, status in self.statuses.items():
-                status.error.reset()
+                    # check that there is no additional status than the configured ones, except for "target" that we merge into
+                    # the known ones
+                    for key, value in {key: value for key, value in data[domain].items() if key not in list(keyClassMap.keys())}.items():
+                        LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain)
+            # check that there is no additional domain than the configured ones
+            for key, value in {key: value for key, value in data.items() if key not in list(jobKeyClassMap.keys())}.items():
+                LOG.warning('%s: Unknown domain %s with value %s', self.getGlobalAddress(), key, value)
 
         # Controls
         self.controls.update()
@@ -434,37 +433,39 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     raise RetrievalError(f'Could not retrieve parking position. Status Code was: {statusResponse.status_code}')
 
             if data is not None and 'data' in data:
-                if 'parkingPosition' in self.statuses:
-                    self.statuses['parkingPosition'].update(fromDict=data['data'])
+                if 'parking' not in self.domains:
+                    self.domains['parking'] = AddressableDict(localAddress='parking', parent=self)
+                if 'parkingPosition' in self.domains['parking']:
+                    self.domains['parking']['parkingPosition'].update(fromDict=data['data'])
                 else:
-                    self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                       parent=self.statuses,
-                                                                       statusId='parkingPosition',
-                                                                       fromDict=data['data'])
-            elif 'parkingPosition' in self.statuses:
-                parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
+                    self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                                 parent=self.domains['parking'],
+                                                                                 statusId='parkingPosition',
+                                                                                 fromDict=data['data'])
+            elif 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
+                parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
                 parkingPosition.latitude.enabled = False
                 parkingPosition.longitude.enabled = False
                 parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
                 parkingPosition.carCapturedTimestamp.enabled = False
                 parkingPosition.enabled = False
 
-        # error handling
+        # # error handling
         if data is not None and 'error' in data and data['error']:
             if isinstance(data['error'], Dict):
-                if 'parkingPosition' in self.statuses:
-                    self.statuses['parkingPosition'].updateError(fromDict=data['error'])
+                if 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
+                    self.domains['parking']['parkingPosition'].updateError(fromDict=data['error'])
                 else:
-                    self.statuses['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                       parent=self.statuses,
-                                                                       statusId='parkingPosition',
-                                                                       fromDict=None)
-                    self.statuses['parkingPosition'].updateError(fromDict=data['error'])
+                    self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                                 parent=self.self.domains['parking'],
+                                                                                 statusId='parkingPosition',
+                                                                                 fromDict=None)
+                    self.domains['parking']['parkingPosition'].updateError(fromDict=data['error'])
             else:
                 raise RetrievalError(data['error'])
         else:
-            if 'parkingPosition' in self.statuses:
-                self.statuses['parkingPosition'].error.reset()
+            if 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
+                self.domains['parking']['parkingPosition'].error.reset()
 
     def updatePictures(self) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
@@ -616,8 +617,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             badges: Set[Vehicle.Badge] = set()
 
-            if 'accessStatus' in self.statuses:
-                accessStatus: AccessStatus = cast(AccessStatus, self.statuses['accessStatus'])
+            if 'access' in self.domains and 'accessStatus' in self.domains['access']:
+                accessStatus: AccessStatus = cast(AccessStatus, self.domains['access']['accessStatus'])
 
                 if accessStatus.overallStatus.enabled:
                     if accessStatus.overallStatus.value == AccessStatus.OverallState.SAFE:
@@ -668,8 +669,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         windowImage = self.__carImages[windowImageName].convert("RGBA")
                         img.paste(windowImage, (0, 0), windowImage)
 
-            if 'lightsStatus' in self.statuses:
-                lightsStatus: LightsStatus = cast(LightsStatus, self.statuses['lightsStatus'])
+            if 'vehicleLights' in self.domains and 'lightsStatus' in self.domains['vehicleLights']:
+                lightsStatus: LightsStatus = cast(LightsStatus, self.domains['vehicleLights']['lightsStatus'])
                 for name, light in lightsStatus.lights.items():
                     lightNameMap = {'frontLeft': 'door_left_front',
                                     'frontRight': 'door_right_front',
@@ -684,18 +685,18 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             lightImage = self.__carImages[lightImageName].convert("RGBA")
                             img.paste(lightImage, (0, 0), lightImage)
 
-            if 'chargingStatus' in self.statuses:
-                chargingStatus: ChargingStatus = cast(ChargingStatus, self.statuses['chargingStatus'])
+            if 'charging' in self.domains and 'chargingStatus' in self.domains['charging']:
+                chargingStatus: ChargingStatus = cast(ChargingStatus, self.domains['charging']['chargingStatus'])
                 if chargingStatus.chargingState.value == ChargingStatus.ChargingState.CHARGING:
                     badges.add(Vehicle.Badge.CHARGING)
 
-            if 'plugStatus' in self.statuses:
-                plugStatus: PlugStatus = cast(PlugStatus, self.statuses['plugStatus'])
+            if 'charging' in self.domains and 'plugStatus' in self.domains['charging']:
+                plugStatus: PlugStatus = cast(PlugStatus, self.domains['charging']['plugStatus'])
                 if plugStatus.plugConnectionState.value == PlugStatus.PlugConnectionState.CONNECTED:
                     badges.add(Vehicle.Badge.CONNECTED)
 
-            if 'climatisationStatus' in self.statuses:
-                climatisationStatus: ClimatizationStatus = cast(ClimatizationStatus, self.statuses['climatisationStatus'])
+            if 'climatisation' in self.domains and 'climatisationStatus' in self.domains['climatisation']:
+                climatisationStatus: ClimatizationStatus = cast(ClimatizationStatus, self.domains['climatisation']['climatisationStatus'])
                 if climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.COOLING:
                     badges.add(Vehicle.Badge.COOLING)
                 elif climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.HEATING:
@@ -703,8 +704,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 elif climatisationStatus.climatisationState.value == ClimatizationStatus.ClimatizationState.VENTILATION:
                     badges.add(Vehicle.Badge.VENTILATING)
 
-            if 'parkingPosition' in self.statuses:
-                parkingPosition: ParkingPosition = cast(ParkingPosition, self.statuses['parkingPosition'])
+            if 'parking' in self.domains and 'parkingPosition' in self.domains['parking']:
+                parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
                 if parkingPosition.latitude.enabled and parkingPosition.latitude.value is not None:
                     badges.add(Vehicle.Badge.PARKING)
 
@@ -797,11 +798,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             for capability in self.capabilities.values():
                 if capability.enabled:
                     returnString += ''.join(['\t' + line for line in str(capability).splitlines(True)]) + '\n'
-        if self.statuses.enabled:
-            returnString += f'Statuses: {len(self.statuses)} items\n'
-            for status in self.statuses.values():
-                if status.enabled:
-                    returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
+        if self.domains.enabled:
+            returnString += f'Domains: {len(self.domains)} items\n'
+            for domain in self.domains:
+                returnString += f'[{domain}] Elements: {len(self.domains[domain])} items\n'
+                for status in self.domains[domain].values():
+                    if status.enabled:
+                        returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
         return returnString
 
     class Badge(Enum):

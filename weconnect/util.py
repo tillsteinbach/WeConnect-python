@@ -46,3 +46,11 @@ def imgToASCIIArt(img: Image, columns: int = 0, mode: ascii_magic.Modes = ascii_
         columns = shutil.get_terminal_size()[0]
 
     return ascii_magic.from_image(cropped_image, columns=columns, mode=mode)
+
+
+def celsiusToKelvin(value):
+    return value + 273.15
+
+
+def farenheitToKelvin(value):
+    return 273.5 + ((value - 32.0) * (5.0 / 9.0))

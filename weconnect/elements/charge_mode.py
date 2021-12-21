@@ -26,35 +26,40 @@ class ChargeMode(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update ChargeMode status from dict')
 
-        if 'preferredChargeMode' in fromDict and fromDict['preferredChargeMode']:
-            try:
-                self.preferredChargeMode.setValueWithCarTime(
-                    ChargeMode.ChargeModeEnum(fromDict['preferredChargeMode']), lastUpdateFromCar=None,
-                    fromServer=True)
-            except ValueError:
-                self.preferredChargeMode.setValueWithCarTime(ChargeMode.ChargeModeEnum.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported preferredChargeMode: %s was provided, please report this as a bug', fromDict['preferredChargeMode'])
+        if 'value' in fromDict:
+            if 'preferredChargeMode' in fromDict['value'] and fromDict['value']['preferredChargeMode']:
+                try:
+                    self.preferredChargeMode.setValueWithCarTime(
+                        ChargeMode.ChargeModeEnum(fromDict['value']['preferredChargeMode']), lastUpdateFromCar=None,
+                        fromServer=True)
+                except ValueError:
+                    self.preferredChargeMode.setValueWithCarTime(ChargeMode.ChargeModeEnum.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported preferredChargeMode: %s was provided, please report this as a bug', fromDict['value']['preferredChargeMode'])
+            else:
+                self.preferredChargeMode.enabled = False
+
+            if 'availableChargeModes' in fromDict['value']:
+                if self.availableChargeModes is None:
+                    self.availableChargeModes = ChargeMode.ChargeModeList(localAddress='availableChargeModes', parent=self,
+                                                                          fromDict=fromDict['value']['availableChargeModes'])
+                else:
+                    self.availableChargeModes.update(fromDict=fromDict['value']['availableChargeModes'])
+            elif self.availableChargeModes is not None:
+                self.availableChargeModes.clear()
+                self.availableChargeModes.enabled = False
         else:
             self.preferredChargeMode.enabled = False
-
-        if 'availableChargeModes' in fromDict:
-            if self.availableChargeModes is None:
-                self.availableChargeModes = ChargeMode.ChargeModeList(localAddress='availableChargeModes', parent=self,
-                                                                      fromDict=fromDict['availableChargeModes'])
-            else:
-                self.availableChargeModes.update(fromDict=fromDict['availableChargeModes'])
-        elif self.availableChargeModes is not None:
+            self.availableChargeModes.clear()
             self.availableChargeModes.enabled = False
-            self.availableChargeModes = None
 
         super().update(fromDict=fromDict, ignoreAttributes=(
             ignoreAttributes + ['preferredChargeMode', 'availableChargeModes']))
 
     def __str__(self):
         string = super().__str__()
-        if self.preferredChargeMode.enabled:
+        if self.preferredChargeMode is not None and self.preferredChargeMode.enabled:
             string += f'\n\tPreferred charge mode: {self.preferredChargeMode.value.value}'  # pylint: disable=no-member
-        if self.availableChargeModes.enabled:
+        if self.availableChargeModes is not None and self.availableChargeModes.enabled:
             string += f'\n\tAvailable charge modes: {self.availableChargeModes}'
         return string
 

@@ -23,8 +23,11 @@ class OdometerMeasurement(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Odometer measurement from dict')
 
-        if 'odometer' in fromDict:
-            self.odometer.setValueWithCarTime(int(fromDict['odometer']), lastUpdateFromCar=None, fromServer=True)
+        if 'value' in fromDict:
+            if 'odometer' in fromDict['value']:
+                self.odometer.setValueWithCarTime(int(fromDict['value']['odometer']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.odometer.enabled = False
         else:
             self.odometer.enabled = False
 

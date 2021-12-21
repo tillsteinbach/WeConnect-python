@@ -26,29 +26,37 @@ class MaintenanceStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update maintenance status from dict')
 
-        if 'inspectionDue_days' in fromDict:
-            self.inspectionDue_days.setValueWithCarTime(int(fromDict['inspectionDue_days']), lastUpdateFromCar=None, fromServer=True)
+        if 'value' in fromDict:
+            if 'inspectionDue_days' in fromDict['value']:
+                self.inspectionDue_days.setValueWithCarTime(int(fromDict['value']['inspectionDue_days']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.inspectionDue_days.enabled = False
+
+            if 'inspectionDue_km' in fromDict['value']:
+                self.inspectionDue_km.setValueWithCarTime(int(fromDict['value']['inspectionDue_km']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.inspectionDue_km.enabled = False
+
+            if 'mileage_km' in fromDict['value']:
+                self.mileage_km.setValueWithCarTime(int(fromDict['value']['mileage_km']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.mileage_km.enabled = False
+
+            if 'oilServiceDue_days' in fromDict['value']:
+                self.oilServiceDue_days.setValueWithCarTime(int(fromDict['value']['oilServiceDue_days']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.oilServiceDue_days.enabled = False
+
+            if 'oilServiceDue_km' in fromDict['value']:
+                self.oilServiceDue_km.setValueWithCarTime(int(fromDict['value']['oilServiceDue_km']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.oilServiceDue_km.enabled = False
+
         else:
             self.inspectionDue_days.enabled = False
-
-        if 'inspectionDue_km' in fromDict:
-            self.inspectionDue_km.setValueWithCarTime(int(fromDict['inspectionDue_km']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.inspectionDue_km.enabled = False
-
-        if 'mileage_km' in fromDict:
-            self.mileage_km.setValueWithCarTime(int(fromDict['mileage_km']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.mileage_km.enabled = False
-
-        if 'oilServiceDue_days' in fromDict:
-            self.oilServiceDue_days.setValueWithCarTime(int(fromDict['oilServiceDue_days']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.oilServiceDue_days.enabled = False
-
-        if 'oilServiceDue_km' in fromDict:
-            self.oilServiceDue_km.setValueWithCarTime(int(fromDict['oilServiceDue_km']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.oilServiceDue_km.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes

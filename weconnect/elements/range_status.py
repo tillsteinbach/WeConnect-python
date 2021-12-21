@@ -27,31 +27,38 @@ class RangeStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Climatization settings from dict')
 
-        if 'carType' in fromDict and fromDict['carType']:
-            try:
-                self.carType.setValueWithCarTime(RangeStatus.CarType(
-                    fromDict['carType']), lastUpdateFromCar=None, fromServer=True)
-            except ValueError:
-                self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported carType: %s was provided,'
-                            ' please report this as a bug', fromDict['carType'])
+        if 'value' in fromDict:
+            if 'carType' in fromDict['value'] and fromDict['value']['carType']:
+                try:
+                    self.carType.setValueWithCarTime(RangeStatus.CarType(
+                        fromDict['value']['carType']), lastUpdateFromCar=None, fromServer=True)
+                except ValueError:
+                    self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported carType: %s was provided,'
+                                ' please report this as a bug', fromDict['value']['carType'])
+            else:
+                self.carType.enabled = False
+
+            if 'primaryEngine' in fromDict['value']:
+                self.primaryEngine.update(fromDict['value']['primaryEngine'])
+            else:
+                self.primaryEngine.enabled = False
+
+            if 'secondaryEngine' in fromDict['value']:
+                self.secondaryEngine.update(fromDict['value']['secondaryEngine'])
+            else:
+                self.secondaryEngine.enabled = False
+
+            if 'totalRange_km' in fromDict['value']:
+                self.totalRange_km.setValueWithCarTime(
+                    int(fromDict['value']['totalRange_km']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.totalRange_km.enabled = False
+
         else:
             self.carType.enabled = False
-
-        if 'primaryEngine' in fromDict:
-            self.primaryEngine.update(fromDict['primaryEngine'])
-        else:
             self.primaryEngine.enabled = False
-
-        if 'secondaryEngine' in fromDict:
-            self.secondaryEngine.update(fromDict['secondaryEngine'])
-        else:
             self.secondaryEngine.enabled = False
-
-        if 'totalRange_km' in fromDict:
-            self.totalRange_km.setValueWithCarTime(
-                int(fromDict['totalRange_km']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.totalRange_km.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes

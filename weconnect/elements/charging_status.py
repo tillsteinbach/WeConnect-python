@@ -28,50 +28,57 @@ class ChargingStatus(GenericStatus):
             localAddress='chargeRate_kmph', value=None, parent=self, valueType=int)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
-    def update(self, fromDict, ignoreAttributes=None):
+    def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Charging status from dict')
 
-        if 'remainingChargingTimeToComplete_min' in fromDict:
-            self.remainingChargingTimeToComplete_min \
-                .setValueWithCarTime(int(fromDict['remainingChargingTimeToComplete_min']), lastUpdateFromCar=None,
-                                     fromServer=True)
+        if 'value' in fromDict:
+            if 'remainingChargingTimeToComplete_min' in fromDict['value']:
+                self.remainingChargingTimeToComplete_min \
+                    .setValueWithCarTime(int(fromDict['value']['remainingChargingTimeToComplete_min']), lastUpdateFromCar=None,
+                                         fromServer=True)
+            else:
+                self.remainingChargingTimeToComplete_min.enabled = False
+
+            if 'chargingState' in fromDict['value'] and fromDict['value']['chargingState']:
+                try:
+                    self.chargingState.setValueWithCarTime(ChargingStatus.ChargingState(fromDict['value']['chargingState']),
+                                                           lastUpdateFromCar=None)
+                except ValueError:
+                    self.chargingState.setValueWithCarTime(
+                        ChargingStatus.ChargingState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported chargingState: %s was provided,'
+                                ' please report this as a bug', fromDict['value']['chargingState'])
+            else:
+                self.chargingState.enabled = False
+
+            if 'chargeMode' in fromDict['value'] and fromDict['value']['chargeMode']:
+                try:
+                    self.chargeMode.setValueWithCarTime(ChargingStatus.ChargeMode(fromDict['value']['chargeMode']), lastUpdateFromCar=None)
+                except ValueError:
+                    self.chargeMode.setValueWithCarTime(
+                        ChargingStatus.ChargeMode.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                    LOG.warning('An unsupported chargeMode: %s was provided,'
+                                ' please report this as a bug', fromDict['value']['chargeMode'])
+            else:
+                self.chargeMode.enabled = False
+
+            if 'chargePower_kW' in fromDict['value']:
+                self.chargePower_kW.setValueWithCarTime(
+                    int(fromDict['value']['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.chargePower_kW.enabled = False
+
+            if 'chargeRate_kmph' in fromDict['value']:
+                self.chargeRate_kmph.setValueWithCarTime(
+                    int(fromDict['value']['chargeRate_kmph']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.chargeRate_kmph.enabled = False
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
-
-        if 'chargingState' in fromDict and fromDict['chargingState']:
-            try:
-                self.chargingState.setValueWithCarTime(ChargingStatus.ChargingState(fromDict['chargingState']),
-                                                       lastUpdateFromCar=None)
-            except ValueError:
-                self.chargingState.setValueWithCarTime(
-                    ChargingStatus.ChargingState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported chargingState: %s was provided,'
-                            ' please report this as a bug', fromDict['chargingState'])
-        else:
             self.chargingState.enabled = False
-
-        if 'chargeMode' in fromDict and fromDict['chargeMode']:
-            try:
-                self.chargeMode.setValueWithCarTime(ChargingStatus.ChargeMode(fromDict['chargeMode']), lastUpdateFromCar=None)
-            except ValueError:
-                self.chargeMode.setValueWithCarTime(
-                    ChargingStatus.ChargeMode.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported chargeMode: %s was provided,'
-                            ' please report this as a bug', fromDict['chargeMode'])
-        else:
             self.chargeMode.enabled = False
-
-        if 'chargePower_kW' in fromDict:
-            self.chargePower_kW.setValueWithCarTime(
-                int(fromDict['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.chargePower_kW.enabled = False
-
-        if 'chargeRate_kmph' in fromDict:
-            self.chargeRate_kmph.setValueWithCarTime(
-                int(fromDict['chargeRate_kmph']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.chargeRate_kmph.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes

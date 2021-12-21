@@ -25,14 +25,19 @@ class RangeMeasurements(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update battery status from dict')
 
-        if 'electricRange' in fromDict:
-            self.electricRange.setValueWithCarTime(int(fromDict['electricRange']), lastUpdateFromCar=None, fromServer=True)
+        if 'value' in fromDict:
+            if 'electricRange' in fromDict['value']:
+                self.electricRange.setValueWithCarTime(int(fromDict['value']['electricRange']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.electricRange.enabled = False
+
+            if 'gasolineRange' in fromDict['value']:
+                self.gasolineRange.setValueWithCarTime(int(fromDict['value']['gasolineRange']), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.gasolineRange.enabled = False
+
         else:
             self.electricRange.enabled = False
-
-        if 'gasolineRange' in fromDict:
-            self.gasolineRange.setValueWithCarTime(int(fromDict['gasolineRange']), lastUpdateFromCar=None, fromServer=True)
-        else:
             self.gasolineRange.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(

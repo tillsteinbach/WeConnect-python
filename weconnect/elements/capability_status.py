@@ -23,8 +23,8 @@ class CapabilityStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update capability status from dict')
 
-        if 'capabilities' in fromDict and fromDict['capabilities'] is not None:
-            for capDict in fromDict['capabilities']:
+        if 'value' in fromDict:
+            for capDict in fromDict['value']:
                 if 'id' in capDict:
                     if capDict['id'] in self.capabilities:
                         self.capabilities[capDict['id']].update(fromDict=capDict)
@@ -33,13 +33,13 @@ class CapabilityStatus(GenericStatus):
                             capabilityId=capDict['id'], fromDict=capDict, parent=self.capabilities)
             for capabilityId in [capabilityId for capabilityId in self.capabilities.keys()
                                  if capabilityId not in [capability['id']
-                                 for capability in fromDict['capabilities'] if 'id' in capability]]:
+                                 for capability in fromDict['value'] if 'id' in capability]]:
                 del self.capabilities[capabilityId]
         else:
             self.capabilities.clear()
             self.capabilities.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['capabilities']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes))
 
     def __str__(self):
         string = super().__str__()

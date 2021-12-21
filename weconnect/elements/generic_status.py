@@ -31,98 +31,105 @@ class GenericStatus(AddressableObject):
         self.carCapturedTimestamp: AddressableAttribute[datetime] = AddressableAttribute(
             localAddress='carCapturedTimestamp', parent=self, value=None, valueType=datetime)
         self.error: GenericStatus.StatusError = GenericStatus.StatusError(localAddress='error', parent=self)
-        self.target: AddressableList[GenericStatus.Target] = AddressableList(localAddress='target', parent=self)
+        self.requests: AddressableList[GenericStatus.Request] = AddressableList(localAddress='request', parent=self)
 
         if fromDict is not None:
             self.update(fromDict=fromDict)
 
-    def update(self, fromDict: Dict[str, Any], ignoreAttributes: Optional[List[str]] = None):
+    def update(self, fromDict: Dict[str, Any], ignoreAttributes: Optional[List[str]] = None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update status from dict')
 
-        if 'carCapturedTimestamp' in fromDict:
-            carCapturedTimestamp: Optional[datetime] = robustTimeParse(fromDict['carCapturedTimestamp'])
-            if self.fixAPI and carCapturedTimestamp is not None:
-                # Looks like for some cars the calculation of the carCapturedTimestamp does not account for the timezone
-                # Unfortunatly it is unknown what the timezone of the car is. So the best we can do is substract 30
-                # minutes as long as the timestamp is in the future. This will create false results when the query
-                # interval is large
-                fixed: timedelta = timedelta(hours=0, minutes=0)
-                while carCapturedTimestamp > datetime.utcnow().replace(tzinfo=timezone.utc):
-                    carCapturedTimestamp -= timedelta(hours=0, minutes=30)
-                    fixed -= timedelta(hours=0, minutes=30)
-                if fixed > timedelta(hours=0, minutes=0):
-                    LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Substracted %s to fix this.'
-                                ' This is a problem of the weconnect API and might be fixed in the future',
-                                self.getGlobalAddress(), fixed)
-                if carCapturedTimestamp == datetime(year=2000, month=1, day=1, hour=0, minute=0, second=0,
-                                                    tzinfo=timezone.utc):
-                    carCapturedTimestamp = None
+        if 'value' in fromDict:
+            if 'carCapturedTimestamp' in fromDict['value']:
+                carCapturedTimestamp: Optional[datetime] = robustTimeParse(fromDict['value']['carCapturedTimestamp'])
+                if self.fixAPI and carCapturedTimestamp is not None:
+                    # Looks like for some cars the calculation of the carCapturedTimestamp does not account for the timezone
+                    # Unfortunatly it is unknown what the timezone of the car is. So the best we can do is substract 30
+                    # minutes as long as the timestamp is in the future. This will create false results when the query
+                    # interval is large
+                    fixed: timedelta = timedelta(hours=0, minutes=0)
+                    while carCapturedTimestamp > datetime.utcnow().replace(tzinfo=timezone.utc):
+                        carCapturedTimestamp -= timedelta(hours=0, minutes=30)
+                        fixed -= timedelta(hours=0, minutes=30)
+                    if fixed > timedelta(hours=0, minutes=0):
+                        LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Substracted %s to fix this.'
+                                    ' This is a problem of the weconnect API and might be fixed in the future',
+                                    self.getGlobalAddress(), fixed)
+                    if carCapturedTimestamp == datetime(year=2000, month=1, day=1, hour=0, minute=0, second=0,
+                                                        tzinfo=timezone.utc):
+                        carCapturedTimestamp = None
 
-            self.carCapturedTimestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None, fromServer=True)
-            if self.carCapturedTimestamp.value is None:
+                self.carCapturedTimestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None, fromServer=True)
+                if self.carCapturedTimestamp.value is None:
+                    self.carCapturedTimestamp.enabled = False
+            else:
                 self.carCapturedTimestamp.enabled = False
+
+            if isinstance(fromDict['value'], Dict):
+                for key, value in {key: value for key, value in fromDict['value'].items()
+                                   if key not in (['carCapturedTimestamp'] + ignoreAttributes)
+                                   }.items():
+                    LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
         else:
             self.carCapturedTimestamp.enabled = False
 
-        for key, value in {key: value for key, value in fromDict.items()
-                           if key not in (['carCapturedTimestamp'] + ignoreAttributes)
-                           }.items():
-            LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
-
-    def updateError(self, fromDict: Dict[str, Any]) -> None:
-        if fromDict is None:
+        if 'error' in fromDict:
+            self.error.update(fromDict['error'])
+        else:
             self.error.reset()
-        else:
-            self.error.update(fromDict)
 
-    def updateTarget(self, fromDict: Optional[List[Any]]) -> None:
-        if fromDict is None:
-            self.target.clear()
-            self.target.enabled = False
+        if 'requests' in fromDict:
+            for request in fromDict['requests']:
+                self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
         else:
-            for target in fromDict:
-                self.target.append(GenericStatus.Target(localAddress=str(
-                    len(self.target)), parent=self.target, fromDict=target))
+            self.requests.clear()
+            self.requests.enabled = False
+
+        for key, value in {key: value for key, value in fromDict.items()
+                           if key not in (['value', 'error', 'requests'] + ['carCapturedTimestamp'] + ignoreAttributes)}.items():
+            LOG.warning('%s: Unknown element %s with value %s', self.getGlobalAddress(), key, value)
 
     def __str__(self) -> str:
         returnString: str = f'[{self.id}]'
         if self.carCapturedTimestamp.enabled and self.carCapturedTimestamp.value is not None:
             returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'
         if self.error.enabled:
-            returnString += f'\n\tError: {self.error}'
-        for target in self.target:
-            returnString += f'\n\tTarget: {target}'
+            returnString += '\n\tError: ' + ''.join(['\t' + line for line in str(self.error).splitlines(True)])
+        for request in self.requests:
+            returnString += f'\n\tRequest: {request}'
         return returnString
 
-    class Target(AddressableObject):
+    class Request(AddressableObject):
         def __init__(
             self,
             localAddress: str,
-            parent: AddressableList[GenericStatus.Target],
+            parent: AddressableList[GenericStatus.Request],
             fromDict: Dict[str, Any] = None,
         ) -> None:
             super().__init__(localAddress=localAddress, parent=parent)
-            self.status: AddressableAttribute[GenericStatus.Target.Status] = AddressableAttribute(localAddress='status', parent=self,
-                                                                                                  value=None, valueType=GenericStatus.Target.Status)
+            self.status: AddressableAttribute[GenericStatus.Request.Status] = AddressableAttribute(localAddress='status', parent=self,
+                                                                                                   value=None, valueType=GenericStatus.Request.Status)
             self.operation: AddressableAttribute[ControlOperation] = AddressableAttribute(
                 localAddress='operation', parent=self, value=None, valueType=ControlOperation)
             self.body: AddressableAttribute[str] = AddressableAttribute(localAddress='body', parent=self, value=None, valueType=str)
             self.group: AddressableAttribute[int] = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
             self.info: AddressableAttribute[str] = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
+            self.requestId: AddressableAttribute[str] = AddressableAttribute(localAddress='requestId', parent=self, value=None, valueType=str)
+            self.vcfRequestId: AddressableAttribute[str] = AddressableAttribute(localAddress='vcfRequestId', parent=self, value=None, valueType=str)
 
             if fromDict is not None:
                 self.update(fromDict)
 
-        def update(self, fromDict: Dict[str, Any]) -> None:
+        def update(self, fromDict: Dict[str, Any]) -> None:  # noqa: C901
             LOG.debug('Update Status Target from dict')
 
             if 'status' in fromDict and fromDict['status']:
                 try:
-                    self.status.setValueWithCarTime(GenericStatus.Target.Status(
+                    self.status.setValueWithCarTime(GenericStatus.Request.Status(
                         fromDict['status']), lastUpdateFromCar=None, fromServer=True)
                 except ValueError:
-                    self.status.setValueWithCarTime(GenericStatus.Target.Status.UNKNOWN,
+                    self.status.setValueWithCarTime(GenericStatus.Request.Status.UNKNOWN,
                                                     lastUpdateFromCar=None, fromServer=True)
                     LOG.warning('An unsupported target status: %s was provided,'
                                 ' please report this as a bug', fromDict['status'])
@@ -156,6 +163,16 @@ class GenericStatus(AddressableObject):
             else:
                 self.info.enabled = False
 
+            if 'requestId' in fromDict:
+                self.requestId.setValueWithCarTime(fromDict['requestId'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.requestId.enabled = False
+
+            if 'vcfRequestId' in fromDict:
+                self.vcfRequestId.setValueWithCarTime(fromDict['vcfRequestId'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.vcfRequestId.enabled = False
+
         def __str__(self) -> str:
             returnValue: str = ''
             if self.operation.enabled and self.operation.value is not None:
@@ -177,6 +194,7 @@ class GenericStatus(AddressableObject):
             FAIL_VEHICLE_IS_OFFLINE = 'fail_vehicle_is_offline'
             FAIL_IGNITION_ON = 'fail_ignition_on'
             FAIL_BATTERY_LOW = 'fail_battery_low'
+            FAIL_PLUG_ERROR = 'fail_plug_error'
             UNKNOWN = 'unknown status'
 
     class StatusError(AddressableObject):
@@ -191,6 +209,7 @@ class GenericStatus(AddressableObject):
             self.message: AddressableAttribute[str] = AddressableAttribute(localAddress='message', parent=self, value=None, valueType=str)
             self.group: AddressableAttribute[int] = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
             self.info: AddressableAttribute[str] = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)
+            self.timestamp: AddressableAttribute[str] = AddressableAttribute(localAddress='timestamp', parent=self, value=None, valueType=datetime)
             self.retry: AddressableAttribute[bool] = AddressableAttribute(localAddress='retry', parent=self, value=None, valueType=bool)
 
             if fromDict is not None:
@@ -232,6 +251,14 @@ class GenericStatus(AddressableObject):
             else:
                 self.info.enabled = False
 
+            if 'errorTimeStamp' in fromDict:
+                carCapturedTimestamp: Optional[datetime] = robustTimeParse(fromDict['errorTimeStamp'])
+                self.timestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None, fromServer=True)
+                if self.timestamp.value is None:
+                    self.timestamp.enabled = False
+            else:
+                self.timestamp.enabled = False
+
             if 'retry' in fromDict:
                 self.retry.setValueWithCarTime(toBool(fromDict['retry']), lastUpdateFromCar=None, fromServer=True)
             else:
@@ -244,8 +271,8 @@ class GenericStatus(AddressableObject):
                 self.enabled = True
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['code', 'message', 'group', 'info', 'retry']}.items():
+                               if key not in ['code', 'message', 'group', 'info', 'errorTimeStamp', 'retry']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self) -> str:
-            return f'Error {self.code.value}: {self.message.value} info: {self.info.value}'
+            return f'Error {self.code.value}: {self.message.value} \n\tinfo: {self.info.value} \n\ttimestamp: {self.timestamp.value}'
