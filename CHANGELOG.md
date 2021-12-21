@@ -3,9 +3,6 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
-
-## [0.30.0] - 2021-12-21
 ### Changed
 - Changed to new selective update endpoint. Warning this is a breaking change in the API!
 
