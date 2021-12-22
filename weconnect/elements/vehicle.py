@@ -447,6 +447,14 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                  parent=self.domains['parking'],
                                                                                  statusId='parkingPosition',
                                                                                  fromDict=data)
+            else:
+                if self.statusExists('parking', 'parkingPosition'):
+                    parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
+                    parkingPosition.latitude.enabled = False
+                    parkingPosition.longitude.enabled = False
+                    parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+                    parkingPosition.carCapturedTimestamp.enabled = False
+                    parkingPosition.enabled = False
 
     def updatePictures(self) -> None:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
