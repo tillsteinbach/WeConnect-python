@@ -808,6 +808,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         WARNING = 'warning'
 
     class DevicePlatform(Enum,):
+        MBB = 'MBB'
         MBB_ODP = 'MBB_ODP'
         WCAR = 'WCAR'
         UNKNOWN = 'UNKNOWN'

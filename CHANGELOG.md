@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- Added MBB Platform (used in e.g. e-up)
+
 ### Changed
 - Changed to new selective update endpoint. Warning this is a breaking change in the API!
 
