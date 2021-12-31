@@ -59,7 +59,8 @@ def farenheitToKelvin(value):
 
 
 class DuplicateFilter(logging.Filter):
-    def __init__(self, name: str = ...) -> None:
+
+    def __init__(self, name: str = '') -> None:
         super().__init__(name=name)
         self.lastLog = {}
         self.firstTime = True
