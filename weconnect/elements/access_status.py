@@ -26,7 +26,7 @@ class AccessStatus(GenericStatus):
         LOG.debug('Update access status from dict')
 
         if 'value' in fromDict:
-            if 'overallStatus' in fromDict and fromDict['value']['overallStatus']:
+            if 'overallStatus' in fromDict['value'] and fromDict['value']['overallStatus']:
                 try:
                     self.overallStatus.setValueWithCarTime(
                         AccessStatus.OverallState(fromDict['value']['overallStatus']), lastUpdateFromCar=None, fromServer=True)
