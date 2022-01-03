@@ -31,6 +31,7 @@ from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.climatization_timer import ClimatizationTimer
 from weconnect.elements.lights_status import LightsStatus
 from weconnect.elements.maintenance_status import MaintenanceStatus
+from weconnect.elements.warning_lights_status import WarningLightsStatus
 from weconnect.elements.parking_position import ParkingPosition
 from weconnect.elements.plug_status import PlugStatus
 from weconnect.elements.range_status import RangeStatus
@@ -259,8 +260,14 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'readinessStatus': ReadinessStatus,
                 'readinessBatterySupportStatus': GenericStatus,
             },
-            'maintenance': {  # todo: find right category
+            'vehicleHealthInspection': {
                 'maintenanceStatus': MaintenanceStatus,
+            },
+            'vehicleHealthWarnings': {
+                'warningLights': WarningLightsStatus,
+            },
+            'oilLevel': {
+                'oilLevelStatus': GenericStatus,
             },
             'measurements': {
                 'rangeStatus': RangeMeasurements,
@@ -276,10 +283,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         cacheDate: Optional[datetime] = None
         if self.vin.value is None:
             raise APIError('')
-        jobs = list(jobKeyClassMap).copy()
-        if not updateCapabilities:
-            jobs.remove('userCapabilities')
-        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
+        # jobs = list(jobKeyClassMap).copy()
+        # if not updateCapabilities:
+        #     jobs.remove('userCapabilities')
+        # url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
+        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=all'
         if not force and (self.weConnect.maxAge is not None and self.weConnect.cache is not None and url in self.weConnect.cache):
             data, cacheDateString = self.weConnect.cache[url]
             cacheDate = datetime.fromisoformat(cacheDateString)
