@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import base64
 import io
 import logging
-import json
+
 from weconnect.elements.generic_settings import GenericSettings
 from weconnect.elements.generic_status import GenericStatus
 
@@ -400,9 +400,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 except exceptions.RetryError as retryError:
                     raise RetrievalError from retryError
                 if statusResponse.status_code == codes['ok']:
-                    data = statusResponse.json()
-                    if self.weConnect.cache is not None:
-                        self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                    try:
+                        data = statusResponse.json()
+                        if self.weConnect.cache is not None:
+                            self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                    except exceptions.JSONDecodeError:
+                        data = None
                 elif statusResponse.status_code == codes['unauthorized']:
                     LOG.info('Server asks for new authorization')
                     self.weConnect.login()
@@ -423,9 +426,12 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     except exceptions.RetryError as retryError:
                         raise RetrievalError from retryError
                     if statusResponse.status_code == codes['ok']:
-                        data = statusResponse.json()
-                        if self.weConnect.cache is not None:
-                            self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                        try:
+                            data = statusResponse.json()
+                            if self.weConnect.cache is not None:
+                                self.weConnect.cache[url] = (data, str(datetime.utcnow()))
+                        except exceptions.JSONDecodeError:
+                            data = None
                     else:
                         self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                                    'Could not fetch parking position due to server error')
@@ -438,7 +444,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         or statusResponse.status_code == codes['forbidden']:
                     try:
                         data = statusResponse.json()
-                    except json.JSONDecodeError:
+                    except exceptions.JSONDecodeError:
                         data = None
                 else:
                     self.weConnect.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
