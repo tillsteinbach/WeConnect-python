@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Changed to new selective update endpoint. Warning this is a breaking change in the API!
 
+### Fixed
+- conflicts when simplejson is installed and preferred from requests
+
 ## [0.28.0] - 2021-12-20
 ### Added
 - decoding of capability status
