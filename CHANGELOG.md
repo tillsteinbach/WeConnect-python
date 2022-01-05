@@ -3,13 +3,16 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- No unreleased changes so far
+
+## [0.29.0] - 2022-01-05
 ### Added
 - Added MBB Platform (used in e.g. e-up)
 - Duplicate log entry filter
 - Added vehicle warning lights
 
 ### Changed
-- Changed to new selective update endpoint. Warning this is a breaking change in the API!
+- Changed to new selective update endpoint. ***Warning this is a breaking change in the API!***
 
 ### Fixed
 - conflicts when simplejson is installed and preferred from requests
@@ -409,7 +412,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.28.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.29.0...HEAD
+[0.29.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.29.0
 [0.28.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.28.0
 [0.27.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.27.2
 [0.27.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.27.1
