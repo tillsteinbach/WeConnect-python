@@ -68,7 +68,7 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes
+class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Main class used to interact with WeConnect"""
 
     DEFAULT_OPTIONS: Dict[str, Any] = {
@@ -131,9 +131,9 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.username: str = username
         self.password: str = password
         # TODO: Named Tupel instead!
-        self.__token: Dict[str, Optional[Union[str, datetime]]] = {'type': None, 'token': None, 'expires': None}
-        self.__aToken: Dict[str, Optional[Union[str, datetime]]] = {'type': None, 'token': None, 'expires': None}
-        self.__rToken: Dict[str, Optional[Union[str, datetime]]] = {'type': None, 'token': None, 'expires': None}
+        self.__token: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now()}
+        self.__aToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now()}
+        self.__rToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now()}
         self.__userId: Optional[str] = None  # pylint: disable=unused-private-member
         self.__session: requests.Session = requests.Session()
         self.__refreshTimer: Optional[threading.Timer] = None
@@ -167,7 +167,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 with open(self.tokenfile, 'r', encoding='utf8') as file:
                     tokens: RequestsCookieJar = requests.utils.cookiejar_from_dict(json.load(file))
 
-                if 'idToken' in tokens and all(key in tokens['idToken'] for key in ('type', 'token', 'expires')):
+                if 'idToken' in tokens and all(key in tokens['idToken'] for key in ('type', 'token', 'expires')) \
+                        and all(tokens['idToken'][key] is not None for key in ('type', 'token', 'expires')):
                     self.__token['type'] = tokens['idToken']['type']
                     self.__token['token'] = tokens['idToken']['token']
                     self.__token['expires'] = datetime.fromisoformat(tokens['idToken']['expires'])
@@ -175,7 +176,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 else:
                     LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
 
-                if 'accessToken' in tokens and all(key in tokens['accessToken'] for key in ('type', 'token', 'expires')):
+                if 'accessToken' in tokens and all(key in tokens['accessToken'] for key in ('type', 'token', 'expires')) \
+                        and all(tokens['accessToken'][key] is not None for key in ('type', 'token', 'expires')):
                     self.__aToken['type'] = tokens['accessToken']['type']
                     self.__aToken['token'] = tokens['accessToken']['token']
                     self.__aToken['expires'] = datetime.fromisoformat(tokens['accessToken']['expires'])
@@ -183,7 +185,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 else:
                     LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
 
-                if 'refreshToken' in tokens and all(key in tokens['refreshToken'] for key in ('type', 'token', 'expires')):
+                if 'refreshToken' in tokens and all(key in tokens['refreshToken'] for key in ('type', 'token', 'expires')) \
+                        and all(tokens['refreshToken'][key] is not None for key in ('type', 'token', 'expires')):
                     self.__rToken['type'] = tokens['refreshToken']['type']
                     self.__rToken['token'] = tokens['refreshToken']['token']
                     self.__rToken['expires'] = datetime.fromisoformat(tokens['refreshToken']['expires'])
@@ -276,11 +279,26 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         # Login url is in response headers when response has status code see_others (303)
         loginUrl: str = tryLoginResponse.headers['Location']
 
-        if loginUrl.startswith('weconnect://authenticated#'):
-            params = dict(parse.parse_qsl(parse.urlsplit(loginUrl.replace('authenticated#', 'authenticated?')).query))
-        else:
-            # Retrieve login page
-            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=True)
+        params: Optional[dict[str, str]] = None
+        consentURL: Optional[str] = None
+        while True:
+            if 'consent' in loginUrl:
+                consentURL = loginUrl
+            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+
+            if 'Location' not in loginResponse.headers:
+                if consentURL is not None:
+                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
+                                                f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
+                break
+
+            loginUrl = loginResponse.headers['Location']
+
+            if loginUrl.startswith('weconnect://authenticated#'):
+                params = dict(parse.parse_qsl(parse.urlsplit(loginUrl.replace('authenticated#', 'authenticated?')).query))
+                break
+
+        if params is None:
             if loginResponse.status_code != requests.codes['ok']:
                 raise APICompatibilityError('Retrieving login page was not successfull,'
                                             f' status code: {loginResponse.status_code}')
@@ -385,7 +403,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
             # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
             afterLoginUrl: str = login3Response.headers['Location']
-            consentURL: Optional[str] = None
+
             while True:
                 if 'consent' in afterLoginUrl:
                     consentURL = afterLoginUrl
@@ -446,6 +464,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 self.__rToken['token'] = data['refreshToken']
                 self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
 
+            LOG.info('Login successful')
             self.__refreshToken()
 
     def __refreshToken(self) -> None:  # noqa C901
@@ -532,57 +551,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.updateComplete()
 
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False) -> None:  # noqa: C901
-        data: Optional[Dict[str, Any]] = None
-        cacheDate: Optional[datetime] = None
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        if not force and (self.maxAge is not None and url in self.__cache):
-            data, cacheDateString = self.__cache[url]
-            cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
-            try:
-                vehiclesResponse: requests.Response = self.__session.get(url, allow_redirects=True)
-                self.recordElapsed(vehiclesResponse.elapsed)
-            except requests.exceptions.ConnectionError as connectionError:
-                self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
-                raise RetrievalError from connectionError
-            except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                 'Could not refresh token due to connection problem with chunked encoding')
-                raise RetrievalError from chunkedEncodingError
-            except requests.exceptions.ReadTimeout as timeoutError:
-                self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
-                raise RetrievalError from timeoutError
-            except requests.exceptions.RetryError as retryError:
-                raise RetrievalError from retryError
-            if vehiclesResponse.status_code == requests.codes['ok']:
-                data = vehiclesResponse.json()
-            elif vehiclesResponse.status_code == requests.codes['unauthorized']:
-                LOG.info('Server asks for new authorization')
-                self.login()
-                try:
-                    vehiclesResponse = self.__session.get(url, allow_redirects=False)
-                    self.recordElapsed(vehiclesResponse.elapsed)
-                except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch vehicles due to connection problem')
-                    raise RetrievalError from connectionError
-                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                     'Could not refresh token due to connection problem with chunked encoding')
-                    raise RetrievalError from chunkedEncodingError
-                except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicles due to timeout')
-                    raise RetrievalError from timeoutError
-                except requests.exceptions.RetryError as retryError:
-                    raise RetrievalError from retryError
-                if vehiclesResponse.status_code == requests.codes['ok']:
-                    data = vehiclesResponse.json()
-                else:
-                    self.notifyError(self, ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
-                    raise RetrievalError('Could not retrieve data even after re-authorization.'
-                                         f' Status Code was: {vehiclesResponse.status_code}')
-            else:
-                self.notifyError(self, ErrorEventType.HTTP, str(vehiclesResponse.status_code), 'Could not fetch vehicles due to server error')
-                raise RetrievalError(f'Status Code from WeConnect server was: {vehiclesResponse.status_code}')
+        data = self.fetchData(url, force)
         if data is not None:
             if 'data' in data and data['data']:
                 vins: List[str] = []
@@ -617,8 +587,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def getChargingStations(self, latitude, longitude, searchRadius=None, market=None, useLocale=None,  # noqa: C901
                             force=False) -> AddressableDict[str, ChargingStation]:
         chargingStationMap: AddressableDict[str, ChargingStation] = AddressableDict(localAddress='', parent=None)
-        data: Optional[Dict[str, Any]] = None
-        cacheDate: Optional[datetime] = None
         url: str = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={latitude}&longitude={longitude}'
         if market is not None:
             url += f'&market={market}'
@@ -628,56 +596,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             url += f'&searchRadius={searchRadius}'
         if self.__userId is not None:
             url += f'&userId={self.__userId}'
-        if not force and (self.maxAge is not None and url in self.__cache):
-            data, cacheDateString = self.__cache[url]
-            cacheDate = datetime.fromisoformat(cacheDateString)
-        if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
-            try:
-                stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
-                self.recordElapsed(stationsResponse.elapsed)
-            except requests.exceptions.ConnectionError as connectionError:
-                self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
-                raise RetrievalError from connectionError
-            except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                 'Could not refresh token due to connection problem with chunked encoding')
-                raise RetrievalError from chunkedEncodingError
-            except requests.exceptions.ReadTimeout as timeoutError:
-                self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
-                raise RetrievalError from timeoutError
-            except requests.exceptions.RetryError as retryError:
-                raise RetrievalError from retryError
-            if stationsResponse.status_code == requests.codes['ok']:
-                data = stationsResponse.json()
-            elif stationsResponse.status_code == requests.codes['unauthorized']:
-                LOG.info('Server asks for new authorization')
-                self.login()
-                try:
-                    stationsResponse = self.__session.get(url, allow_redirects=False)
-                    self.recordElapsed(stationsResponse.elapsed)
-                except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
-                    raise RetrievalError from connectionError
-                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                     'Could not refresh token due to connection problem with chunked encoding')
-                    raise RetrievalError from chunkedEncodingError
-                except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
-                    raise RetrievalError from timeoutError
-                except requests.exceptions.RetryError as retryError:
-                    raise RetrievalError from retryError
-                if stationsResponse.status_code == requests.codes['ok']:
-                    data = stationsResponse.json()
-                else:
-                    self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
-                                     'Could not fetch charging stations due to server error')
-                    raise RetrievalError('Could not retrieve data even after re-authorization.'
-                                         f' Status Code was: {stationsResponse.status_code}')
-            else:
-                self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
-                                 'Could not fetch charging stations due to server error')
-                raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
+        data = self.fetchData(url, force)
         if data is not None:
             if 'chargingStations' in data and data['chargingStations']:
                 for stationDict in data['chargingStations']:
@@ -693,8 +612,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def updateChargingStations(self, force: bool = False) -> None:  # noqa: C901 # pylint: disable=too-many-branches
         if self.latitude is not None and self.longitude is not None:
-            data: Optional[Dict[str, Any]] = None
-            cacheDate: Optional[datetime] = None
             url: str = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={self.latitude}&longitude={self.longitude}'
             if self.market is not None:
                 url += f'&market={self.market}'
@@ -704,56 +621,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 url += f'&searchRadius={self.searchRadius}'
             if self.__userId is not None:
                 url += f'&userId={self.__userId}'
-            if not force and (self.maxAge is not None and url in self.__cache):
-                data, cacheDateString = self.__cache[url]
-                cacheDate = datetime.fromisoformat(cacheDateString)
-            if data is None or self.maxAge is None or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
-                try:
-                    stationsResponse: requests.Response = self.__session.get(url, allow_redirects=True)
-                    self.recordElapsed(stationsResponse.elapsed)
-                except requests.exceptions.ConnectionError as connectionError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging stations due to connection problem')
-                    raise RetrievalError from connectionError
-                except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                    self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                     'Could not refresh token due to connection problem with chunked encoding')
-                    raise RetrievalError from chunkedEncodingError
-                except requests.exceptions.ReadTimeout as timeoutError:
-                    self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging stations due to timeout')
-                    raise RetrievalError from timeoutError
-                except requests.exceptions.RetryError as retryError:
-                    raise RetrievalError from retryError
-                if stationsResponse.status_code == requests.codes['ok']:
-                    data = stationsResponse.json()
-                elif stationsResponse.status_code == requests.codes['unauthorized']:
-                    LOG.info('Server asks for new authorization')
-                    self.login()
-                    try:
-                        stationsResponse = self.__session.get(url, allow_redirects=False)
-                        self.recordElapsed(stationsResponse.elapsed)
-                    except requests.exceptions.ConnectionError as connectionError:
-                        self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch charging station due to connection problem')
-                        raise RetrievalError from connectionError
-                    except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
-                        self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                         'Could not refresh token due to connection problem with chunked encoding')
-                        raise RetrievalError from chunkedEncodingError
-                    except requests.exceptions.ReadTimeout as timeoutError:
-                        self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch charging station due to timeout')
-                        raise RetrievalError from timeoutError
-                    except requests.exceptions.RetryError as retryError:
-                        raise RetrievalError from retryError
-                    if stationsResponse.status_code == requests.codes['ok']:
-                        data = stationsResponse.json()
-                    else:
-                        self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
-                                         'Could not fetch charging stations due to server error')
-                        raise RetrievalError('Could not retrieve data even after re-authorization.'
-                                             f' Status Code was: {stationsResponse.status_code}')
-                else:
-                    self.notifyError(self, ErrorEventType.HTTP, str(stationsResponse.status_code),
-                                     'Could not fetch charging stations due to server error')
-                    raise RetrievalError(f'Status Code from WeConnect server was: {stationsResponse.status_code}')
+            data = self.fetchData(url, force)
             if data is not None:
                 if 'chargingStations' in data and data['chargingStations']:
                     ids: List[str] = []
@@ -834,3 +702,54 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if len(self.__elapsed) == 0:
             return None
         return sum(self.__elapsed, timedelta())
+
+    def fetchData(self, url, force=False, allowEmpty=False, allowHttpError=False) -> Optional[Dict[str, Any]]:  # noqa: C901
+        data: Optional[Dict[str, Any]] = None
+        cacheDate: Optional[datetime] = None
+        if not force and (self.maxAge is not None and self.cache is not None and url in self.cache):
+            data, cacheDateString = self.cache[url]
+            cacheDate = datetime.fromisoformat(cacheDateString)
+        if data is None or self.maxAge is None \
+                or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
+            try:
+                statusResponse: requests.Response = self.session.get(url, allow_redirects=False)
+                self.recordElapsed(statusResponse.elapsed)
+                if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
+                    data = statusResponse.json()
+                    if self.cache is not None:
+                        self.cache[url] = (data, str(datetime.utcnow()))
+                elif statusResponse.status_code == requests.codes['unauthorized']:
+                    LOG.info('Server asks for new authorization')
+                    self.login()
+                    statusResponse = self.session.get(url, allow_redirects=False)
+                    self.recordElapsed(statusResponse.elapsed)
+
+                    if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
+                        data = statusResponse.json()
+                        if self.cache is not None:
+                            self.cache[url] = (data, str(datetime.utcnow()))
+                    elif not allowHttpError:
+                        self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code), 'Could not fetch data due to server error')
+                        raise RetrievalError(f'Could not fetch data even after re-authorization. Status Code was: {statusResponse.status_code}')
+                elif not allowHttpError:
+                    self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code), 'Could not fetch data due to server error')
+                    raise RetrievalError(f'Could not fetch data. Status Code was: {statusResponse.status_code}')
+            except requests.exceptions.ConnectionError as connectionError:
+                self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not fetch data due to connection problem')
+                raise RetrievalError from connectionError
+            except requests.exceptions.ChunkedEncodingError as chunkedEncodingError:
+                self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                 'Could not fetch data due to connection problem with chunked encoding')
+                raise RetrievalError from chunkedEncodingError
+            except requests.exceptions.ReadTimeout as timeoutError:
+                self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch data due to timeout')
+                raise RetrievalError from timeoutError
+            except requests.exceptions.RetryError as retryError:
+                raise RetrievalError from retryError
+            except requests.exceptions.JSONDecodeError as jsonError:
+                if allowEmpty:
+                    data = None
+                else:
+                    self.notifyError(self, ErrorEventType.JSON, 'json', 'Could not fetch data due to error in returned data')
+                    raise RetrievalError from jsonError
+        return data
