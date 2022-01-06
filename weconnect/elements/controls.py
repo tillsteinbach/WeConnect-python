@@ -8,6 +8,7 @@ from weconnect.elements.charging_settings import ChargingSettings
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.errors import ControlError, SetterError
 from weconnect.util import celsiusToKelvin, farenheitToKelvin
+from weconnect.domain import Domain
 
 LOG = logging.getLogger("weconnect")
 
@@ -67,9 +68,13 @@ class Controls(AddressableObject):
                 data = json.dumps(settingsDict)
                 controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
                 if controlResponse.status_code != requests.codes['ok']:
-                    raise SetterError(f'Could not set value ({controlResponse.status_code})')
-                # Trigger one update for the vehicle status to show result
-                self.vehicle.updateStatus(force=True)
+                    if controlResponse.status_code == requests.codes['too_many_requests']:
+                        raise SetterError('Could not control climatisation due to too many requests. Please try again later')
+                    raise SetterError(f'Could not control climatisation ({controlResponse.status_code})')
+                responseDict = controlResponse.json()
+                if 'data' in responseDict and 'requestID' in responseDict['data']:
+                    if self.vehicle.requestTracker is not None:
+                        self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CLIMATISATION, 20, 120)
 
     def __onChargingControlChange(self, element, flags):
         if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED:
@@ -78,6 +83,10 @@ class Controls(AddressableObject):
 
                 controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
                 if controlResponse.status_code != requests.codes['ok']:
-                    raise SetterError(f'Could not set value ({controlResponse.status_code})')
-                # Trigger one update for the vehicle status to show result
-                self.vehicle.updateStatus(force=True)
+                    if controlResponse.status_code == requests.codes['too_many_requests']:
+                        raise SetterError('Could not control charging due to too many requests. Please try again later')
+                    raise SetterError(f'Could not control charging ({controlResponse.status_code})')
+                responseDict = controlResponse.json()
+                if 'data' in responseDict and 'requestID' in responseDict['data']:
+                    if self.vehicle.requestTracker is not None:
+                        self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CHARGING, 20, 120)

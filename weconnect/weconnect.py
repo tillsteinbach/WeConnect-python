@@ -19,6 +19,7 @@ from requests.structures import CaseInsensitiveDict
 from requests.adapters import HTTPAdapter
 
 from weconnect.elements.vehicle import Vehicle
+from weconnect.domain import Domain
 from weconnect.elements.charging_station import ChargingStation
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
 from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError
@@ -106,7 +107,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         maxAgePictures: Optional[int] = None,
         updateCapabilities: bool = True,
         updatePictures: bool = True,
-        numRetries: int = 3
+        numRetries: int = 3,
+        selective: Optional[list[Domain]] = None
     ) -> None:
         """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
            If loginOnInit is true also an initial fetch of data is performed.
@@ -149,6 +151,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.market: Optional[str] = None
         self.useLocale: Optional[str] = locale.getlocale()[0]
         self.__elapsed: List[timedelta] = []
+
+        self.__enableTracker: bool = False
 
         self.__errorObservers: Set[Tuple[Callable[[Optional[Any], ErrorEventType], None], ErrorEventType]] = set()
 
@@ -210,7 +214,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 LOG.info('Login not necessary, token still valid')
 
         if updateAfterLogin:
-            self.update(updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+            self.update(updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective)
 
     @property
     def session(self) -> requests.Session:
@@ -263,6 +267,16 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def clearCache(self) -> None:
         self.__cache.clear()
         LOG.info('Clearing cache')
+
+    def enableTracker(self) -> None:
+        self.__enableTracker = True
+        for vehicle in self.vehicles:
+            vehicle.enableTracker()
+
+    def disableTracker(self) -> None:
+        self.__enableTracker = True
+        for vehicle in self.vehicles:
+            vehicle.disableTracker()
 
     def login(self) -> None:  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
         # Try to access page to be redirected to login form
@@ -544,13 +558,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def vehicles(self) -> AddressableDict[str, Vehicle]:
         return self.__vehicles
 
-    def update(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False) -> None:
+    def update(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,
+               selective: Optional[list[Domain]] = None) -> None:
         self.__elapsed.clear()
-        self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force)
+        self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force, selective=selective)
         self.updateChargingStations(force=force)
         self.updateComplete()
 
-    def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False) -> None:  # noqa: C901
+    def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
+                       selective: Optional[list[Domain]] = None) -> None:
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
         data = self.fetchData(url, force)
         if data is not None:
@@ -563,11 +579,13 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     vins.append(vin)
                     try:
                         if vin not in self.__vehicles:
-                            vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict,
-                                              fixAPI=self.fixAPI, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+                            vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict, fixAPI=self.fixAPI,
+                                              updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective,
+                                              enableTracker=self.__enableTracker)
                             self.__vehicles[vin] = vehicle
                         else:
-                            self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+                            self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures,
+                                                        selective=selective)
                     except RetrievalError as retrievalError:
                         LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
                 # delete those vins that are not anymore available

@@ -43,6 +43,9 @@ from weconnect.elements.charging_profiles import ChargingProfiles
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
+from weconnect.domain import Domain
+
+from weconnect.elements.helpers.request_tracker import RequestTracker
 
 LOG: logging.Logger = logging.getLogger("weconnect")
 
@@ -58,6 +61,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         fixAPI: bool = True,
         updateCapabilities: bool = True,
         updatePictures: bool = True,
+        selective: Optional[list[Domain]] = None,
+        enableTracker: bool = False
     ) -> None:
         self.weConnect: WeConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
@@ -85,7 +90,19 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.__badges: Dict[Vehicle.Badge, Image.Image] = {}
         self.pictures: AddressableDict[str, Image.Image] = AddressableDict(localAddress='pictures', parent=self)
 
-        self.update(fromDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures)
+        self.requestTracker: Optional[RequestTracker] = None
+        if enableTracker:
+            self.requestTracker = RequestTracker(self)
+
+        self.update(fromDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective)
+
+    def enableTracker(self) -> None:
+        if self.requestTracker is None:
+            self.requestTracker = RequestTracker(self)
+
+    def disableTracker(self) -> None:
+        self.requestTracker.clear()
+        self.requestTracker = None
 
     def statusExists(self, domain: str, status: str) -> bool:
         if domain in self.domains and status in self.domains[domain]:
@@ -98,6 +115,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         updateCapabilities: bool = True,
         updatePictures: bool = True,
         force: bool = False,
+        selective: Optional[list[Domain]] = None
     ) -> None:
         if fromDict is not None:
             LOG.debug('Create /update vehicle')
@@ -208,7 +226,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                               'coUsers']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
-        self.updateStatus(updateCapabilities=updateCapabilities, force=force)
+        self.updateStatus(updateCapabilities=updateCapabilities, force=force, selective=selective)
         if updatePictures:
             for badge in Vehicle.Badge:
                 badgeImg: Image = Image.open(f'{os.path.dirname(__file__)}/../badges/{badge.value}.png')
@@ -217,20 +235,21 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             self.updatePictures()
 
-    def updateStatus(self, updateCapabilities: bool = True, force: bool = False):  # noqa: C901 # pylint: disable=too-many-branches
-        jobKeyClassMap: Dict[str, Dict[str, Type[GenericStatus]]] = {
-            'access': {
+    def updateStatus(self, updateCapabilities: bool = True, force: bool = False,  # noqa: C901 # pylint: disable=too-many-branches
+                     selective: Optional[list[Domain]] = None):
+        jobKeyClassMap: Dict[Domain, Dict[str, Type[GenericStatus]]] = {
+            Domain.ACCESS: {
                 'accessStatus': AccessStatus
             },
-            'automation': {
+            Domain.AUTOMATION: {
                 'climatisationTimer': ClimatizationTimer,
                 'climatisationTimersRequestStatus': GenericRequestStatus,
                 'chargingProfiles': ChargingProfiles,
             },
-            'userCapabilities': {
+            Domain.USER_CAPABILITIES: {
                 'capabilitiesStatus': CapabilityStatus,
             },
-            'charging': {
+            Domain.CHARGING: {
                 'batteryStatus': BatteryStatus,
                 'chargingStatus': ChargingStatus,
                 'chargingSettings': ChargingSettings,
@@ -240,74 +259,74 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'chargingSettingsRequestStatus': GenericRequestStatus,
                 'chargingCareSettings': GenericSettings,
             },
-            'climatisation': {
+            Domain.CLIMATISATION: {
                 'climatisationStatus': ClimatizationStatus,
                 'climatisationSettings': ClimatizationSettings,
                 'windowHeatingStatus': WindowHeatingStatus,
                 'climatisationRequestStatus': GenericRequestStatus,
                 'climatisationSettingsRequestStatus': GenericRequestStatus,
             },
-            'fuelStatus': {
+            Domain.FUEL_STATUS: {
                 'rangeStatus': RangeStatus,
             },
-            'vehicleLights': {
+            Domain.VEHICLE_LIGHTS: {
                 'lightsStatus': LightsStatus,
             },
-            'lvBattery': {
+            Domain.LV_BATTERY: {
                 'lvBatteryStatus': LVBatteryStatus,
             },
-            'readiness': {
+            Domain.READINESS: {
                 'readinessStatus': ReadinessStatus,
                 'readinessBatterySupportStatus': GenericStatus,
             },
-            'vehicleHealthInspection': {
+            Domain.VEHICLE_HEALTH_INSPECTION: {
                 'maintenanceStatus': MaintenanceStatus,
             },
-            'vehicleHealthWarnings': {
+            Domain.VEHICLE_HEALTH_WARNINGS: {
                 'warningLights': WarningLightsStatus,
             },
-            'oilLevel': {
+            Domain.OIL_LEVEL: {
                 'oilLevelStatus': GenericStatus,
             },
-            'measurements': {
+            Domain.MEASUREMENTS: {
                 'rangeStatus': RangeMeasurements,
                 'odometerStatus': OdometerMeasurement,
                 'oilLevelStatus': GenericStatus,
                 'measurements': GenericStatus,
             },
-            'batterySupport': {
+            Domain.BATTERY_SUPPORT: {
                 'batterySupportStatus': GenericStatus,
             }
         }
         if self.vin.value is None:
             raise APIError('')
-        # jobs = list(jobKeyClassMap).copy()
-        # if not updateCapabilities:
-        #     jobs.remove('userCapabilities')
-        # url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
-        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=all'
+        if selective is None:
+            jobs = ['all']
+        else:
+            jobs = [domain.value for domain in selective]
+        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
         data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
         if data is not None:
             for domain, keyClassMap in jobKeyClassMap.items():
-                if domain in data:
-                    if domain not in self.domains:
-                        self.domains[domain] = AddressableDict(localAddress=domain, parent=self)
+                if domain.value in data:
+                    if domain.value not in self.domains:
+                        self.domains[domain.value] = AddressableDict(localAddress=domain.value, parent=self)
                     for key, className in keyClassMap.items():
-                        if key in data[domain]:
-                            if key in self.domains[domain]:
+                        if key in data[domain.value]:
+                            if key in self.domains[domain.value]:
                                 LOG.debug('Status %s exists, updating it', key)
-                                self.domains[domain][key].update(fromDict=data[domain][key])
+                                self.domains[domain.value][key].update(fromDict=data[domain.value][key])
                             else:
                                 LOG.debug('Status %s does not exist, creating it', key)
-                                self.domains[domain][key] = className(vehicle=self, parent=self.domains[domain], statusId=key,
-                                                                      fromDict=data[domain][key], fixAPI=self.fixAPI)
+                                self.domains[domain.value][key] = className(vehicle=self, parent=self.domains[domain.value], statusId=key,
+                                                                            fromDict=data[domain.value][key], fixAPI=self.fixAPI)
 
                     # check that there is no additional status than the configured ones, except for "target" that we merge into
                     # the known ones
-                    for key, value in {key: value for key, value in data[domain].items() if key not in list(keyClassMap.keys())}.items():
-                        LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain)
+                    for key, value in {key: value for key, value in data[domain.value].items() if key not in list(keyClassMap.keys())}.items():
+                        LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain.value)
             # check that there is no additional domain than the configured ones
-            for key, value in {key: value for key, value in data.items() if key not in list(jobKeyClassMap.keys())}.items():
+            for key, value in {key: value for key, value in data.items() if key not in list([domain.value for domain in jobKeyClassMap.keys()])}.items():
                 LOG.warning('%s: Unknown domain %s with value %s', self.getGlobalAddress(), key, value)
 
         # Controls

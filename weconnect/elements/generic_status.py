@@ -89,7 +89,20 @@ class GenericStatus(AddressableObject):
 
         if 'requests' in fromDict:
             for request in fromDict['requests']:
-                self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
+                updated = False
+                if 'requestId' in request:
+                    for knownRequest in self.requests:
+                        if knownRequest.requestId.enabled and knownRequest.requestId.value == request['requestId']:
+                            request.update(fromDict=request)
+                            updated = True
+                elif 'operation' in request:
+                    for knownRequest in self.requests:
+                        if knownRequest.operation.enabled and knownRequest.operation.value.value == request['operation']:
+                            request.update(fromDict=request)
+                            updated = True
+
+                if not updated:
+                    self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
         else:
             self.requests.clear()
             self.requests.enabled = False
@@ -189,6 +202,8 @@ class GenericStatus(AddressableObject):
                 returnValue += f' status {self.status.value.value} '
             if self.info.enabled and self.info.value is not None:
                 returnValue += f' information: {self.info.value}'
+            if self.requestId.enabled and self.requestId.value is not None:
+                returnValue += f' Request Id: {self.requestId.value}'
             return returnValue
 
         class Status(Enum,):
