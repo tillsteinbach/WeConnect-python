@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class Domain(Enum):
+    ALL = 'all'
     ACCESS = 'access'
     AUTOMATION = 'automation'
     USER_CAPABILITIES = 'userCapabilities'

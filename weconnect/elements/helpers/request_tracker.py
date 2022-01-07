@@ -1,14 +1,17 @@
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 from datetime import datetime, timedelta
 from threading import Timer
+
+if TYPE_CHECKING:
+    from weconnect.elements.vehicle import Vehicle
 
 from weconnect.elements.generic_status import GenericStatus
 from weconnect.domain import Domain
 
 
 class RequestTracker:
-    def __init__(self, vehicle: 'Vehicle') -> None:  # noqa: F821
-        self.vehicle: 'Vehicle' = vehicle  # noqa: F821
+    def __init__(self, vehicle: 'Vehicle') -> None:
+        self.vehicle: 'Vehicle' = vehicle
         self.requests: dict[Domain, list[Tuple[str, datetime, datetime]]] = {}
         self.__timer = None
 
