@@ -14,6 +14,10 @@ class AuthentificationError(Exception):
     pass
 
 
+class TemporaryAuthentificationError(AuthentificationError):
+    pass
+
+
 class APICompatibilityError(Exception):
     pass
 
