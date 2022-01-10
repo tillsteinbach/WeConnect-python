@@ -308,6 +308,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
         if data is not None:
             for domain, keyClassMap in jobKeyClassMap.items():
+                if not updateCapabilities and domain == Domain.USER_CAPABILITIES:
+                    continue
                 if domain.value in data:
                     if domain.value not in self.domains:
                         self.domains[domain.value] = AddressableDict(localAddress=domain.value, parent=self)
