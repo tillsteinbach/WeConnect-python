@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.30.1] - 2022-01-10
+### Fixed
+- missing init file
+
 ## [0.30.0] - 2022-01-10
 ### Added
 - Request Tracker to track progress of control requests
@@ -416,7 +420,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.30.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.30.1...HEAD
+[0.30.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.1
 [0.30.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.0
 [0.29.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.29.0
 [0.28.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.28.0
