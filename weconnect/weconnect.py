@@ -463,20 +463,23 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 })
 
             tokenResponse = self.__session.post(tokenUrl, data=body, allow_redirects=False)
-            data = tokenResponse.json()
-            if 'idToken' in data:
-                self.__token['type'] = 'Bearer'
-                self.__token['token'] = data['idToken']
-                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-                self.__session.auth = BearerAuth(cast(str, self.__token['token']))
-            if 'accessToken' in data:
-                self.__aToken['type'] = 'Bearer'
-                self.__aToken['token'] = data['accessToken']
-                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-            if 'refreshToken' in data:
-                self.__rToken['type'] = 'Bearer'
-                self.__rToken['token'] = data['refreshToken']
-                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+            if tokenResponse.status_code == requests.codes['ok']:
+                data = tokenResponse.json()
+                if 'idToken' in data:
+                    self.__token['type'] = 'Bearer'
+                    self.__token['token'] = data['idToken']
+                    self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                    self.__session.auth = BearerAuth(cast(str, self.__token['token']))
+                if 'accessToken' in data:
+                    self.__aToken['type'] = 'Bearer'
+                    self.__aToken['token'] = data['accessToken']
+                    self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+                if 'refreshToken' in data:
+                    self.__rToken['type'] = 'Bearer'
+                    self.__rToken['token'] = data['refreshToken']
+                    self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
+            else:
+                raise AuthentificationError(f'There was a problem fetching tokens during login. Status code was {tokenResponse.status_code}')
 
             LOG.info('Login successful')
             self.__refreshToken()
