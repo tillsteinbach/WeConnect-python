@@ -286,6 +286,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         tryLoginResponse: requests.Response = self.__session.get(tryLoginUrl, allow_redirects=False)
         if tryLoginResponse.status_code != requests.codes['see_other']:
+            if tryLoginResponse.status_code == requests.codes['internal_server_error']:
+                raise RetrievalError('Temporary server error during login')
             raise APICompatibilityError('Forwarding to login page expected (status code 303),'
                                         f' but got status code {tryLoginResponse.status_code}')
         if 'Location' not in tryLoginResponse.headers:
@@ -314,6 +316,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         if params is None:
             if loginResponse.status_code != requests.codes['ok']:
+                if loginResponse.status_code == requests.codes['internal_server_error']:
+                    raise RetrievalError('Temporary server error during login')
                 raise APICompatibilityError('Retrieving login page was not successfull,'
                                             f' status code: {loginResponse.status_code}')
 
@@ -347,6 +351,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             # Post form content and retrieve credentials page
             login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
             if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
+                if login2Response.status_code == requests.codes['internal_server_error']:
+                    raise RetrievalError('Temporary server error during login')
                 raise APICompatibilityError('Retrieving credentials page was not successfull,'
                                             f' status code: {login2Response.status_code}')
 
@@ -387,6 +393,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             # Post form content and retrieve userId in forwarding Location
             login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
             if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
+                if login3Response.status_code == requests.codes['internal_server_error']:
+                    raise RetrievalError('Temporary server error during login')
                 raise APICompatibilityError('Forwarding expected (status code 302),'
                                             f' but got status code {login3Response.status_code}')
             if 'Location' not in login3Response.headers:
@@ -479,6 +487,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.__rToken['token'] = data['refreshToken']
                     self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
             else:
+                if tokenResponse.status_code == requests.codes['internal_server_error']:
+                    raise RetrievalError('Temporary server error during login')
                 raise AuthentificationError(f'There was a problem fetching tokens during login. Status code was {tokenResponse.status_code}')
 
             LOG.info('Login successful')
