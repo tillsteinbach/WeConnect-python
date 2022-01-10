@@ -724,7 +724,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             return None
         return sum(self.__elapsed, timedelta())
 
-    def fetchData(self, url, force=False, allowEmpty=False, allowHttpError=False) -> Optional[Dict[str, Any]]:  # noqa: C901
+    def fetchData(self, url, force=False, allowEmpty=False, allowHttpError=False, allowedErrors=None) -> Optional[Dict[str, Any]]:  # noqa: C901
         data: Optional[Dict[str, Any]] = None
         cacheDate: Optional[datetime] = None
         if not force and (self.maxAge is not None and self.cache is not None and url in self.cache):
@@ -749,10 +749,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         data = statusResponse.json()
                         if self.cache is not None:
                             self.cache[url] = (data, str(datetime.utcnow()))
-                    elif not allowHttpError:
+                    elif not allowHttpError or (allowedErrors is not None and statusResponse.status_code not in allowedErrors):
                         self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code), 'Could not fetch data due to server error')
                         raise RetrievalError(f'Could not fetch data even after re-authorization. Status Code was: {statusResponse.status_code}')
-                elif not allowHttpError:
+                elif not allowHttpError or (allowedErrors is not None and statusResponse.status_code not in allowedErrors):
                     self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code), 'Could not fetch data due to server error')
                     raise RetrievalError(f'Could not fetch data. Status Code was: {statusResponse.status_code}')
             except requests.exceptions.ConnectionError as connectionError:
