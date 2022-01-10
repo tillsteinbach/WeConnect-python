@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Fixed
+- Make login more robust against server errors
 
 ## [0.30.2] - 2022-01-10
 ### Fixed
