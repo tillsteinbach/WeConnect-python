@@ -3,8 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- No unreleased changes so far
+
+## [0.30.3] - 2022-01-11
 ### Fixed
 - Make login more robust against server errors
+- Hide 204 no_content error on missing parking position
 
 ## [0.30.2] - 2022-01-10
 ### Fixed
@@ -425,7 +429,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.30.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.30.3...HEAD
+[0.30.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.3
 [0.30.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.2
 [0.30.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.1
 [0.30.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.30.0
