@@ -133,9 +133,9 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.username: str = username
         self.password: str = password
         # TODO: Named Tupel instead!
-        self.__token: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now().replace(tzinfo=timezone.utc)}
-        self.__aToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now().replace(tzinfo=timezone.utc)}
-        self.__rToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.now().replace(tzinfo=timezone.utc)}
+        self.__token: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
+        self.__aToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
+        self.__rToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
         self.__userId: Optional[str] = None  # pylint: disable=unused-private-member
         self.__session: requests.Session = requests.Session()
         self.__refreshTimer: Optional[threading.Timer] = None
