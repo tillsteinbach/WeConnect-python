@@ -5,11 +5,21 @@ import logging
 from datetime import datetime, timezone
 from enum import Enum, IntEnum, Flag, auto
 
-from PIL import Image  # type: ignore
-import ascii_magic  # type: ignore
-
 from weconnect.util import toBool, imgToASCIIArt
 
+SUPPORT_IMAGES = False
+try:
+    from PIL import Image  # type: ignore
+    SUPPORT_IMAGES = True
+except ImportError:
+    pass
+
+SUPPORT_ASCII_IMAGES = False
+try:
+    import ascii_magic  # type: ignore
+    SUPPORT_ASCII_IMAGES = True
+except ImportError:
+    pass
 
 LOG: logging.Logger = logging.getLogger("weconnect")
 
@@ -229,13 +239,13 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
         if self.value is not None:
             if filename.endswith(('.txt', '.TXT', '.text')):
                 with open(filename, mode='w', encoding='utf8') as textfile:
-                    if isinstance(self.value, Image.Image):
+                    if SUPPORT_IMAGES and SUPPORT_ASCII_IMAGES and isinstance(self.value, Image.Image):
                         textfile.write(imgToASCIIArt(self.value, columns=120, mode=ascii_magic.Modes.ASCII))
                     else:
                         textfile.write(str(self))
             elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
                 with open(filename, mode='w', encoding='utf8') as htmlfile:
-                    if isinstance(self.value, Image.Image):
+                    if SUPPORT_IMAGES and SUPPORT_ASCII_IMAGES and isinstance(self.value, Image.Image):
                         html = """<!DOCTYPE html><head><title>ASCII art</title></head><body><pre style="display: inline-block; border-width: 4px 6px;
     border-color: black; border-style: solid; background-color:black; font-size: 8px;">"""
                         htmlfile.write(html)
@@ -245,13 +255,13 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                         htmlfile.write(str(self))
             elif filename.endswith(('.png', '.PNG')):
                 with open(filename, mode='wb') as pngfile:
-                    if isinstance(self.value, Image.Image):
+                    if SUPPORT_IMAGES and isinstance(self.value, Image.Image):
                         self.value.save(fp=pngfile, format='PNG')  # pylint: disable=no-member
                     else:
                         raise ValueError('Attribute is no image and cannot be converted to one')
             elif filename.endswith(('.jpg', '.JPG', '.jpeg', '.JPEG')):
                 with open(filename, mode='wb') as jpgfile:
-                    if isinstance(self.value, Image.Image):
+                    if SUPPORT_IMAGES and isinstance(self.value, Image.Image):
                         if self.value.mode in ("RGBA", "P"):  # pylint: disable=no-member
                             raise ValueError('Image contains transparency and thus cannot be saved as jpeg-file')
                         self.value.save(fp=jpgfile, format='JPEG')  # pylint: disable=no-member
@@ -267,7 +277,7 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
             return str(self.value.value)  # pylint: disable=no-member
         if isinstance(self.value, datetime):
             return self.value.isoformat()  # pylint: disable=no-member
-        if isinstance(self.value, Image.Image):
+        if SUPPORT_IMAGES and isinstance(self.value, Image.Image):
             return imgToASCIIArt(self.value)  # pylint: disable=no-member
         return str(self.value)
 

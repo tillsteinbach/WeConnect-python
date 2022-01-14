@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.31.0] - 2022-01-14
+### Added
+- Image support is now optional and can be installed with pip install weconnect\[Images\], remove \[Images\] if you do not need image support in your project
+- New disconnect method that cancles all timers and thus terminates all additional threads
+- New timeout parameter to limit the time waiting in requests for the VW servers
+
 ## [0.30.4] - 2022-01-12
 ### Fixed
 - Fix problem with stored tokens

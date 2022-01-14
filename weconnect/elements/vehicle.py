@@ -11,7 +11,6 @@ from weconnect.elements.generic_settings import GenericSettings
 from weconnect.elements.generic_status import GenericStatus
 
 from requests import exceptions, codes
-from PIL import Image  # type: ignore
 
 from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableDict, AddressableList
 if TYPE_CHECKING:
@@ -46,6 +45,13 @@ from weconnect.weconnect_errors import ErrorEventType
 from weconnect.domain import Domain
 
 from weconnect.elements.helpers.request_tracker import RequestTracker
+
+SUPPORT_IMAGES = False
+try:
+    from PIL import Image  # type: ignore
+    SUPPORT_IMAGES = True
+except ImportError:
+    pass
 
 LOG: logging.Logger = logging.getLogger("weconnect")
 
@@ -86,9 +92,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.controls: Controls = Controls(localAddress='controls', vehicle=self, parent=self)
         self.fixAPI: bool = fixAPI
 
-        self.__carImages: Dict[str, Image.Image] = {}
-        self.__badges: Dict[Vehicle.Badge, Image.Image] = {}
-        self.pictures: AddressableDict[str, Image.Image] = AddressableDict(localAddress='pictures', parent=self)
+        if SUPPORT_IMAGES:
+            self.__carImages: Dict[str, Image.Image] = {}
+            self.__badges: Dict[Vehicle.Badge, Image.Image] = {}
+            self.pictures: AddressableDict[str, Image.Image] = AddressableDict(localAddress='pictures', parent=self)
 
         self.requestTracker: Optional[RequestTracker] = None
         if enableTracker:
@@ -227,7 +234,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         self.updateStatus(updateCapabilities=updateCapabilities, force=force, selective=selective)
-        if updatePictures:
+        if SUPPORT_IMAGES and updatePictures:
             for badge in Vehicle.Badge:
                 badgeImg: Image = Image.open(f'{os.path.dirname(__file__)}/../badges/{badge.value}.png')
                 badgeImg.thumbnail((100, 100))
@@ -361,6 +368,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     parkingPosition.enabled = False
 
     def updatePictures(self) -> None:  # noqa: C901
+        if not SUPPORT_IMAGES:
+            return
         url: str = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
         data = self.weConnect.fetchData(url, allowHttpError=True)
         if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
@@ -376,7 +385,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 if img is None or self.weConnect.maxAgePictures is None \
                         or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
                     try:
-                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True, timeout=self.weConnect.timeout)
                         self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                         if imageDownloadResponse.status_code == codes['ok']:
                             img = Image.open(imageDownloadResponse.raw)
@@ -388,7 +397,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         elif imageDownloadResponse.status_code == codes['unauthorized']:
                             LOG.info('Server asks for new authorization')
                             self.weConnect.login()
-                            imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                            imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True, timeout=self.weConnect.timeout)
                             self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                             if imageDownloadResponse.status_code == codes['ok']:
                                 img = Image.open(imageDownloadResponse.raw)
@@ -434,6 +443,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             self.updateStatusPicture()
 
     def updateStatusPicture(self) -> None:  # noqa: C901
+        if not SUPPORT_IMAGES:
+            return
         if 'car_birdview' in self.__carImages:
             img: Image = self.__carImages['car_birdview']
 

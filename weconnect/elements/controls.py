@@ -67,7 +67,7 @@ class Controls(AddressableObject):
                                 settingsDict['targetTemperature_K'] = celsiusToKelvin(20.5)
 
                 data = json.dumps(settingsDict)
-                controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
+                controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True, timeout=self.vehicle.weConnect.timeout)
                 if controlResponse.status_code != requests.codes['ok']:
                     errorDict = controlResponse.json()
                     if errorDict is not None and 'error' in errorDict:
@@ -97,7 +97,7 @@ class Controls(AddressableObject):
             if element.value in [ControlOperation.START, ControlOperation.STOP]:
                 url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/charging/{element.value.value}'
 
-                controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
+                controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True, timeout=self.vehicle.weConnect.timeout)
                 if controlResponse.status_code != requests.codes['ok']:
                     errorDict = controlResponse.json()
                     if errorDict is not None and 'error' in errorDict:

@@ -108,6 +108,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         updateCapabilities: bool = True,
         updatePictures: bool = True,
         numRetries: int = 3,
+        timeout: bool = None,
         selective: Optional[list[Domain]] = None
     ) -> None:
         """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
@@ -116,18 +117,20 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         Args:
             username (str): Username used with WeConnect. This is your volkswagen user.
             password (str): Password used with WeConnect. This is your volkswagen password.
-            tokenfile (Optional[str], optional): Optional file to read/write token from/to. Defaults to None.
+            tokenfile (str, optional): Optional file to read/write token from/to. Defaults to None.
             updateAfterLogin (bool, optional): Update data from WeConnect after logging in (If set to false, update needs to be called manually).
             Defaults to True.
             loginOnInit (bool, optional): Login after initialization (If set to false, login needs to be called manually). Defaults to True.
             refreshTokens (bool, optional): Refresh tokens every 3600 seconds. Defaults to True.
             fixAPI (bool, optional): Automatically fix known issues with the WeConnect responses. Defaults to True.
-            maxAge (Optional[int], optional): Maximum age of the cache before date is fetched again. None means no caching. Defaults to None.
+            maxAge (int, optional): Maximum age of the cache before date is fetched again. None means no caching. Defaults to None.
             maxAgePictures (Optional[int], optional):  Maximum age of the pictures in the cache before date is fetched again. None means no caching.
             Defaults to None.
             updateCapabilities (bool, optional): Also update the information about the cars capabilities. Defaults to True.
             updatePictures (bool, optional):  Also fetch and update pictures. Defaults to True.
             numRetries (int, optional): Number of retries when http requests are failing. Defaults to 3.
+            timeout (bool, optional, optional): Timeout in seconds used for http connections to the VW servers
+            selective (list[Domain], optional): Domains to request data for
         """
         super().__init__(localAddress='', parent=None)
         self.username: str = username
@@ -164,6 +167,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                         status_forcelist=[500],
                         raise_on_status=False)
         self.__session.mount('https://', HTTPAdapter(max_retries=retries))
+        self.timeout = timeout
 
         self.tokenfile: Optional[str] = tokenfile
         if self.tokenfile:
@@ -215,6 +219,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         if updateAfterLogin:
             self.update(updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective)
+
+    def __del__(self) -> None:
+        self.disconnect()
+        return super().__del__()
+
+    def disconnect(self) -> None:
+        if self.__refreshTimer is not None and self.__refreshTimer.is_alive():
+            self.__refreshTimer.cancel()
+            self.__refreshTimer = None
 
     @property
     def session(self) -> requests.Session:
@@ -284,7 +297,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
             '&redirect_uri=weconnect://authenticated'
 
-        tryLoginResponse: requests.Response = self.__session.get(tryLoginUrl, allow_redirects=False)
+        tryLoginResponse: requests.Response = self.__session.get(tryLoginUrl, allow_redirects=False, timeout=self.timeout)
         if tryLoginResponse.status_code != requests.codes['see_other']:
             if tryLoginResponse.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
@@ -300,7 +313,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         while True:
             if 'consent' in loginUrl:
                 consentURL = loginUrl
-            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False,
+                                                                  timeout=self.timeout)
 
             if 'Location' not in loginResponse.headers:
                 if consentURL is not None:
@@ -349,7 +363,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
 
             # Post form content and retrieve credentials page
-            login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True)
+            login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True,
+                                                                    timeout=self.timeout)
             if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
                 if login2Response.status_code == requests.codes['internal_server_error']:
                     raise RetrievalError('Temporary server error during login')
@@ -391,7 +406,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             login3Url: str = 'https://identity.vwgroup.io' + target
 
             # Post form content and retrieve userId in forwarding Location
-            login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
+            login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False,
+                                                                    timeout=self.timeout)
             if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
                 if login3Response.status_code == requests.codes['internal_server_error']:
                     raise RetrievalError('Temporary server error during login')
@@ -429,8 +445,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             while True:
                 if 'consent' in afterLoginUrl:
                     consentURL = afterLoginUrl
-                afterLoginResponse = self.__session.get(
-                    afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False)
+                afterLoginResponse = self.__session.get(afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False,
+                                                        timeout=self.timeout)
 
                 if 'Location' not in afterLoginResponse.headers:
                     if consentURL is not None:
@@ -470,7 +486,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     'authorizationCode': params['code'],
                 })
 
-            tokenResponse = self.__session.post(tokenUrl, data=body, allow_redirects=False)
+            tokenResponse = self.__session.post(tokenUrl, data=body, allow_redirects=False, timeout=self.timeout)
             if tokenResponse.status_code == requests.codes['ok']:
                 data = tokenResponse.json()
                 if 'idToken' in data:
@@ -498,7 +514,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
         failed = False
         try:
-            refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])))
+            refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])),
+                                                                    timeout=self.timeout)
         except requests.exceptions.ConnectionError:
             self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not refresh token due to connection problem')
             failed = True
@@ -743,7 +760,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if data is None or self.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
-                statusResponse: requests.Response = self.session.get(url, allow_redirects=False)
+                statusResponse: requests.Response = self.session.get(url, allow_redirects=False, timeout=self.timeout)
                 self.recordElapsed(statusResponse.elapsed)
                 if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
                     data = statusResponse.json()
@@ -752,7 +769,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 elif statusResponse.status_code == requests.codes['unauthorized']:
                     LOG.info('Server asks for new authorization')
                     self.login()
-                    statusResponse = self.session.get(url, allow_redirects=False)
+                    statusResponse = self.session.get(url, allow_redirects=False, timeout=self.timeout)
                     self.recordElapsed(statusResponse.elapsed)
 
                     if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
