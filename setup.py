@@ -6,6 +6,7 @@ HERE = pathlib.Path(__file__).parent
 
 README = (HERE / "README.md").read_text()
 INSTALL_REQUIRED = (HERE / "requirements.txt").read_text()
+IMAGE_EXTRA_REQUIRED = (HERE / "image_extra_requirements.txt").read_text()
 SETUP_REQUIRED = (HERE / "setup_requirements.txt").read_text()
 TEST_REQUIRED = (HERE / "test_requirements.txt").read_text()
 
@@ -26,6 +27,9 @@ setup(
     },
     license='MIT',
     install_requires=INSTALL_REQUIRED,
+    extras_require={
+        "Images": IMAGE_EXTRA_REQUIRED,
+    },
     classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
