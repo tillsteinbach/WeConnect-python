@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.31.1] - 2022-01-14
+### Fixed
+- Change datatype for chargePower_kW and chargeRate_kmph from Integer to Float
+
 ## [0.31.0] - 2022-01-14
 ### Added
 - Image support is now optional and can be installed with pip install weconnect\[Images\], remove \[Images\] if you do not need image support in your project

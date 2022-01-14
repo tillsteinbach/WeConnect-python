@@ -23,9 +23,9 @@ class ChargingStatus(GenericStatus):
         self.chargeMode = AddressableAttribute(
             localAddress='chargeMode', value=None, parent=self, valueType=ChargingStatus.ChargeMode)
         self.chargePower_kW = AddressableAttribute(
-            localAddress='chargePower_kW', value=None, parent=self, valueType=int)
+            localAddress='chargePower_kW', value=None, parent=self, valueType=float)
         self.chargeRate_kmph = AddressableAttribute(
-            localAddress='chargeRate_kmph', value=None, parent=self, valueType=int)
+            localAddress='chargeRate_kmph', value=None, parent=self, valueType=float)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
@@ -65,13 +65,13 @@ class ChargingStatus(GenericStatus):
 
             if 'chargePower_kW' in fromDict['value']:
                 self.chargePower_kW.setValueWithCarTime(
-                    int(fromDict['value']['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
+                    float(fromDict['value']['chargePower_kW']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.chargePower_kW.enabled = False
 
             if 'chargeRate_kmph' in fromDict['value']:
                 self.chargeRate_kmph.setValueWithCarTime(
-                    int(fromDict['value']['chargeRate_kmph']), lastUpdateFromCar=None, fromServer=True)
+                    float(fromDict['value']['chargeRate_kmph']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.chargeRate_kmph.enabled = False
         else:
