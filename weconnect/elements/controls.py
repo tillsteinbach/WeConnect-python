@@ -58,13 +58,13 @@ class Controls(AddressableObject):
                     for child in climatizationSettings.getLeafChildren():
                         if isinstance(child, ChangeableAttribute):
                             settingsDict[child.getLocalAddress()] = child.value
-                        if 'targetTemperature_K' not in settingsDict:
-                            if 'targetTemperature_C' in settingsDict:
-                                settingsDict['targetTemperature_K'] = celsiusToKelvin(settingsDict['targetTemperature_C'])
-                            elif 'targetTemperature_F' in settingsDict:
-                                settingsDict['targetTemperature_K'] = farenheitToKelvin(settingsDict['targetTemperature_F'])
-                            else:
-                                settingsDict['targetTemperature_K'] = celsiusToKelvin(20.5)
+                    if 'targetTemperature_K' not in settingsDict:
+                        if 'targetTemperature_C' in settingsDict:
+                            settingsDict['targetTemperature_K'] = celsiusToKelvin(settingsDict['targetTemperature_C'])
+                        elif 'targetTemperature_F' in settingsDict:
+                            settingsDict['targetTemperature_K'] = farenheitToKelvin(settingsDict['targetTemperature_F'])
+                        else:
+                            settingsDict['targetTemperature_K'] = celsiusToKelvin(20.5)
 
                 data = json.dumps(settingsDict)
                 controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True, timeout=self.vehicle.weConnect.timeout)

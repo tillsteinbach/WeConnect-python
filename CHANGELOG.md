@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Fixed
+- Fixed a problem where the temperature of the climatization is always set to 20.5 C
 
 ## [0.32.0] - 2022-01-14
 ### Fixed
