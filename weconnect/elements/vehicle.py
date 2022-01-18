@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Set, Any, Type, Optional, cast, TYPE_CHECKING
+from typing import Dict, List, Set, Any, Type, Optional, cast, TYPE_CHECKING
 import os
 from enum import Enum
 from datetime import datetime, timedelta
@@ -88,6 +88,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
         self.domains: AddressableDict[str, AddressableDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
         self.images: AddressableAttribute[Dict[str, str]] = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
+        self.tags: AddressableAttribute[List[str]] = AddressableAttribute(localAddress='tags', parent=self, value=None, valueType=list)
         self.coUsers: AddressableList[Vehicle.User] = AddressableList(localAddress='coUsers', parent=self)
         self.controls: Controls = Controls(localAddress='controls', vehicle=self, parent=self)
         self.fixAPI: bool = fixAPI
@@ -203,6 +204,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             else:
                 self.images.enabled = False
 
+            if 'tags' in fromDict:
+                self.tags.setValueWithCarTime(fromDict['tags'], lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.tags.enabled = False
+
             if 'coUsers' in fromDict and fromDict['coUsers'] is not None:
                 for user in fromDict['coUsers']:
                     if 'id' in user:
@@ -230,6 +236,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                               'nickname',
                                               'capabilities',
                                               'images',
+                                              'tags',
                                               'coUsers']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
@@ -626,6 +633,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             for coUser in self.coUsers:
                 if coUser.enabled:
                     returnString += ''.join(['\t' + line for line in str(coUser).splitlines(True)]) + '\n'
+        if self.tags.enabled and self.tags.value:
+            returnString += 'Tags:               ' + ', '.join(self.tags.value) + '\n'
         if self.capabilities.enabled:
             returnString += f'Capabilities: {len(self.capabilities)} items\n'
             for capability in self.capabilities.values():
