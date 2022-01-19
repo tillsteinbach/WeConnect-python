@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.34.0] - unreleased
+### Changed
+- Code refactoring
+
 ## [0.33.0] - 2022-01-18
 ### Added
 - Add new tags attribute
