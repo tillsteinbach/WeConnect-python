@@ -3,7 +3,6 @@ import logging
 
 from weconnect.addressable import AddressableAttribute, AddressableList
 from weconnect.elements.generic_settings import GenericSettings
-from weconnect.util import robustTimeParse
 
 LOG = logging.getLogger("weconnect")
 
@@ -33,11 +32,7 @@ class ChargingProfiles(GenericSettings):
                 self.profiles.clear()
                 self.profiles.enabled = False
 
-            if 'timeInCar' in fromDict['value']:
-                self.timeInCar.setValueWithCarTime(robustTimeParse(
-                    fromDict['value']['timeInCar']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.timeInCar.enabled = False
+            self.timeInCar.fromDict(fromDict['value'], 'timeInCar')
         else:
             self.profiles.clear()
             self.profiles.enabled = False

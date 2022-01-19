@@ -27,24 +27,8 @@ class ClimatizationStatus(GenericStatus):
         LOG.debug('Update Climatization status from dict')
 
         if 'value' in fromDict:
-            if 'remainingClimatisationTime_min' in fromDict['value']:
-                self.remainingClimatisationTime_min.setValueWithCarTime(int(fromDict['value']['remainingClimatisationTime_min']),
-                                                                        lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.remainingClimatisationTime_min.enabled = False
-
-            if 'climatisationState' in fromDict['value'] and fromDict['value']['climatisationState']:
-                try:
-                    self.climatisationState.setValueWithCarTime(
-                        ClimatizationStatus.ClimatizationState(fromDict['value']['climatisationState']), lastUpdateFromCar=None,
-                        fromServer=True)
-                except ValueError:
-                    self.climatisationState.setValueWithCarTime(ClimatizationStatus.ClimatizationState.UNKNOWN,
-                                                                lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported climatisationState: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['climatisationState'])
-            else:
-                self.climatisationState.enabled = False
+            self.remainingClimatisationTime_min.fromDict(fromDict['value'], 'remainingClimatisationTime_min')
+            self.climatisationState.fromDict(fromDict['value'], 'climatisationState')
         else:
             self.remainingClimatisationTime_min.enabled = False
             self.climatisationState.enabled = False

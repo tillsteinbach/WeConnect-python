@@ -27,31 +27,11 @@ class MaintenanceStatus(GenericStatus):
         LOG.debug('Update maintenance status from dict')
 
         if 'value' in fromDict:
-            if 'inspectionDue_days' in fromDict['value']:
-                self.inspectionDue_days.setValueWithCarTime(int(fromDict['value']['inspectionDue_days']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.inspectionDue_days.enabled = False
-
-            if 'inspectionDue_km' in fromDict['value']:
-                self.inspectionDue_km.setValueWithCarTime(int(fromDict['value']['inspectionDue_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.inspectionDue_km.enabled = False
-
-            if 'mileage_km' in fromDict['value']:
-                self.mileage_km.setValueWithCarTime(int(fromDict['value']['mileage_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.mileage_km.enabled = False
-
-            if 'oilServiceDue_days' in fromDict['value']:
-                self.oilServiceDue_days.setValueWithCarTime(int(fromDict['value']['oilServiceDue_days']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.oilServiceDue_days.enabled = False
-
-            if 'oilServiceDue_km' in fromDict['value']:
-                self.oilServiceDue_km.setValueWithCarTime(int(fromDict['value']['oilServiceDue_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.oilServiceDue_km.enabled = False
-
+            self.inspectionDue_days.fromDict(fromDict['value'], 'inspectionDue_days')
+            self.inspectionDue_km.fromDict(fromDict['value'], 'inspectionDue_km')
+            self.mileage_km.fromDict(fromDict['value'], 'mileage_km')
+            self.oilServiceDue_days.fromDict(fromDict['value'], 'oilServiceDue_days')
+            self.oilServiceDue_km.fromDict(fromDict['value'], 'oilServiceDue_km')
         else:
             self.inspectionDue_days.enabled = False
             self.inspectionDue_km.enabled = False

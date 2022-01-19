@@ -42,11 +42,7 @@ class ClimatizationTimer(GenericStatus):
                 self.timers.clear()
                 self.timers.enabled = False
 
-            if 'timeInCar' in fromDict['value']:
-                self.timeInCar.setValueWithCarTime(robustTimeParse(
-                    fromDict['value']['timeInCar']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.timeInCar.enabled = False
+            self.timeInCar.fromDict(fromDict['value'], 'timeInCar')
         else:
             self.timers.clear()
             self.timers.enabled = False

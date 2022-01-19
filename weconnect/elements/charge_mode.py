@@ -27,16 +27,7 @@ class ChargeMode(GenericStatus):
         LOG.debug('Update ChargeMode status from dict')
 
         if 'value' in fromDict:
-            if 'preferredChargeMode' in fromDict['value'] and fromDict['value']['preferredChargeMode']:
-                try:
-                    self.preferredChargeMode.setValueWithCarTime(
-                        ChargeMode.ChargeModeEnum(fromDict['value']['preferredChargeMode']), lastUpdateFromCar=None,
-                        fromServer=True)
-                except ValueError:
-                    self.preferredChargeMode.setValueWithCarTime(ChargeMode.ChargeModeEnum.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported preferredChargeMode: %s was provided, please report this as a bug', fromDict['value']['preferredChargeMode'])
-            else:
-                self.preferredChargeMode.enabled = False
+            self.preferredChargeMode.fromDict(fromDict['value'], 'preferredChargeMode')
 
             if 'availableChargeModes' in fromDict['value']:
                 if self.availableChargeModes is None:

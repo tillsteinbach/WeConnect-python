@@ -74,17 +74,7 @@ class WindowHeatingStatus(GenericStatus):
             else:
                 LOG.error('Window is missing windowLocation attribute')
 
-            if 'windowHeatingState' in fromDict and fromDict['windowHeatingState']:
-                try:
-                    self.windowHeatingState.setValueWithCarTime(WindowHeatingStatus.Window.WindowHeatingState(
-                        fromDict['windowHeatingState']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.windowHeatingState.setValueWithCarTime(WindowHeatingStatus.Window.WindowHeatingState.UNKNOWN,
-                                                                lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported windowHeatingState: %s was provided,'
-                                ' please report this as a bug', fromDict['windowHeatingState'])
-            else:
-                self.windowHeatingState.enabled = False
+            self.windowHeatingState.fromDict(fromDict, 'windowHeatingState')
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['windowLocation', 'windowHeatingState']}.items():

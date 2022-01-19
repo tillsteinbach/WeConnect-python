@@ -28,16 +28,7 @@ class RangeStatus(GenericStatus):
         LOG.debug('Update Climatization settings from dict')
 
         if 'value' in fromDict:
-            if 'carType' in fromDict['value'] and fromDict['value']['carType']:
-                try:
-                    self.carType.setValueWithCarTime(RangeStatus.CarType(
-                        fromDict['value']['carType']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.carType.setValueWithCarTime(RangeStatus.CarType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported carType: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['carType'])
-            else:
-                self.carType.enabled = False
+            self.carType.fromDict(fromDict['value'], 'carType')
 
             if 'primaryEngine' in fromDict['value']:
                 self.primaryEngine.update(fromDict['value']['primaryEngine'])
@@ -49,11 +40,7 @@ class RangeStatus(GenericStatus):
             else:
                 self.secondaryEngine.enabled = False
 
-            if 'totalRange_km' in fromDict['value']:
-                self.totalRange_km.setValueWithCarTime(
-                    int(fromDict['value']['totalRange_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.totalRange_km.enabled = False
+            self.totalRange_km.fromDict(fromDict['value'], 'totalRange_km')
 
         else:
             self.carType.enabled = False
@@ -99,29 +86,9 @@ class RangeStatus(GenericStatus):
         def update(self, fromDict):
             LOG.debug('Update Engine from dict')
 
-            if 'type' in fromDict and fromDict['type']:
-                try:
-                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType(fromDict['type']),
-                                                  lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.type.setValueWithCarTime(RangeStatus.Engine.EngineType.UNKNOWN,
-                                                  lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported type: %s was provided,'
-                                ' please report this as a bug', fromDict['type'])
-            else:
-                self.type.enabled = False
-
-            if 'currentSOC_pct' in fromDict:
-                self.currentSOC_pct.setValueWithCarTime(
-                    int(fromDict['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.currentSOC_pct.enabled = False
-
-            if 'remainingRange_km' in fromDict:
-                self.remainingRange_km.setValueWithCarTime(
-                    int(fromDict['remainingRange_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.remainingRange_km.enabled = False
+            self.type.fromDict(fromDict, 'type')
+            self.currentSOC_pct.fromDict(fromDict, 'currentSOC_pct')
+            self.remainingRange_km.fromDict(fromDict, 'remainingRange_km')
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['type', 'currentSOC_pct', 'remainingRange_km']}.items():

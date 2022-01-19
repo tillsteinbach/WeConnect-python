@@ -26,16 +26,8 @@ class RangeMeasurements(GenericStatus):
         LOG.debug('Update battery status from dict')
 
         if 'value' in fromDict:
-            if 'electricRange' in fromDict['value']:
-                self.electricRange.setValueWithCarTime(int(fromDict['value']['electricRange']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.electricRange.enabled = False
-
-            if 'gasolineRange' in fromDict['value']:
-                self.gasolineRange.setValueWithCarTime(int(fromDict['value']['gasolineRange']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.gasolineRange.enabled = False
-
+            self.electricRange.fromDict(fromDict['value'], 'electricRange')
+            self.gasolineRange.fromDict(fromDict['value'], 'gasolineRange')
         else:
             self.electricRange.enabled = False
             self.gasolineRange.enabled = False

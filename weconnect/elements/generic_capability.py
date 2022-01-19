@@ -2,7 +2,6 @@ from enum import IntEnum
 import logging
 from datetime import datetime
 
-from weconnect.util import robustTimeParse
 from weconnect.addressable import AddressableObject, AddressableAttribute
 
 LOG = logging.getLogger("weconnect")
@@ -31,10 +30,7 @@ class GenericCapability(AddressableObject):
     def update(self, fromDict):
         LOG.debug('Update capability from dict')
 
-        if 'id' in fromDict:
-            self.id.setValueWithCarTime(fromDict['id'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.id.enabled = False
+        self.id.fromDict(fromDict, 'id')
 
         if 'status' in fromDict:
             statuses = []
@@ -48,17 +44,8 @@ class GenericCapability(AddressableObject):
         else:
             self.status.enabled = False
 
-        if 'expirationDate' in fromDict:
-            self.expirationDate.setValueWithCarTime(robustTimeParse(
-                fromDict['expirationDate']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.expirationDate.enabled = False
-
-        if 'userDisablingAllowed' in fromDict:
-            self.userDisablingAllowed.setValueWithCarTime(
-                fromDict['userDisablingAllowed'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.userDisablingAllowed.enabled = False
+        self.expirationDate.fromDict(fromDict, 'expirationDate')
+        self.userDisablingAllowed.fromDict(fromDict, 'userDisablingAllowed')
 
         for key, value in {key: value for key, value in fromDict.items()
                            if key not in ['id', 'status', 'expirationDate', 'userDisablingAllowed']}.items():

@@ -3,7 +3,7 @@ import logging
 
 from weconnect.addressable import AddressableLeaf, ChangeableAttribute, AddressableAttribute, AliasChangeableAttribute
 from weconnect.elements.generic_settings import GenericSettings
-from weconnect.util import toBool, celsiusToKelvin, farenheitToKelvin
+from weconnect.util import celsiusToKelvin, farenheitToKelvin
 
 LOG = logging.getLogger("weconnect")
 
@@ -71,78 +71,17 @@ class ClimatizationSettings(GenericSettings):
         LOG.debug('Update Climatization settings from dict')
 
         if 'value' in fromDict:
-            if 'targetTemperature_K' in fromDict['value'] and fromDict['value']['targetTemperature_K'] is not None:
-                self.targetTemperature_K.setValueWithCarTime(
-                    float(fromDict['value']['targetTemperature_K']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.targetTemperature_K.enabled = False
-
-            if 'targetTemperature_C' in fromDict['value'] and fromDict['value']['targetTemperature_C'] is not None:
-                self.targetTemperature_C.setValueWithCarTime(
-                    float(fromDict['value']['targetTemperature_C']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.targetTemperature_C.enabled = False
-
-            if 'targetTemperature_F' in fromDict['value'] and fromDict['value']['targetTemperature_F'] is not None:
-                self.targetTemperature_F.setValueWithCarTime(
-                    float(fromDict['value']['targetTemperature_F']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.targetTemperature_F.enabled = False
-
-            if 'unitInCar' in fromDict['value'] and fromDict['value']['unitInCar']:
-                try:
-                    self.unitInCar.setValueWithCarTime(
-                        ClimatizationSettings.UnitInCar(fromDict['value']['unitInCar']), lastUpdateFromCar=None,
-                        fromServer=True)
-                except ValueError:
-                    self.unitInCar.setValueWithCarTime(ClimatizationSettings.UnitInCar.UNKNOWN,
-                                                       lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported unitInCar: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['unitInCar'])
-            else:
-                self.unitInCar.enabled = False
-
-            if 'climatisationWithoutExternalPower' in fromDict['value']:
-                self.climatisationWithoutExternalPower.setValueWithCarTime(
-                    toBool(fromDict['value']['climatisationWithoutExternalPower']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.climatisationWithoutExternalPower.enabled = False
-
-            if 'climatizationAtUnlock' in fromDict['value']:
-                self.climatizationAtUnlock.setValueWithCarTime(
-                    toBool(fromDict['value']['climatizationAtUnlock']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.climatizationAtUnlock.enabled = False
-
-            if 'windowHeatingEnabled' in fromDict['value']:
-                self.windowHeatingEnabled.setValueWithCarTime(
-                    toBool(fromDict['value']['windowHeatingEnabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.windowHeatingEnabled.enabled = False
-
-            if 'zoneFrontLeftEnabled' in fromDict['value']:
-                self.zoneFrontLeftEnabled.setValueWithCarTime(
-                    toBool(fromDict['value']['zoneFrontLeftEnabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.zoneFrontLeftEnabled.enabled = False
-
-            if 'zoneFrontRightEnabled' in fromDict['value']:
-                self.zoneFrontRightEnabled.setValueWithCarTime(
-                    toBool(fromDict['value']['zoneFrontRightEnabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.zoneFrontRightEnabled.enabled = False
-
-            if 'zoneRearLeftEnabled' in fromDict['value']:
-                self.zoneRearLeftEnabled.setValueWithCarTime(
-                    toBool(fromDict['value']['zoneRearLeftEnabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.zoneRearLeftEnabled.enabled = False
-
-            if 'zoneRearRightEnabled' in fromDict['value']:
-                self.zoneRearRightEnabled.setValueWithCarTime(
-                    toBool(fromDict['value']['zoneRearRightEnabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.zoneRearRightEnabled.enabled = False
+            self.targetTemperature_K.fromDict(fromDict['value'], 'targetTemperature_K')
+            self.targetTemperature_C.fromDict(fromDict['value'], 'targetTemperature_C')
+            self.targetTemperature_F.fromDict(fromDict['value'], 'targetTemperature_F')
+            self.unitInCar.fromDict(fromDict['value'], 'unitInCar')
+            self.climatisationWithoutExternalPower.fromDict(fromDict['value'], 'climatisationWithoutExternalPower')
+            self.climatizationAtUnlock.fromDict(fromDict['value'], 'climatizationAtUnlock')
+            self.windowHeatingEnabled.fromDict(fromDict['value'], 'windowHeatingEnabled')
+            self.zoneFrontLeftEnabled.fromDict(fromDict['value'], 'zoneFrontLeftEnabled')
+            self.zoneFrontRightEnabled.fromDict(fromDict['value'], 'zoneFrontRightEnabled')
+            self.zoneRearLeftEnabled.fromDict(fromDict['value'], 'zoneRearLeftEnabled')
+            self.zoneRearRightEnabled.fromDict(fromDict['value'], 'zoneRearRightEnabled')
         else:
             self.targetTemperature_K.enabled = False
             self.targetTemperature_C.enabled = False

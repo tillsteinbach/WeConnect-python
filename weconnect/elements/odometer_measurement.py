@@ -24,10 +24,7 @@ class OdometerMeasurement(GenericStatus):
         LOG.debug('Odometer measurement from dict')
 
         if 'value' in fromDict:
-            if 'odometer' in fromDict['value']:
-                self.odometer.setValueWithCarTime(int(fromDict['value']['odometer']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.odometer.enabled = False
+            self.odometer.fromDict(fromDict['value'], 'odometer')
         else:
             self.odometer.enabled = False
 

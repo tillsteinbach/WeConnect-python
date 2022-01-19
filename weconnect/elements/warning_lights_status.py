@@ -24,15 +24,8 @@ class WarningLightsStatus(GenericStatus):
         LOG.debug('Update maintenance status from dict')
 
         if 'value' in fromDict:
-            if 'mileage_km' in fromDict['value']:
-                self.mileage_km.setValueWithCarTime(int(fromDict['value']['mileage_km']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.mileage_km.enabled = False
-
-            if 'warningLights' in fromDict['value']:
-                self.warningLights.setValueWithCarTime(str(fromDict['value']['warningLights']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.warningLights.enabled = False
+            self.mileage_km.fromDict(fromDict['value'], 'mileage_km')
+            self.warningLights.fromDict(fromDict['value'], 'warningLights')
         else:
             self.mileage_km.enabled = False
             self.warningLights.enabled = False

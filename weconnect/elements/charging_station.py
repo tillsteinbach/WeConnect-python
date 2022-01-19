@@ -1,7 +1,6 @@
 import logging
 from enum import Enum
 
-from weconnect.util import toBool
 from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableList
 
 LOG = logging.getLogger("weconnect")
@@ -43,30 +42,11 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
     ):
         if fromDict is not None:
             LOG.debug('Create / update charging station')
-            if 'id' in fromDict:
-                self.id.setValueWithCarTime(fromDict['id'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.id.enabled = False
-
-            if 'name' in fromDict:
-                self.name.setValueWithCarTime(fromDict['name'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.name.enabled = False
-
-            if 'latitude' in fromDict:
-                self.latitude.setValueWithCarTime(float(fromDict['latitude']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.latitude.enabled = False
-
-            if 'longitude' in fromDict:
-                self.longitude.setValueWithCarTime(float(fromDict['longitude']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.longitude.enabled = False
-
-            if 'distance' in fromDict:
-                self.distance.setValueWithCarTime(float(fromDict['distance']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.distance.enabled = False
+            self.id.fromDict(fromDict, 'id')
+            self.name.fromDict(fromDict, 'name')
+            self.latitude.fromDict(fromDict, 'latitude')
+            self.longitude.fromDict(fromDict, 'longitude')
+            self.longitude.fromDict(fromDict, 'distance')
 
             if 'address' in fromDict:
                 if self.address is None:
@@ -77,10 +57,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                 self.address.enabled = False
                 self.address = None
 
-            if 'chargingPower' in fromDict:
-                self.chargingPower.setValueWithCarTime(float(fromDict['chargingPower']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.chargingPower.enabled = False
+            self.chargingPower.fromDict(fromDict, 'chargingPower')
 
             if 'chargingSpots' in fromDict and fromDict['chargingSpots'] is not None:
                 if len(fromDict['chargingSpots']) == len(self.chargingSpots):
@@ -118,20 +95,9 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                 self.authTypes.enabled = False
                 self.authTypes.clear()
 
-            if 'filteredOut' in fromDict:
-                self.filteredOut.setValueWithCarTime(toBool(fromDict['filteredOut']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.filteredOut.enabled = False
-
-            if 'isFavorite' in fromDict:
-                self.isFavorite.setValueWithCarTime(toBool(fromDict['isFavorite']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.isFavorite.enabled = False
-
-            if 'isWeChargePartner' in fromDict:
-                self.isWeChargePartner.setValueWithCarTime(toBool(fromDict['isWeChargePartner']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.isWeChargePartner.enabled = False
+            self.filteredOut.fromDict(fromDict, 'filteredOut')
+            self.isFavorite.fromDict(fromDict, 'isFavorite')
+            self.isWeChargePartner.fromDict(fromDict, 'isWeChargePartner')
 
             if 'cpoiOperatorInfo' in fromDict:
                 if self.operator is None:

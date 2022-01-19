@@ -146,54 +146,13 @@ class GenericStatus(AddressableObject):
         def update(self, fromDict: Dict[str, Any]) -> None:  # noqa: C901
             LOG.debug('Update Status Target from dict')
 
-            if 'status' in fromDict and fromDict['status']:
-                try:
-                    self.status.setValueWithCarTime(GenericStatus.Request.Status(
-                        fromDict['status']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.status.setValueWithCarTime(GenericStatus.Request.Status.UNKNOWN,
-                                                    lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported target status: %s was provided,'
-                                ' please report this as a bug', fromDict['status'])
-            else:
-                self.status.enabled = False
-
-            if 'operation' in fromDict and fromDict['operation']:
-                try:
-                    self.operation.setValueWithCarTime(ControlOperation(
-                        fromDict['operation']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.operation.setValueWithCarTime(ControlOperation.UNKNOWN,
-                                                       lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported target operation: %s was provided,'
-                                ' please report this as a bug', fromDict['operation'])
-            else:
-                self.operation.enabled = False
-
-            if 'body' in fromDict:
-                self.body.setValueWithCarTime(str(fromDict['body']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.body.enabled = False
-
-            if 'group' in fromDict:
-                self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.group.enabled = False
-
-            if 'info' in fromDict:
-                self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.info.enabled = False
-
-            if 'requestId' in fromDict:
-                self.requestId.setValueWithCarTime(fromDict['requestId'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.requestId.enabled = False
-
-            if 'vcfRequestId' in fromDict:
-                self.vcfRequestId.setValueWithCarTime(fromDict['vcfRequestId'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.vcfRequestId.enabled = False
+            self.status.fromDict(fromDict, 'status')
+            self.operation.fromDict(fromDict, 'operation')
+            self.body.fromDict(fromDict, 'body')
+            self.group.fromDict(fromDict, 'group')
+            self.info.fromDict(fromDict, 'info')
+            self.requestId.fromDict(fromDict, 'requestId')
+            self.vcfRequestId.fromDict(fromDict, 'vcfRequestId')
 
         def __str__(self) -> str:
             returnValue: str = ''

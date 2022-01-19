@@ -27,31 +27,8 @@ class PlugStatus(GenericStatus):
         LOG.debug('Update Plug status from dict')
 
         if 'value' in fromDict:
-            if 'plugConnectionState' in fromDict['value'] and fromDict['value']['plugConnectionState']:
-                try:
-                    self.plugConnectionState.setValueWithCarTime(
-                        PlugStatus.PlugConnectionState(fromDict['value']['plugConnectionState']), lastUpdateFromCar=None,
-                        fromServer=True)
-                except ValueError:
-                    self.plugConnectionState.setValueWithCarTime(PlugStatus.PlugConnectionState.UNKNOWN,
-                                                                 lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported plugConnectionState: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['plugConnectionState'])
-            else:
-                self.plugConnectionState.enabled = False
-
-            if 'plugLockState' in fromDict['value'] and fromDict['value']['plugLockState']:
-                try:
-                    self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState(fromDict['value']['plugLockState']),
-                                                           lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.plugLockState.setValueWithCarTime(PlugStatus.PlugLockState.UNKNOWN,
-                                                           lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported plugLockState: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['plugLockState'])
-            else:
-                self.plugLockState.enabled = False
-
+            self.plugConnectionState.fromDict(fromDict['value'], 'plugConnectionState')
+            self.plugLockState.fromDict(fromDict['value'], 'plugLockState')
         else:
             self.plugConnectionState.enabled = False
             self.plugLockState.enabled = False

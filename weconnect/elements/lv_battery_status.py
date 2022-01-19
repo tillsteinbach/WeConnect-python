@@ -25,16 +25,7 @@ class LVBatteryStatus(GenericStatus):
         LOG.debug('Update lv battery status from dict')
 
         if 'value' in fromDict:
-            if 'batterySupport' in fromDict['value'] and fromDict['value']['batterySupport']:
-                try:
-                    self.batterySupport.setValueWithCarTime(
-                        LVBatteryStatus.BatterySupport(fromDict['value']['batterySupport']), lastUpdateFromCar=None,
-                        fromServer=True)
-                except ValueError:
-                    self.batterySupport.setValueWithCarTime(LVBatteryStatus.BatterySupport.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported batterySupport: %s was provided, please report this as a bug', fromDict['value']['batterySupport'])
-            else:
-                self.batterySupport.enabled = False
+            self.batterySupport.fromDict(fromDict['value'], 'batterySupport')
         else:
             self.batterySupport.enabled = False
 

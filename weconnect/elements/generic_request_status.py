@@ -26,27 +26,9 @@ class GenericRequestStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update Request status from dict')
 
-        if 'status' in fromDict:
-            try:
-                self.status.setValueWithCarTime(GenericRequestStatus.Status(fromDict['status']),
-                                                lastUpdateFromCar=None, fromServer=True)
-            except ValueError:
-                self.status.setValueWithCarTime(GenericRequestStatus.Status.UNKNOWN,
-                                                lastUpdateFromCar=None, fromServer=True)
-                LOG.warning('An unsupported status: %s was provided,'
-                            ' please report this as a bug', fromDict['status'])
-        else:
-            self.status.enabled = False
-
-        if 'group' in fromDict:
-            self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.group.enabled = False
-
-        if 'info' in fromDict:
-            self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.info.enabled = False
+        self.status.fromDict(fromDict, 'status')
+        self.group.fromDict(fromDict, 'group')
+        self.info.fromDict(fromDict, 'info')
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['status', 'group', 'info']))
 

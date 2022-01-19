@@ -29,25 +29,14 @@ class ParkingPosition(GenericStatus):
             del fromDict['data']
 
         if 'value' in fromDict:
-            if 'lat' in fromDict['value']:
-                self.latitude.setValueWithCarTime(float(fromDict['value']['lat']), lastUpdateFromCar=None, fromServer=True)
-            elif 'latitude' in fromDict['value']:
-                self.latitude.setValueWithCarTime(float(fromDict['value']['latitude']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.latitude.enabled = False
-
-            if 'lon' in fromDict['value']:
-                self.longitude.setValueWithCarTime(float(fromDict['value']['lon']), lastUpdateFromCar=None, fromServer=True)
-            elif 'longitude' in fromDict['value']:
-                self.longitude.setValueWithCarTime(float(fromDict['value']['longitude']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.longitude.enabled = False
+            self.latitude.fromDict(fromDict['value'], 'lat')
+            self.longitude.fromDict(fromDict['value'], 'lon')
         else:
             self.latitude.enabled = False
             self.longitude.enabled = False
             self.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['latitude', 'longitude', 'lat', 'lon']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['lat', 'lon']))
 
     def __str__(self):
         string = super().__str__()

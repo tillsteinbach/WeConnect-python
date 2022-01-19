@@ -26,11 +26,7 @@ class BatteryStatus(GenericStatus):
         LOG.debug('Update battery status from dict')
 
         if 'value' in fromDict:
-            if 'currentSOC_pct' in fromDict['value']:
-                self.currentSOC_pct.setValueWithCarTime(
-                    int(fromDict['value']['currentSOC_pct']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.currentSOC_pct.enabled = False
+            self.currentSOC_pct.fromDict(fromDict['value'], 'currentSOC_pct')
 
             if 'cruisingRangeElectric_km' in fromDict['value']:
                 cruisingRangeElectric_km = int(fromDict['value']['cruisingRangeElectric_km'])

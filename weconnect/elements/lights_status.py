@@ -72,17 +72,7 @@ class LightsStatus(GenericStatus):
             else:
                 LOG.error('Light is missing name attribute')
 
-            if 'status' in fromDict and fromDict['status']:
-                try:
-                    self.status.setValueWithCarTime(LightsStatus.Light.LightState(fromDict['status']),
-                                                    lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.status.setValueWithCarTime(LightsStatus.Light.LightState.UNKNOWN,
-                                                    lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported status: %s was provided,'
-                                ' please report this as a bug', fromDict['status'])
-            else:
-                self.status.enabled = False
+            self.status.fromDict(fromDict, 'status')
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['name', 'status']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)

@@ -26,15 +26,7 @@ class AccessStatus(GenericStatus):
         LOG.debug('Update access status from dict')
 
         if 'value' in fromDict:
-            if 'overallStatus' in fromDict['value'] and fromDict['value']['overallStatus']:
-                try:
-                    self.overallStatus.setValueWithCarTime(
-                        AccessStatus.OverallState(fromDict['value']['overallStatus']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.overallStatus.setValueWithCarTime(AccessStatus.OverallState.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported overallStatus: %s was provided, please report this as a bug', fromDict['value']['overallStatus'])
-            else:
-                self.overallStatus.enabled = False
+            self.overallStatus.fromDict(fromDict['value'], 'overallStatus')
 
             if 'doors' in fromDict['value'] and fromDict['value']['doors'] is not None:
                 for doorDict in fromDict['value']['doors']:

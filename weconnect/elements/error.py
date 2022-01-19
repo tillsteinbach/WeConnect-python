@@ -4,8 +4,6 @@ import logging
 
 from datetime import datetime
 
-from weconnect.util import robustTimeParse, toBool
-
 from weconnect.addressable import AddressableObject, AddressableAttribute
 
 if TYPE_CHECKING:
@@ -48,38 +46,12 @@ class Error(AddressableObject):
     def update(self, fromDict: Dict[str, Any]) -> None:
         LOG.debug('Update Status Error from dict')
 
-        if 'code' in fromDict:
-            self.code.setValueWithCarTime(int(fromDict['code']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.code.enabled = False
-
-        if 'message' in fromDict:
-            self.message.setValueWithCarTime(fromDict['message'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.message.enabled = False
-
-        if 'group' in fromDict:
-            self.group.setValueWithCarTime(int(fromDict['group']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.code.enabled = False
-
-        if 'info' in fromDict:
-            self.info.setValueWithCarTime(fromDict['info'], lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.info.enabled = False
-
-        if 'errorTimeStamp' in fromDict:
-            carCapturedTimestamp: Optional[datetime] = robustTimeParse(fromDict['errorTimeStamp'])
-            self.timestamp.setValueWithCarTime(carCapturedTimestamp, lastUpdateFromCar=None, fromServer=True)
-            if self.timestamp.value is None:
-                self.timestamp.enabled = False
-        else:
-            self.timestamp.enabled = False
-
-        if 'retry' in fromDict:
-            self.retry.setValueWithCarTime(toBool(fromDict['retry']), lastUpdateFromCar=None, fromServer=True)
-        else:
-            self.retry.enabled = False
+        self.code.fromDict(fromDict, 'code')
+        self.message.fromDict(fromDict, 'message')
+        self.group.fromDict(fromDict, 'group')
+        self.info.fromDict(fromDict, 'info')
+        self.timestamp.fromDict(fromDict, 'errorTimeStamp')
+        self.retry.fromDict(fromDict, 'retry')
 
         if not self.code.enabled and not self.message.enabled and not self.code.enabled and not self.info.enabled \
                 and not self.retry.enabled:

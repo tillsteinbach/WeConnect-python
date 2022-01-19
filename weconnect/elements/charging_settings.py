@@ -35,35 +35,9 @@ class ChargingSettings(GenericSettings):
         LOG.debug('Update Charging settings from dict')
 
         if 'value' in fromDict:
-            if 'maxChargeCurrentAC' in fromDict['value'] and fromDict['value']['maxChargeCurrentAC']:
-                try:
-                    self.maxChargeCurrentAC.setValueWithCarTime(ChargingSettings.MaximumChargeCurrent(
-                        fromDict['value']['maxChargeCurrentAC']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.maxChargeCurrentAC.setValueWithCarTime(ChargingSettings.MaximumChargeCurrent.UNKNOWN,
-                                                                lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported maxChargeCurrentAC: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['maxChargeCurrentAC'])
-            else:
-                self.maxChargeCurrentAC.enabled = False
-
-            if 'autoUnlockPlugWhenCharged' in fromDict['value'] and fromDict['value']['autoUnlockPlugWhenCharged']:
-                try:
-                    self.autoUnlockPlugWhenCharged.setValueWithCarTime(ChargingSettings.UnlockPlugState(
-                        fromDict['value']['autoUnlockPlugWhenCharged']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.autoUnlockPlugWhenCharged.setValueWithCarTime(ChargingSettings.UnlockPlugState.UNKNOWN,
-                                                                       lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported autoUnlockPlugWhenCharged: %s was provided,'
-                                ' please report this as a bug', fromDict['value']['autoUnlockPlugWhenCharged'])
-            else:
-                self.autoUnlockPlugWhenCharged.enabled = False
-
-            if 'targetSOC_pct' in fromDict['value']:
-                self.targetSOC_pct.setValueWithCarTime(
-                    int(fromDict['value']['targetSOC_pct']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.targetSOC_pct.enabled = False
+            self.maxChargeCurrentAC.fromDict(fromDict['value'], 'maxChargeCurrentAC')
+            self.autoUnlockPlugWhenCharged.fromDict(fromDict['value'], 'autoUnlockPlugWhenCharged')
+            self.targetSOC_pct.fromDict(fromDict['value'], 'targetSOC_pct')
         else:
             self.maxChargeCurrentAC.enabled = False
             self.autoUnlockPlugWhenCharged.enabled = False

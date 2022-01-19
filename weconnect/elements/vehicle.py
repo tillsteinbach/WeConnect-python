@@ -127,60 +127,14 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     ) -> None:
         if fromDict is not None:
             LOG.debug('Create /update vehicle')
-            if 'vin' in fromDict:
-                self.vin.setValueWithCarTime(fromDict['vin'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.vin.enabled = False
 
-            if 'role' in fromDict and fromDict['role']:
-                try:
-                    self.role.setValueWithCarTime(Vehicle.User.Role(fromDict['role']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.role.setValueWithCarTime(Vehicle.User.Role.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported role: %s was provided, please report this as a bug', fromDict['role'])
-            else:
-                self.role.enabled = False
-
-            if 'enrollmentStatus' in fromDict and fromDict['enrollmentStatus']:
-                try:
-                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus(fromDict['enrollmentStatus']), lastUpdateFromCar=None,
-                                                              fromServer=True)
-                    if self.enrollmentStatus.value == Vehicle.User.EnrollmentStatus.GDC_MISSING:
-                        LOG.warning('WeConnect reported enrollmentStatus GDC_MISSING. This means you have to login at'
-                                    ' myvolkswagen.de website and accept the terms and conditions')
-                except ValueError:
-                    self.enrollmentStatus.setValueWithCarTime(Vehicle.User.EnrollmentStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported enrollment Status: %s was provided, please report this as a bug', fromDict['enrollmentStatus'])
-            else:
-                self.enrollmentStatus.enabled = False
-
-            if 'userRoleStatus' in fromDict and fromDict['userRoleStatus']:
-                try:
-                    self.userRoleStatus.setValueWithCarTime(Vehicle.User.UserRoleStatus(fromDict['userRoleStatus']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.userRoleStatus.setValueWithCarTime(Vehicle.User.UserRoleStatus.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported userRoleStatus: %s was provided, please report this as a bug', fromDict['userRoleStatus'])
-            else:
-                self.userRoleStatus.enabled = False
-
-            if 'model' in fromDict:
-                self.model.setValueWithCarTime(fromDict['model'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.model.enabled = False
-
-            if 'devicePlatform' in fromDict and fromDict['devicePlatform']:
-                try:
-                    self.devicePlatform.setValueWithCarTime(Vehicle.DevicePlatform(fromDict['devicePlatform']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.devicePlatform.setValueWithCarTime(Vehicle.DevicePlatform.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported devicePlatform: %s was provided, please report this as a bug', fromDict['devicePlatform'])
-            else:
-                self.devicePlatform.enabled = False
-
-            if 'nickname' in fromDict:
-                self.nickname.setValueWithCarTime(fromDict['nickname'], lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.nickname.enabled = False
+            self.vin.fromDict(fromDict, 'vin')
+            self.role.fromDict(fromDict, 'role')
+            self.enrollmentStatus.fromDict(fromDict, 'enrollmentStatus')
+            self.userRoleStatus.fromDict(fromDict, 'userRoleStatus')
+            self.model.fromDict(fromDict, 'model')
+            self.devicePlatform.fromDict(fromDict, 'devicePlatform')
+            self.nickname.fromDict(fromDict, 'nickname')
 
             if updateCapabilities and 'capabilities' in fromDict and fromDict['capabilities'] is not None:
                 for capDict in fromDict['capabilities']:

@@ -72,31 +72,10 @@ class ReadinessStatus(GenericStatus):
         def update(self, fromDict):
             LOG.debug('Update timer from dict')
 
-            if 'isOnline' in fromDict:
-                self.isOnline.setValueWithCarTime(toBool(fromDict['isOnline']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.isOnline.enabled = False
-
-            if 'isActive' in fromDict:
-                self.isActive.setValueWithCarTime(toBool(fromDict['isActive']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.isActive.enabled = False
-
-            if 'batteryPowerLevel' in fromDict and fromDict['batteryPowerLevel']:
-                try:
-                    self.batteryPowerLevel.setValueWithCarTime(
-                        ReadinessStatus.ConnectionState.BatteryPowerLevel(fromDict['batteryPowerLevel']), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.batteryPowerLevel.setValueWithCarTime(ReadinessStatus.ConnectionState.BatteryPowerLevel.UNKNOWN, lastUpdateFromCar=None,
-                                                               fromServer=True)
-                    LOG.warning('An unsupported batteryPowerLevel: %s was provided, please report this as a bug', fromDict['batteryPowerLevel'])
-            else:
-                self.batteryPowerLevel.enabled = False
-
-            if 'dailyPowerBudgetAvailable' in fromDict:
-                self.dailyPowerBudgetAvailable.setValueWithCarTime(toBool(fromDict['dailyPowerBudgetAvailable']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.dailyPowerBudgetAvailable.enabled = False
+            self.isOnline.fromDict(fromDict, 'isOnline')
+            self.isActive.fromDict(fromDict, 'isActive')
+            self.batteryPowerLevel.fromDict(fromDict, 'batteryPowerLevel')
+            self.dailyPowerBudgetAvailable.fromDict(fromDict, 'dailyPowerBudgetAvailable')
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['isOnline', 'isActive', 'batteryPowerLevel', 'dailyPowerBudgetAvailable']}.items():
