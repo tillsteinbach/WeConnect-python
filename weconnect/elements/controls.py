@@ -52,6 +52,7 @@ class Controls(AddressableObject):
                 settingsDict = dict()
                 if element.value == ControlOperation.START:
                     if 'climatisation' not in self.vehicle.domains and 'climatisationSettings' not in self.vehicle.domains['climatisation']:
+                        element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
                         raise ControlError(
                             'Could not control climatisation, there are no climatisationSettings for the vehicle available.')
                     climatizationSettings = self.vehicle.domains['climatisation']['climatisationSettings']
@@ -83,14 +84,17 @@ class Controls(AddressableObject):
                                     message += ' - Please retry in a moment'
                                 else:
                                     message += ' - No retry possible'
+                            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
                             raise SetterError(f'Could not control climatisation ({message})')
                         else:
+                            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
                             raise SetterError(f'Could not control climatisation ({controlResponse.status_code})')
                     raise SetterError(f'Could not control climatisation ({controlResponse.status_code})')
                 responseDict = controlResponse.json()
                 if 'data' in responseDict and 'requestID' in responseDict['data']:
                     if self.vehicle.requestTracker is not None:
                         self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CLIMATISATION, 20, 120)
+            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
 
     def __onChargingControlChange(self, element, flags):  # noqa: C901
         if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED:
@@ -113,11 +117,14 @@ class Controls(AddressableObject):
                                     message += ' - Please retry in a moment'
                                 else:
                                     message += ' - No retry possible'
+                            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
                             raise SetterError(f'Could not control charging ({message})')
                         else:
+                            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
                             raise SetterError(f'Could not control charging ({controlResponse.status_code})')
                     raise SetterError(f'Could not control charging ({controlResponse.status_code})')
                 responseDict = controlResponse.json()
                 if 'data' in responseDict and 'requestID' in responseDict['data']:
                     if self.vehicle.requestTracker is not None:
                         self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CHARGING, 20, 120)
+            element.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=False, noNotify=True)
