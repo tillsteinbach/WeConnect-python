@@ -46,7 +46,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
             self.name.fromDict(fromDict, 'name')
             self.latitude.fromDict(fromDict, 'latitude')
             self.longitude.fromDict(fromDict, 'longitude')
-            self.longitude.fromDict(fromDict, 'distance')
+            self.distance.fromDict(fromDict, 'distance')
 
             if 'address' in fromDict:
                 if self.address is None:
