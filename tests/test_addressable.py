@@ -94,8 +94,10 @@ def test_AddressableLeafParents():
     addressableLeaf.enabled = True
     assert addressableLeaf.enabled is True
 
+    recursiveChildren = parentAddressableLeaf.getRecursiveChildren()
+    assert len(recursiveChildren) == 2  # This is two as it is the oarent as well as the child
     leafChildren = parentAddressableLeaf.getLeafChildren()
-    assert len(leafChildren) == 2  # This is two as it is the oarent as well as the child
+    assert len(leafChildren) == 1
 
     addressableLeaf.enabled = False
     assert addressableLeaf.enabled is False
@@ -188,6 +190,8 @@ def test_AdressableObjectLeafChildren():
     childAddressableLeaf1.setValueWithCarTime(newValue='test1')
 
     children = addressableObject.getLeafChildren()
+    assert len(children) == 1
+    children = addressableObject.getRecursiveChildren()
     assert len(children) == 2
     assert children[0] == addressableObject
     assert children[1] == childAddressableLeaf1
@@ -195,6 +199,8 @@ def test_AdressableObjectLeafChildren():
     childAddressableLeaf2.setValueWithCarTime(newValue='test2')
 
     children = addressableObject.getLeafChildren()
+    assert len(children) == 2
+    children = addressableObject.getRecursiveChildren()
     assert len(children) == 3
     assert children[0] == addressableObject
     assert children[1] == childAddressableLeaf1
