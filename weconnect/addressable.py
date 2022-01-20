@@ -273,26 +273,23 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
             raise ValueError('I cannot save None value')
 
     def fromDict(self, fromDict: dict, key: str):
-        if fromDict is not None and key in fromDict and fromDict[key] is not None:
-            if issubclass(self.valueType, bool):
-                self.setValueWithCarTime(toBool(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
-            elif issubclass(self.valueType, int):
+        if fromDict is not None and key in fromDict:
+            if issubclass(self.valueType, int):
                 self.setValueWithCarTime(int(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
-            elif issubclass(self.valueType, float):
-                self.setValueWithCarTime(float(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
             elif issubclass(self.valueType, Enum):
-                try:
-                    self.setValueWithCarTime(self.valueType(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
-                except ValueError:
-                    self.setValueWithCarTime(self.valueType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported %s: %s was provided, known values are [%s]'
-                                ' please report this as a bug', key, fromDict[key], ', '.join([state.value for state in list(self.valueType)]))
+                if fromDict[key]:
+                    try:
+                        self.setValueWithCarTime(self.valueType(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
+                    except ValueError:
+                        self.setValueWithCarTime(self.valueType.UNKNOWN, lastUpdateFromCar=None, fromServer=True)
+                        LOG.warning('An unsupported %s: %s was provided, known values are [%s]'
+                                    ' please report this as a bug', key, fromDict[key], ', '.join([state.value for state in list(self.valueType)]))
+                else:
+                    self.enabled = False
             elif issubclass(self.valueType, datetime):
                 self.setValueWithCarTime(robustTimeParse(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
-            elif issubclass(self.valueType, str):
-                self.setValueWithCarTime(str(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
             else:
-                raise ValueError(f'Unknown attribute type {self.valueType}')
+                raise ValueError('Unknown attribute type %s', self.valueType)
         else:
             self.enabled = False
 
