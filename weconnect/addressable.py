@@ -232,9 +232,6 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
     def isLeaf(self) -> bool:  # pylint: disable=R0201
         return True
 
-    def getLeafChildren(self) -> List[AddressableLeaf]:
-        return [self]
-
     def saveToFile(self, filename: str) -> None:  # noqa: C901
         if self.value is not None:
             if filename.endswith(('.txt', '.TXT', '.text')):
@@ -412,17 +409,23 @@ class AddressableObject(AddressableLeaf):
         self.enabled = True
 
     def getLeafChildren(self) -> List[AddressableLeaf]:
+        return self.getRecursiveChildren(leaveOnly=True)
+
+    def getRecursiveChildren(self, leaveOnly=False) -> List[AddressableLeaf]:
         if not self.enabled:
             return []
         if self.isLeaf():
             return [self]
 
-        children: List[AddressableLeaf] = [self]
+        children: List[AddressableLeaf] = []
+        if not leaveOnly:
+            children.append(self)
         for child in self.__children.values():
-            if isinstance(child, AddressableObject):
-                children.extend(child.getLeafChildren())
-            elif isinstance(child, AddressableLeaf) and child.enabled:
-                children.append(child)
+            if child.enabled:
+                if isinstance(child, AddressableObject):
+                    children.extend(child.getRecursiveChildren(leaveOnly=leaveOnly))
+                elif isinstance(child, AddressableLeaf):
+                    children.append(child)
         return children
 
     @property

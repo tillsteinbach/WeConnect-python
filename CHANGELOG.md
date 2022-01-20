@@ -1,4 +1,4 @@
-# Changelog
+CHANGELOG.md# Changelog
 
 All notable changes to this project will be documented in this file.
 
@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 ## [0.34.0] - unreleased
 ### Changed
 - Code refactoring
+
+### Fixed
+- duplicated entries in getChildren
+- Domains are now in domains topic
 
 ## [0.33.0] - 2022-01-18
 ### Added

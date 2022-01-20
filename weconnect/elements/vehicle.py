@@ -280,7 +280,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     continue
                 if domain.value in data:
                     if domain.value not in self.domains:
-                        self.domains[domain.value] = AddressableDict(localAddress=domain.value, parent=self)
+                        self.domains[domain.value] = AddressableDict(localAddress=domain.value, parent=self.domains)
                     for key, className in keyClassMap.items():
                         if key in data[domain.value]:
                             if key in self.domains[domain.value]:
