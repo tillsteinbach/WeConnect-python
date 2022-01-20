@@ -272,10 +272,14 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
         else:
             raise ValueError('I cannot save None value')
 
-    def fromDict(self, fromDict: dict, key: str):
-        if fromDict is not None and key in fromDict:
-            if issubclass(self.valueType, int):
+    def fromDict(self, fromDict: dict, key: str):  # noqa: C901
+        if fromDict is not None and key in fromDict and fromDict[key] is not None:
+            if issubclass(self.valueType, bool):
+                self.setValueWithCarTime(toBool(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
+            elif issubclass(self.valueType, int):
                 self.setValueWithCarTime(int(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
+            elif issubclass(self.valueType, float):
+                self.setValueWithCarTime(float(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
             elif issubclass(self.valueType, Enum):
                 if fromDict[key]:
                     try:
@@ -288,8 +292,10 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                     self.enabled = False
             elif issubclass(self.valueType, datetime):
                 self.setValueWithCarTime(robustTimeParse(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
+            elif issubclass(self.valueType, str):
+                self.setValueWithCarTime(str(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
             else:
-                raise ValueError('Unknown attribute type %s', self.valueType)
+                raise ValueError(f'Unknown attribute type {self.valueType}')
         else:
             self.enabled = False
 
