@@ -182,16 +182,22 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
         parent: AddressableObject,
         value: Optional[T],
         valueType: Type[T],
-        lastUpdateFromCar: Optional[datetime] = None
+        lastUpdateFromCar: Optional[datetime] = None,
+        valueGetter: Optional[Callable[[], Optional[T]]] = None,
+        valueSetter: Optional[Callable[[Optional[T]], None]] = None
     ) -> None:
         super().__init__(localAddress, parent)
         self.__value: Optional[T] = None
         self.valueType: Type[T] = valueType
+        self.valueGetter = valueGetter
+        self.valueSetter = valueSetter
         if value is not None:
             self.setValueWithCarTime(value, lastUpdateFromCar, fromServer=True)
 
     @property
     def value(self) -> Optional[T]:
+        if self.valueGetter is not None:
+            return self.valueGetter()
         return self.__value
 
     @value.setter
@@ -315,9 +321,11 @@ class ChangeableAttribute(AddressableAttribute):
         value,
         valueType=str,
         lastUpdateFromCar: Optional[datetime] = None,
+        valueGetter: Optional[Callable[[], Optional[T]]] = None,
+        valueSetter: Optional[Callable[[Optional[T]], None]] = None
     ) -> None:
         super().__init__(localAddress=localAddress, parent=parent, value=value, valueType=valueType,
-                         lastUpdateFromCar=lastUpdateFromCar)
+                         lastUpdateFromCar=lastUpdateFromCar, valueGetter=valueGetter, valueSetter=valueSetter)
 
     @AddressableAttribute.value.setter  # type: ignore # noqa: C901
     def value(self, newValue):  # noqa: C901
@@ -356,7 +364,10 @@ class ChangeableAttribute(AddressableAttribute):
             if self.valueType == float:
                 newValue = float(newValue)
 
-        self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
+        if self.valueSetter is not None:
+            self.valueSetter(newValue)
+        else:
+            self.setValueWithCarTime(newValue=newValue, lastUpdateFromCar=None)
 
 
 class AliasChangeableAttribute(ChangeableAttribute):
