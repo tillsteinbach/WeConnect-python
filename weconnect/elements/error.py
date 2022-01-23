@@ -31,17 +31,23 @@ class Error(AddressableObject):
             self.update(fromDict)
 
     def reset(self) -> None:
-        self.code.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
-        self.code.enabled = False
-        self.message.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
-        self.message.enabled = False
-        self.group.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
-        self.group.enabled = False
-        self.info.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
-        self.info.enabled = False
-        self.retry.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
-        self.retry.enabled = False
-        self.enabled = False
+        if self.code.enabled:
+            self.code.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.code.enabled = False
+        if self.message.enabled:
+            self.message.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.message.enabled = False
+        if self.group.enabled:
+            self.group.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.group.enabled = False
+        if self.info.enabled:
+            self.info.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.info.enabled = False
+        if self.retry.enabled:
+            self.retry.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
+            self.retry.enabled = False
+        if self.enabled:
+            self.enabled = False
 
     def update(self, fromDict: Dict[str, Any]) -> None:
         LOG.debug('Update Status Error from dict')
