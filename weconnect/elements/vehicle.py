@@ -302,7 +302,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         # Controls
         self.controls.update()
 
-        if not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None):
+        if (selective is None or any(x in selective for x in [Domain.ALL, Domain.PARKING])) \
+                and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
             url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
             data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
                                                                                                              codes['no_content'],
