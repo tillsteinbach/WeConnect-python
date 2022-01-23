@@ -1,12 +1,16 @@
 from typing import TYPE_CHECKING, Tuple
 from datetime import datetime, timedelta
 from threading import Timer
+import logging
 
 if TYPE_CHECKING:
     from weconnect.elements.vehicle import Vehicle
 
 from weconnect.elements.generic_status import GenericStatus
 from weconnect.domain import Domain
+
+
+LOG = logging.getLogger("weconnect")
 
 
 class RequestTracker:
@@ -23,6 +27,7 @@ class RequestTracker:
     def trackRequest(self, id: str, domain: Domain, minTime: int, maxTime: int) -> None:
         minDate = datetime.now() + timedelta(seconds=minTime)
         maxDate = datetime.now() + timedelta(seconds=maxTime)
+        LOG.debug('Track requests for id %s in %s at lesat until %s, at most until %s every 5 seconds', id, domain.value, minDate, maxDate)
         if domain not in self.requests:
             self.requests[domain] = [(id, minDate, maxDate)]
         else:
@@ -34,6 +39,7 @@ class RequestTracker:
             self.__timer.start()
 
     def update(self) -> None:  # noqa: C901
+        LOG.debug('request tracking update status for %d domains', len(self.requests))
         self.vehicle.updateStatus(force=True, selective=self.requests)
         openRequests = []
         for domain, statuses in self.vehicle.domains.items():
@@ -47,6 +53,7 @@ class RequestTracker:
 
                 if maxDate < datetime.now():
                     requests.remove(request)
+                    LOG.debug('request tracking for id %s timed out', id)
                 else:
                     for openRequest in openRequests:
                         if openRequest.requestId.value == id:
@@ -54,10 +61,12 @@ class RequestTracker:
                                                                 GenericStatus.Request.Status.QUEUED,
                                                                 GenericStatus.Request.Status.DELAYED):
                                 requests.remove(request)
+                                LOG.debug('request tracking for id %s finished with status %s', id, openRequest.status.value)
                             request = (id, datetime.now(), maxDate)
             if not requests:
                 self.requests.pop(domain)
 
-        self.__timer = Timer(5, self.update)
-        self.__timer.daemon = True
-        self.__timer.start()
+        if self.requests:  # Restart timer if there are still requests left
+            self.__timer = Timer(5, self.update)
+            self.__timer.daemon = True
+            self.__timer.start()

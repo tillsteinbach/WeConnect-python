@@ -94,12 +94,12 @@ class GenericStatus(AddressableObject):
                 if 'requestId' in request:
                     for knownRequest in self.requests:
                         if knownRequest.requestId.enabled and knownRequest.requestId.value == request['requestId']:
-                            request.update(fromDict=request)
+                            knownRequest.update(fromDict=request)
                             updated = True
                 elif 'operation' in request:
                     for knownRequest in self.requests:
                         if knownRequest.operation.enabled and knownRequest.operation.value.value == request['operation']:
-                            request.update(fromDict=request)
+                            knownRequest.update(fromDict=request)
                             updated = True
 
                 if not updated:
@@ -145,7 +145,6 @@ class GenericStatus(AddressableObject):
 
         def update(self, fromDict: Dict[str, Any]) -> None:  # noqa: C901
             LOG.debug('Update Status Target from dict')
-
             self.status.fromDict(fromDict, 'status')
             self.operation.fromDict(fromDict, 'operation')
             self.body.fromDict(fromDict, 'body')
