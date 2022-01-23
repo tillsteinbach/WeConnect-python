@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.34.0] - unreleased
+## [0.34.0] - 2022-01-23
 ### Changed
 - Code refactoring
 
 ### Fixed
 - duplicated entries in getChildren
 - Domains are now in domains topic
+- Fixed Request Tracker
+- Parking Position also selectivevly usable
 
 ## [0.33.0] - 2022-01-18
 ### Added
@@ -460,7 +462,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.33.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.34.0...HEAD
+[0.34.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.34.0
 [0.33.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.33.0
 [0.32.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.32.1
 [0.32.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.32.0
