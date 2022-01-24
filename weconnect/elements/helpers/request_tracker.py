@@ -55,14 +55,19 @@ class RequestTracker:
                     requests.remove(request)
                     LOG.debug('request tracking for id %s timed out', id)
                 else:
-                    for openRequest in openRequests:
-                        if openRequest.requestId.value == id:
-                            if openRequest.status.value not in (GenericStatus.Request.Status.IN_PROGRESS,
-                                                                GenericStatus.Request.Status.QUEUED,
-                                                                GenericStatus.Request.Status.DELAYED):
-                                requests.remove(request)
-                                LOG.debug('request tracking for id %s finished with status %s', id, openRequest.status.value)
-                            request = (id, datetime.now(), maxDate)
+                    if openRequests:
+                        for openRequest in openRequests:
+                            if openRequest.requestId.value == id:
+                                if openRequest.status.value not in (GenericStatus.Request.Status.IN_PROGRESS,
+                                                                    GenericStatus.Request.Status.QUEUED,
+                                                                    GenericStatus.Request.Status.DELAYED):
+                                    requests.remove(request)
+                                    LOG.debug('request tracking for id %s finished with status %s', id, openRequest.status.value)
+                                request = (id, datetime.now(), maxDate)
+                    else:
+                        if minDate < datetime.now():
+                            requests.remove(request)
+                            LOG.debug('request tracking for id %s removed, no requests seen until minimum time', id)
             if not requests:
                 self.requests.pop(domain)
 
