@@ -89,21 +89,28 @@ class GenericStatus(AddressableObject):
             self.error.reset()
 
         if 'requests' in fromDict:
+            requestsToRemove = self.requests
             for request in fromDict['requests']:
                 updated = False
                 if 'requestId' in request:
                     for knownRequest in self.requests:
                         if knownRequest.requestId.enabled and knownRequest.requestId.value == request['requestId']:
                             knownRequest.update(fromDict=request)
+                            if knownRequest in requestsToRemove:
+                                requestsToRemove.remove(knownRequest)
                             updated = True
                 elif 'operation' in request:
                     for knownRequest in self.requests:
                         if knownRequest.operation.enabled and knownRequest.operation.value.value == request['operation']:
                             knownRequest.update(fromDict=request)
+                            if knownRequest in requestsToRemove:
+                                requestsToRemove.remove(knownRequest)
                             updated = True
 
                 if not updated:
                     self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
+            for request in requestsToRemove:
+                self.requests.remove(request)
         else:
             self.requests.clear()
             self.requests.enabled = False
