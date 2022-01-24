@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.35.0] - unreleased (in testing)
+## [0.35.0] - 2022-01-24
 ### Changed
 - Better tracking of several parallel requests
 
@@ -469,7 +469,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.34.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.35.0...HEAD
+[0.35.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.35.0
 [0.34.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.34.0
 [0.33.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.33.0
 [0.32.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.32.1
