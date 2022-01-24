@@ -89,7 +89,7 @@ class GenericStatus(AddressableObject):
             self.error.reset()
 
         if 'requests' in fromDict:
-            requestsToRemove = self.requests
+            requestsToRemove = self.requests.copy()
             for request in fromDict['requests']:
                 updated = False
                 if 'requestId' in request:
@@ -111,6 +111,15 @@ class GenericStatus(AddressableObject):
                     self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
             for request in requestsToRemove:
                 self.requests.remove(request)
+
+            index = 0
+            for request in self.requests:
+                if request != str(index):
+                    request.enabled = False
+                    request.localAddress = str(index)
+                    request.enabled = True
+                index += 1
+
         else:
             self.requests.clear()
             self.requests.enabled = False
