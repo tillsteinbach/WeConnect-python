@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.35.0] - unreleased (in testing)
+### Changed
+- Better tracking of several parallel requests
+
+### Fixed
+- Reduced number of unnecesary events for none values
+
 ## [0.34.0] - 2022-01-23
 ### Changed
 - Code refactoring
