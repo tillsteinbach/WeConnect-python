@@ -7,16 +7,19 @@ import requests
 
 from urllib.parse import parse_qsl, urlsplit
 
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 
-from oauthlib.common import to_unicode
+from oauthlib.common import add_params_to_uri
 from oauthlib.oauth2 import InsecureTransportError, is_secure_transport
+
 
 from requests.models import CaseInsensitiveDict
 
 
 from weconnect.auth.openid_session import AccessType
 from weconnect.auth.vw_web_session import VWWebSession
-from weconnect.errors import AuthentificationError, RetrievalError
+from weconnect.errors import AuthentificationError, RetrievalError, TemporaryAuthentificationError
 
 LOG = logging.getLogger("weconnect")
 
@@ -24,55 +27,46 @@ LOG = logging.getLogger("weconnect")
 class WeChargeSession(VWWebSession):
     def __init__(self, sessionuser, **kwargs):
         super(WeChargeSession, self).__init__(client_id='0fa5ae01-ebc0-4901-a2aa-4dd60572ea0e@apps_vw-dilab_com',
-                         refresh_url='https://identity.vwgroup.io/oidc/v1/token',
-                         scope='openid profile address email cars vin',
-                         redirect_uri='wecharge://authenticated',
-                         token=None,
-                         state=None,
-                         sessionuser=sessionuser,
-                         **kwargs)
+                                              refresh_url='https://identity.vwgroup.io/oidc/v1/token',
+                                              scope='openid profile address email cars vin',
+                                              redirect_uri='wecharge://authenticated',
+                                              state=None,
+                                              sessionuser=sessionuser,
+                                              **kwargs)
 
         self.headers = CaseInsensitiveDict({
-                'accept': '*/*',
-                'content-type': 'application/json',
-                'content-version': '1',
-                'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
-                'user-agent': 'WeConnect/3 CFNetwork/1327.0.4 Darwin/21.2.0',
-                'accept-language': 'de-de',
-            })
-        
-        response = self.doWebAuth()
-        self.fetch_token('https://wecharge.apps.emea.vwapps.io/user-identity/v1/identity/login',
-                code=None,
-                authorization_response=response,
-                body="",
-                auth=None,
-                username=None,
-                password=None,
-                method="POST",
-                force_querystring=False,
-                timeout=None,
-                headers=None,
-                verify=True,
-                proxies=None,
-                include_client_id=None,
-                client_secret=None,
-                **kwargs
-            )
-        self.refresh_tokens(
-            'https://wecharge.apps.emea.vwapps.io/refresh/v1',
-            refresh_token=None,
-            body="",
-            auth=None,
-            timeout=None,
-            headers=None,
-            verify=True,
-            proxies=None,
-            **kwargs
+            'accept': '*/*',
+            'content-type': 'application/json',
+            'content-version': '1',
+            'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
+            'user-agent': 'WeConnect/3 CFNetwork/1327.0.4 Darwin/21.2.0',
+            'accept-language': 'de-de',
+        })
+
+    @property
+    def wcAccessToken(self):
+        if self._token is not None and 'wc_access_token' in self._token:
+            return self._token.get('wc_access_token')
+        return None
+
+    def login(self):
+        authorizationUrl = self.authorizationUrl(url='https://identity.vwgroup.io/oidc/v1/authorize')
+        response = self.doWebAuth(authorizationUrl)
+        self.fetchTokens('https://wecharge.apps.emea.vwapps.io/user-identity/v1/identity/login',
+                         authorization_response=response)
+
+    def refresh(self):
+        self.refreshTokens(
+            'https://wecharge.apps.emea.vwapps.io/user-identity/v1/identity/login',
         )
 
-    def doWebAuth(self):
+    def doWebAuth(self, authorizationUrl):  # noqa: C901
         websession: requests.Session = requests.Session()
+        retries = Retry(total=self.retries,
+                        backoff_factor=0.1,
+                        status_forcelist=[500],
+                        raise_on_status=False)
+        websession.mount('https://', HTTPAdapter(max_retries=retries))
         websession.headers = CaseInsensitiveDict({
             'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
                           'Chrome/74.0.3729.185 Mobile Safari/537.36',
@@ -83,13 +77,12 @@ class WeChargeSession(VWWebSession):
             'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
             'upgrade-insecure-requests': '1',
         })
-        loginUrl = self.authorization_url(url='https://identity.vwgroup.io/oidc/v1/authorize')
+
         while True:
-            loginFormResponse: requests.Response = websession.get(loginUrl, allow_redirects=False)
+            loginFormResponse: requests.Response = websession.get(authorizationUrl, allow_redirects=False)
             if loginFormResponse.status_code == requests.codes['ok']:
                 break
-            loginUrl = loginFormResponse.headers['Location']
-        print(loginFormResponse.text)
+            authorizationUrl = loginFormResponse.headers['Location']
         # Find login form on page to obtain inputs
         emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             r'(?P<formContent>.+?(?=</form>))</form>'
@@ -148,15 +141,17 @@ class WeChargeSession(VWWebSession):
                         form2Data['email'] = templateModel['emailPasswordForm']['email']
                     if 'errorCode' in templateModel:
                         raise AuthentificationError('Error during login, is the username correct?')
+                    if 'postAction' in templateModel:
+                        target = templateModel['postAction']
+                    else:
+                        raise AuthentificationError('Form does not contain postAction')
                 elif match.groupdict()['name'] == 'csrf_token':
                     form2Data['_csrf'] = match.groupdict()['value']
         form2Data['password'] = self.sessionuser.password
         if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
-            print(form2Data)
             raise AuthentificationError('Could not find all required input fields in credentials page')
 
-        # TODO improve build url from form action
-        login3Url = 'https://identity.vwgroup.io/signin-service/v1/0fa5ae01-ebc0-4901-a2aa-4dd60572ea0e@apps_vw-dilab_com/login/authenticate'
+        login3Url = f'https://identity.vwgroup.io/signin-service/v1/{self.client_id}/{target}'
 
         # Post form content and retrieve userId in forwarding Location
         login3Response: requests.Response = websession.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
@@ -216,64 +211,41 @@ class WeChargeSession(VWWebSession):
             queryurl = afterLoginUrl
         return queryurl
 
-    def fetch_token(
+    def fetchTokens(
         self,
         token_url,
-        code=None,
         authorization_response=None,
         **kwargs
     ):
-        params = dict(parse_qsl(urlsplit(authorization_response).query))
-        code = self.parseFromFragment(authorization_response)
+        self.parseFromFragment(authorization_response)
 
-        if all(key in code for key in ('state', 'id_token', 'access_token', 'code')):
-            body: str = json.dumps(
-                {
-                    'state': code['state'],
-                    'id_token': code['id_token'],
-                    'redirect_uri': self.redirect_uri,
-                    'region': 'emea',
-                    'access_token': code['access_token'],
-                    'authorizationCode': code['code'],
-                })
-
-            loginHeadersForm: CaseInsensitiveDict = self.headers
+        if all(key in self.token for key in ('state', 'id_token', 'access_token', 'code')):
+            loginHeadersForm: CaseInsensitiveDict = self.headers.copy()
             loginHeadersForm['accept'] = 'application/json'
             loginHeadersForm["x-api-key"] = "yabajourasW9N8sm+9F/oP=="
 
-            token_url = token_url + f'?redirect_uri=wecharge://authenticated&code={params["code"]}'
+            urlParams = [(('redirect_uri', self.redirect_uri)),
+                         (('code', self.token["code"]))]
+            token_url = add_params_to_uri(token_url, urlParams)
 
             tokenResponse = self.get(token_url, headers=loginHeadersForm, allow_redirects=False, access_type=AccessType.ID)
 
-            self.token = self.parseFromBody(tokenResponse.text)
+            self.parseFromBody(tokenResponse.text)
 
             return self.token
 
-    def refresh_tokens(
-            self,
-            token_url,
-            refresh_token=None,
-            auth=None,
-            timeout=None,
-            headers=None,
-            verify=True,
-            proxies=None,
-            **kwargs
-        ):
-        """Fetch a new access token using a refresh token.
-
-        :param token_url: The token endpoint, must be HTTPS.
-        :param refresh_token: The refresh_token to use.
-        :param body: Optional application/x-www-form-urlencoded body to add the
-                     include in the token request. Prefer kwargs over body.
-        :param auth: An auth tuple or method as accepted by `requests`.
-        :param timeout: Timeout of the request in seconds.
-        :param headers: A dict of headers to be used by `requests`.
-        :param verify: Verify SSL certificate.
-        :param proxies: The `proxies` argument will be passed to `requests`.
-        :param kwargs: Extra parameters to include in the token request.
-        :return: A token dict
-        """
+    def refreshTokens(
+        self,
+        token_url,
+        refresh_token=None,
+        auth=None,
+        timeout=None,
+        headers=None,
+        verify=True,
+        proxies=None,
+        **kwargs
+    ):
+        LOG.info('Refreshing tokens')
         if not token_url:
             raise ValueError("No token endpoint set for auto_refresh.")
 
@@ -281,42 +253,51 @@ class WeChargeSession(VWWebSession):
             raise InsecureTransportError()
 
         refresh_token = refresh_token or self.refresh_token
+        if refresh_token is None:
+            raise ValueError("Missing refresh token.")
 
         if headers is None:
             headers = self.headers
+
+        urlParams = [(('redirect_uri', self.redirect_uri)),
+                     (('refresh_token', refresh_token))]
+
+        token_url = add_params_to_uri(token_url, urlParams)
+
+        refreshHeaders: CaseInsensitiveDict = headers.copy()
+        refreshHeaders['accept'] = 'application/json'
+        refreshHeaders["x-api-key"] = "yabajourasW9N8sm+9F/oP=="
 
         tokenResponse = self.get(
             token_url,
             auth=auth,
             timeout=timeout,
-            headers=headers,
+            headers=refreshHeaders,
             verify=verify,
             withhold_token=False,
             proxies=proxies,
             access_type=AccessType.REFRESH
         )
-        LOG.debug("Request to refresh token completed with status %s.", tokenResponse.status_code)
-        LOG.debug("Response headers were %s and content %s.", tokenResponse.headers, tokenResponse.text)
-        self.token = self.parseFromBody(tokenResponse.text)
-
-        if not "refresh_token" in self.token:
-            LOG.debug("No new refresh token given. Re-using old.")
-            self.token["refresh_token"] = refresh_token
-        return self.token
-
-    def safeTokenAttributes(self, response):
-        """Add attributes from a token exchange response to self."""
-        super(WeChargeSession, self).safeTokenAttributes(response)
-        if 'wc_access_token' in response:
-            self.wc_access_token = response.get('wc_access_token')
+        if tokenResponse.status_code == requests.codes['unauthorized']:
+            raise AuthentificationError('Refreshing tokens failed: Server requests new authorization')
+        elif tokenResponse.status_code in (requests.codes['internal_server_error'], requests.codes['service_unavailable'], requests.codes['gateway_timeout']):
+            raise TemporaryAuthentificationError('Token could not be refreshed due to temporary WeConnect failure: {tokenResponse.status_code}')
+        elif tokenResponse.status_code == requests.codes['ok']:
+            self.parseFromBody(tokenResponse.text)
+            if "refresh_token" not in self.token:
+                LOG.debug("No new refresh token given. Re-using old.")
+                self.token["refresh_token"] = refresh_token
+            return self.token
+        else:
+            raise RetrievalError(f'Status Code from WeConnect while refreshing tokens was: {tokenResponse.status_code}')
 
     def addToken(self, uri, body=None, headers=None, access_type=AccessType.ACCESS, **kwargs):
         headers = headers or {}
         uri, headers, body = super(WeChargeSession, self).addToken(uri, body=body, headers=headers, access_type=access_type, **kwargs)
 
         if access_type == AccessType.ACCESS:
-            if not (self.wc_access_token):
+            if not (self.wcAccessToken):
                 raise ValueError("Missing wc access token.")
-            headers['wc_access_token'] = self.wc_access_token
+            headers['wc_access_token'] = self.wcAccessToken
 
         return (uri, headers, body)

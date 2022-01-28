@@ -347,7 +347,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 if img is None or self.weConnect.maxAgePictures is None \
                         or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
                     try:
-                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True, timeout=self.weConnect.timeout)
+                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                         self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                         if imageDownloadResponse.status_code == codes['ok']:
                             img = Image.open(imageDownloadResponse.raw)
@@ -359,7 +359,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         elif imageDownloadResponse.status_code == codes['unauthorized']:
                             LOG.info('Server asks for new authorization')
                             self.weConnect.login()
-                            imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True, timeout=self.weConnect.timeout)
+                            imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                             self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                             if imageDownloadResponse.status_code == codes['ok']:
                                 img = Image.open(imageDownloadResponse.raw)

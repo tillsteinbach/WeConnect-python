@@ -3,102 +3,60 @@ from typing import Dict, Optional, Match
 import re
 import json
 import logging
-from oauthlib.oauth2.rfc6749.parameters import parse_authorization_code_response, prepare_grant_uri
 import requests
 
-from urllib.parse import parse_qs, parse_qsl, urlencode, urlparse, urlsplit
+from urllib.parse import parse_qsl, urlparse, urlsplit
 
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 
 from oauthlib.common import add_params_to_uri, generate_nonce, to_unicode
 from oauthlib.oauth2 import InsecureTransportError
-from oauthlib.oauth2 import TokenExpiredError, is_secure_transport
+from oauthlib.oauth2 import is_secure_transport
 
 from requests.models import CaseInsensitiveDict
 from weconnect.auth.openid_session import AccessType
 
 
 from weconnect.auth.vw_web_session import VWWebSession
-from weconnect.errors import AuthentificationError, RetrievalError
+from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError, TemporaryAuthentificationError
 
 
 LOG = logging.getLogger("weconnect")
 
 
-class BearerAuth(requests.auth.AuthBase):
-    """Requests auth class for Bearer token authentification header"""
-
-    def __init__(self, token: str) -> None:
-        """Intialize authentification class from token
-
-        Args:
-            token (str): token to be used
-        """
-        self.token = token
-
-    def __call__(self, r: requests.PreparedRequest) -> requests.PreparedRequest:
-        """Internally used in requests to prepare a request with authentification
-
-        Args:
-            r (requests.PreparedRequest): The request to prepare
-
-        Returns:
-            requests.PreparedRequest: Request with authentification header
-        """
-        r.headers["authorization"] = "Bearer " + self.token
-        return r
-
-
 class WeConnectSession(VWWebSession):
     def __init__(self, sessionuser, **kwargs):
         super(WeConnectSession, self).__init__(client_id='a24fba63-34b3-4d43-b181-942111e6bda8@apps_vw-dilab_com',
-                         refresh_url='https://identity.vwgroup.io/oidc/v1/token',
-                         scope='openid profile badge cars dealers vin',
-                         redirect_uri='weconnect://authenticated',
-                         token=None,
-                         state=None,
-                         sessionuser=sessionuser,
-                         **kwargs)
+                                               refresh_url='https://identity.vwgroup.io/oidc/v1/token',
+                                               scope='openid profile badge cars dealers vin',
+                                               redirect_uri='weconnect://authenticated',
+                                               state=None,
+                                               sessionuser=sessionuser,
+                                               **kwargs)
 
         self.headers = CaseInsensitiveDict({
-                'accept': '*/*',
-                'content-type': 'application/json',
-                'content-version': '1',
-                'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
-                'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
-                'accept-language': 'de-de',
-            })
-        
-        response = self.doWebAuth()
-        self.fetch_token('https://login.apps.emea.vwapps.io/login/v1',
-                code=None,
-                authorization_response=response,
-                body="",
-                auth=None,
-                username=None,
-                password=None,
-                method="POST",
-                force_querystring=False,
-                timeout=None,
-                headers=None,
-                verify=True,
-                proxies=None,
-                include_client_id=None,
-                client_secret=None,
-                **kwargs
-            )
-        self.refresh_tokens(
+            'accept': '*/*',
+            'content-type': 'application/json',
+            'content-version': '1',
+            'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
+            'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
+            'accept-language': 'de-de',
+        })
+
+    def login(self):
+        authorizationUrl = self.authorizationUrl(url='https://identity.vwgroup.io/oidc/v1/authorize')
+        response = self.doWebAuth(authorizationUrl)
+        self.fetchTokens('https://login.apps.emea.vwapps.io/login/v1',
+                         authorization_response=response
+                         )
+
+    def refresh(self):
+        self.refreshTokens(
             'https://login.apps.emea.vwapps.io/refresh/v1',
-            refresh_token=None,
-            body="",
-            auth=None,
-            timeout=None,
-            headers=None,
-            verify=True,
-            proxies=None,
-            **kwargs
         )
 
-    def authorization_url(self, url, state=None, **kwargs):
+    def authorizationUrl(self, url, state=None, **kwargs):
         if state is not None:
             raise AuthentificationError('Do not provide state')
 
@@ -116,8 +74,13 @@ class WeConnectSession(VWWebSession):
 
         return redirect
 
-    def doWebAuth(self):
+    def doWebAuth(self, authorizationUrl):  # noqa: C901
         websession: requests.Session = requests.Session()
+        retries = Retry(total=self.retries,
+                        backoff_factor=0.1,
+                        status_forcelist=[500],
+                        raise_on_status=False)
+        websession.mount('https://', HTTPAdapter(max_retries=retries))
         websession.headers = CaseInsensitiveDict({
             'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
                           'Chrome/74.0.3729.185 Mobile Safari/537.36',
@@ -128,19 +91,18 @@ class WeConnectSession(VWWebSession):
             'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
             'upgrade-insecure-requests': '1',
         })
-        loginUrl = self.authorization_url(url='https://identity.vwgroup.io/oidc/v1/authorize')
         while True:
-            loginFormResponse: requests.Response = websession.get(loginUrl, allow_redirects=False)
+            loginFormResponse: requests.Response = websession.get(authorizationUrl, allow_redirects=False)
             if loginFormResponse.status_code == requests.codes['ok']:
                 break
-            loginUrl = loginFormResponse.headers['Location']
-        
+            authorizationUrl = loginFormResponse.headers['Location']
+
         # Find login form on page to obtain inputs
         emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             r'(?P<formContent>.+?(?=</form>))</form>'
         match: Optional[Match[str]] = re.search(emailFormRegex, loginFormResponse.text, flags=re.DOTALL)
         if match is None:
-            raise AuthentificationError('No login email form found')
+            raise APICompatibilityError('No login email form found')
         # retrieve target url from form
         target: str = match.groupdict()['formAction']
 
@@ -151,7 +113,7 @@ class WeConnectSession(VWWebSession):
             if match.groupdict()['name']:
                 formData[match.groupdict()['name']] = match.groupdict()['value']
         if not all(x in ['_csrf', 'relayState', 'hmac', 'email'] for x in formData):
-            raise AuthentificationError('Could not find all required input fields in login page')
+            raise APICompatibilityError('Could not find all required input fields in login page')
 
         # Set email to the provided username
         formData['email'] = self.sessionuser.username
@@ -168,14 +130,14 @@ class WeConnectSession(VWWebSession):
         if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
             if login2Response.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
-            raise AuthentificationError('Retrieving credentials page was not successfull,'
+            raise APICompatibilityError('Retrieving credentials page was not successfull,'
                                         f' status code: {login2Response.status_code}')
 
         credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \
             r'(?P<templateModel>.+?(?=\s+\};\s+</script>))\s+\};\s+</script>'
         match = re.search(credentialsTemplateRegex, login2Response.text, flags=re.DOTALL)
         if match is None:
-            raise AuthentificationError('No credentials form found')
+            raise APICompatibilityError('No credentials form found')
         if match.groupdict()['templateModel']:
             lineRegex = r'\s*(?P<name>[^\:]+)\:\s+[\'\{]?(?P<value>.+)[\'\}][,]?'
             form2Data: Dict[str, str] = {}
@@ -193,24 +155,27 @@ class WeConnectSession(VWWebSession):
                         form2Data['email'] = templateModel['emailPasswordForm']['email']
                     if 'errorCode' in templateModel:
                         raise AuthentificationError('Error during login, is the username correct?')
+                    if 'postAction' in templateModel:
+                        target = templateModel['postAction']
+                    else:
+                        raise APICompatibilityError('Form does not contain postAction')
                 elif match.groupdict()['name'] == 'csrf_token':
                     form2Data['_csrf'] = match.groupdict()['value']
         form2Data['password'] = self.sessionuser.password
         if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
-            raise AuthentificationError('Could not find all required input fields in login page')
+            raise APICompatibilityError('Could not find all required input fields in login page')
 
-        # TODO improve build url from form action
-        login3Url = 'https://identity.vwgroup.io/signin-service/v1/a24fba63-34b3-4d43-b181-942111e6bda8@apps_vw-dilab_com/login/authenticate'
+        login3Url = f'https://identity.vwgroup.io/signin-service/v1/{self.client_id}/{target}'
 
         # Post form content and retrieve userId in forwarding Location
         login3Response: requests.Response = websession.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False)
         if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
             if login3Response.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
-            raise AuthentificationError('Forwarding expected (status code 302),'
+            raise APICompatibilityError('Forwarding expected (status code 302),'
                                         f' but got status code {login3Response.status_code}')
         if 'Location' not in login3Response.headers:
-            raise AuthentificationError('No url for forwarding in response headers')
+            raise APICompatibilityError('No url for forwarding in response headers')
 
         # Parse parametes from forwarding url
         params: Dict[str, str] = dict(parse_qsl(urlsplit(login3Response.headers['Location']).query))
@@ -232,12 +197,13 @@ class WeConnectSession(VWWebSession):
         if 'userId' not in params or not params['userId']:
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
-            raise AuthentificationError('No user id provided')
+            raise APICompatibilityError('No user id provided')
         self.__userId = params['userId']  # pylint: disable=unused-private-member
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLoginUrl: str = login3Response.headers['Location']
 
+        consentURL = None
         while True:
             if 'consent' in afterLoginUrl:
                 consentURL = afterLoginUrl
@@ -247,7 +213,7 @@ class WeConnectSession(VWWebSession):
                 if consentURL is not None:
                     raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
                                                 f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
-                raise AuthentificationError('No Location for forwarding in response headers')
+                raise APICompatibilityError('No Location for forwarding in response headers')
 
             afterLoginUrl = afterLoginResponse.headers['Location']
 
@@ -260,26 +226,23 @@ class WeConnectSession(VWWebSession):
             queryurl = afterLoginUrl
         return queryurl
 
-
-    def fetch_token(
+    def fetchTokens(
         self,
         token_url,
-        code=None,
         authorization_response=None,
         **kwargs
     ):
-        params = dict(parse_qsl(urlsplit(authorization_response).query))
-        code = self.parseFromFragment(authorization_response)
+        self.parseFromFragment(authorization_response)
 
-        if all(key in code for key in ('state', 'id_token', 'access_token', 'code')):
+        if all(key in self.token for key in ('state', 'id_token', 'access_token', 'code')):
             body: str = json.dumps(
                 {
-                    'state': code['state'],
-                    'id_token': code['id_token'],
+                    'state': self.token['state'],
+                    'id_token': self.token['id_token'],
                     'redirect_uri': self.redirect_uri,
                     'region': 'emea',
-                    'access_token': code['access_token'],
-                    'authorizationCode': code['code'],
+                    'access_token': self.token['access_token'],
+                    'authorizationCode': self.token['code'],
                 })
 
             loginHeadersForm: CaseInsensitiveDict = self.headers
@@ -301,38 +264,25 @@ class WeConnectSession(VWWebSession):
         fixedTokenresponse = to_unicode(json.dumps(token)).encode("utf-8")
         return super(WeConnectSession, self).parseFromBody(token_response=fixedTokenresponse, state=state)
 
-    def refresh_tokens(
-            self,
-            token_url,
-            refresh_token=None,
-            auth=None,
-            timeout=None,
-            headers=None,
-            verify=True,
-            proxies=None,
-            **kwargs
-        ):
-        """Fetch a new access token using a refresh token.
-
-        :param token_url: The token endpoint, must be HTTPS.
-        :param refresh_token: The refresh_token to use.
-        :param body: Optional application/x-www-form-urlencoded body to add the
-                     include in the token request. Prefer kwargs over body.
-        :param auth: An auth tuple or method as accepted by `requests`.
-        :param timeout: Timeout of the request in seconds.
-        :param headers: A dict of headers to be used by `requests`.
-        :param verify: Verify SSL certificate.
-        :param proxies: The `proxies` argument will be passed to `requests`.
-        :param kwargs: Extra parameters to include in the token request.
-        :return: A token dict
-        """
+    def refreshTokens(
+        self,
+        token_url,
+        refresh_token=None,
+        auth=None,
+        timeout=None,
+        headers=None,
+        verify=True,
+        proxies=None,
+        **kwargs
+    ):
+        LOG.info('Refreshing tokens')
         if not token_url:
             raise ValueError("No token endpoint set for auto_refresh.")
 
         if not is_secure_transport(token_url):
             raise InsecureTransportError()
 
-        refresh_token = refresh_token or self.refresh_token
+        refresh_token = refresh_token or self.refreshToken
 
         if headers is None:
             headers = self.headers
@@ -347,11 +297,15 @@ class WeConnectSession(VWWebSession):
             proxies=proxies,
             access_type=AccessType.REFRESH
         )
-        LOG.debug("Request to refresh token completed with status %s.", tokenResponse.status_code)
-        LOG.debug("Response headers were %s and content %s.", tokenResponse.headers, tokenResponse.text)
-        self.token = self.parseFromBody(tokenResponse.text)
-
-        if not "refresh_token" in self.token:
-            LOG.debug("No new refresh token given. Re-using old.")
-            self.token["refresh_token"] = refresh_token
-        return self.token
+        if tokenResponse.status_code == requests.codes['unauthorized']:
+            raise AuthentificationError('Refreshing tokens failed: Server requests new authorization')
+        elif tokenResponse.status_code in (requests.codes['internal_server_error'], requests.codes['service_unavailable'], requests.codes['gateway_timeout']):
+            raise TemporaryAuthentificationError('Token could not be refreshed due to temporary WeConnect failure: {tokenResponse.status_code}')
+        elif tokenResponse.status_code == requests.codes['ok']:
+            self.parseFromBody(tokenResponse.text)
+            if "refresh_token" not in self.token:
+                LOG.debug("No new refresh token given. Re-using old.")
+                self.token["refresh_token"] = refresh_token
+            return self.token
+        else:
+            raise RetrievalError(f'Status Code from WeConnect while refreshing tokens was: {tokenResponse.status_code}')
