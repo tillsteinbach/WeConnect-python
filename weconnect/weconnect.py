@@ -377,45 +377,44 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             # Post form content and retrieve credentials page
             login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True,
                                                                     timeout=self.timeout)
+
             if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
                 if login2Response.status_code == requests.codes['internal_server_error']:
                     raise RetrievalError('Temporary server error during login')
                 raise APICompatibilityError('Retrieving credentials page was not successfull,'
                                             f' status code: {login2Response.status_code}')
 
-            # Find credentials form on page to obtain inputs
-            credentialsFormRegex = r'<form.+id=\"credentialsForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
-                r'(?P<formContent>.+?(?=</form>))</form>'
-            match = re.search(credentialsFormRegex, login2Response.text, flags=re.DOTALL)
+            credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \
+                r'(?P<templateModel>.+?(?=\s+\};\s+</script>))\s+\};\s+</script>'
+            match = re.search(credentialsTemplateRegex, login2Response.text, flags=re.DOTALL)
             if match is None:
-                formErrorRegex = r'<div.+class=\".*error\">.*<span\sclass=\"message\">' \
-                    r'(?P<errorMessage>.+?(?=</span>))</span>.*</div>'
-                errorMatch: Optional[Match[str]] = re.search(formErrorRegex, login2Response.text, flags=re.DOTALL)
-                if errorMatch is not None:
-                    raise AuthentificationError(errorMatch.groupdict()['errorMessage'])
-
-                accountNotFoundRegex = r'<div\sid=\"title\"\sclass=\"title\">.*<div class=\"sub-title\">.*<div>' \
-                    r'(?P<errorMessage>.+?(?=</div>))</div>.*</div>.*</div>'
-                errorMatch = re.search(accountNotFoundRegex, login2Response.text, flags=re.DOTALL)
-                if errorMatch is not None:
-                    errorMessage: str = re.sub('<[^<]+?>', '', errorMatch.groupdict()['errorMessage'])
-                    raise AuthentificationError(errorMessage)
                 raise APICompatibilityError('No credentials form found')
-            # retrieve target url from form
-            target = match.groupdict()['formAction']
-
-            # Find all inputs and put those in formData dictionary
-            input2Regex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-            form2Data: Dict[str, str] = {}
-            for match in re.finditer(input2Regex, match.groupdict()['formContent']):
-                if match.groupdict()['name']:
-                    form2Data[match.groupdict()['name']] = match.groupdict()['value']
+            if match.groupdict()['templateModel']:
+                lineRegex = r'\s*(?P<name>[^\:]+)\:\s+[\'\{]?(?P<value>.+)[\'\}][,]?'
+                form2Data: Dict[str, str] = {}
+                for match in re.finditer(lineRegex, match.groupdict()['templateModel']):
+                    if match.groupdict()['name'] == 'templateModel':
+                        templateModelString = '{' + match.groupdict()['value'] + '}'
+                        if templateModelString.endswith(','):
+                            templateModelString = templateModelString[:-len(',')]
+                        templateModel = json.loads(templateModelString)
+                        if 'relayState' in templateModel:
+                            form2Data['relayState'] = templateModel['relayState']
+                        if 'hmac' in templateModel:
+                            form2Data['hmac'] = templateModel['hmac']
+                        if 'emailPasswordForm' in templateModel and 'email' in templateModel['emailPasswordForm']:
+                            form2Data['email'] = templateModel['emailPasswordForm']['email']
+                        if 'errorCode' in templateModel:
+                            raise AuthentificationError('Error during login, is the username correct?')
+                    elif match.groupdict()['name'] == 'csrf_token':
+                        form2Data['_csrf'] = match.groupdict()['value']
+            form2Data['password'] = self.password
             if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
                 raise APICompatibilityError('Could not find all required input fields in login page')
             form2Data['password'] = self.password
 
-            # build url from form action
-            login3Url: str = 'https://identity.vwgroup.io' + target
+            # TODO improve build url from form action
+            login3Url = 'https://identity.vwgroup.io/signin-service/v1/a24fba63-34b3-4d43-b181-942111e6bda8@apps_vw-dilab_com/login/authenticate'
 
             # Post form content and retrieve userId in forwarding Location
             login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False,
