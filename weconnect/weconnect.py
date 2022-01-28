@@ -17,6 +17,7 @@ from urllib3.util.retry import Retry
 from requests.cookies import RequestsCookieJar
 from requests.structures import CaseInsensitiveDict
 from requests.adapters import HTTPAdapter
+from weconnect.auth.session_manager import Service
 
 from weconnect.elements.vehicle import Vehicle
 from weconnect.domain import Domain
@@ -160,6 +161,17 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__errorObservers: Set[Tuple[Callable[[Optional[Any], ErrorEventType], None], ErrorEventType]] = set()
 
         self.__session.headers = self.DEFAULT_OPTIONS['headers']
+
+        from weconnect.auth.session_manager import SessionManager, Service, SessionUser
+        #session = SessionManager.getSession(Service.WE_CONNECT, SessionUser(username=username, password=password))
+        session = SessionManager.getSession(Service.WE_CHARGE, SessionUser(username=username, password=password))
+        print('Authorized: ' + str(session.authorized))
+        
+        #response = session.get(url='https://mobileapi.apps.emea.vwapps.io/vehicles')
+        response = session.get(url='https://wecharge.apps.emea.vwapps.io/charge-and-pay/v1/user/subscriptions')
+        
+        print(response.text)
+        exit(1)
 
         # Retry on internal server error (500)
         retries = Retry(total=numRetries,
