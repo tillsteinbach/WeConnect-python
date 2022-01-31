@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.36.0.devX] - in testing
+### Changed
+- Refactors the OAuth procedure
+
+### Added
+- Add authentification for WeCharge
+
 ## [0.35.1] - 2022-01-28
 ### Fixed
 - Quick fix for login problem due to changes of the login page
