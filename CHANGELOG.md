@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Add authentification for WeCharge
+- Attributes for automation/chargingProfiles
 
 ## [0.35.1] - 2022-01-28
 ### Fixed
