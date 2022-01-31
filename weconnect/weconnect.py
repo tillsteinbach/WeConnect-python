@@ -1,55 +1,24 @@
 from __future__ import annotations
-from typing import Dict, List, Set, Tuple, Callable, Any, Optional, Union, cast, Match
+from typing import Dict, List, Set, Tuple, Callable, Any, Optional
 
 import os
 import string
-import random
-import re
 import locale
 import logging
-import threading
 import json
-from datetime import datetime, timedelta, timezone
-from urllib import parse
+from datetime import datetime, timedelta
 
 import requests
-from urllib3.util.retry import Retry
-from requests.cookies import RequestsCookieJar
-from requests.structures import CaseInsensitiveDict
-from requests.adapters import HTTPAdapter
 
+from weconnect.auth.session_manager import SessionManager, Service, SessionUser
 from weconnect.elements.vehicle import Vehicle
 from weconnect.domain import Domain
 from weconnect.elements.charging_station import ChargingStation
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
-from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError
+from weconnect.errors import RetrievalError
 from weconnect.weconnect_errors import ErrorEventType
 
 LOG = logging.getLogger("weconnect")
-
-
-class BearerAuth(requests.auth.AuthBase):
-    """Requests auth class for Bearer token authentification header"""
-
-    def __init__(self, token: str) -> None:
-        """Intialize authentification class from token
-
-        Args:
-            token (str): token to be used
-        """
-        self.token = token
-
-    def __call__(self, r: requests.PreparedRequest) -> requests.PreparedRequest:
-        """Internally used in requests to prepare a request with authentification
-
-        Args:
-            r (requests.PreparedRequest): The request to prepare
-
-        Returns:
-            requests.PreparedRequest: Request with authentification header
-        """
-        r.headers["authorization"] = "Bearer " + self.token
-        return r
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -72,36 +41,13 @@ class DateTimeEncoder(json.JSONEncoder):
 class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Main class used to interact with WeConnect"""
 
-    DEFAULT_OPTIONS: Dict[str, Any] = {
-        "headers": CaseInsensitiveDict({
-            'accept': '*/*',
-            'content-type': 'application/json',
-            'content-version': '1',
-            'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
-            'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
-            'accept-language': 'de-de',
-        }),
-        "loginHeaders": CaseInsensitiveDict({
-            'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
-                          'Chrome/74.0.3729.185 Mobile Safari/537.36',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,'
-                      'application/signed-exchange;v=b3',
-            'accept-language': 'en-US,en;q=0.9',
-            'accept-encoding': 'gzip, deflate',
-            'x-requested-with': 'de.volkswagen.carnet.eu.eremote',
-            'upgrade-insecure-requests': '1',
-        }),
-        "refreshBeforeExpires": 30
-    }
-
     def __init__(  # noqa: C901 # pylint: disable=too-many-arguments
         self,
         username: str,
         password: str,
         tokenfile: Optional[str] = None,
         updateAfterLogin: bool = True,
-        loginOnInit: bool = True,
-        refreshTokens: bool = True,
+        loginOnInit: bool = False,
         fixAPI: bool = True,
         maxAge: Optional[int] = None,
         maxAgePictures: Optional[int] = None,
@@ -121,7 +67,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             updateAfterLogin (bool, optional): Update data from WeConnect after logging in (If set to false, update needs to be called manually).
             Defaults to True.
             loginOnInit (bool, optional): Login after initialization (If set to false, login needs to be called manually). Defaults to True.
-            refreshTokens (bool, optional): Refresh tokens every 3600 seconds. Defaults to True.
             fixAPI (bool, optional): Automatically fix known issues with the WeConnect responses. Defaults to True.
             maxAge (int, optional): Maximum age of the cache before date is fetched again. None means no caching. Defaults to None.
             maxAgePictures (Optional[int], optional):  Maximum age of the pictures in the cache before date is fetched again. None means no caching.
@@ -135,13 +80,10 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         super().__init__(localAddress='', parent=None)
         self.username: str = username
         self.password: str = password
-        # TODO: Named Tupel instead!
-        self.__token: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
-        self.__aToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
-        self.__rToken: Dict[str, Optional[Union[str, datetime]]] = {'type': '', 'token': '', 'expires': datetime.min.replace(tzinfo=timezone.utc)}
+
         self.__userId: Optional[str] = None  # pylint: disable=unused-private-member
         self.__session: requests.Session = requests.Session()
-        self.__refreshTimer: Optional[threading.Timer] = None
+
         self.__vehicles: AddressableDict[str, Vehicle] = AddressableDict(localAddress='vehicles', parent=self)
         self.__stations: AddressableDict[str, ChargingStation] = AddressableDict(localAddress='chargingStations', parent=self)
         self.__cache: Dict[str, Any] = {}
@@ -159,63 +101,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         self.__errorObservers: Set[Tuple[Callable[[Optional[Any], ErrorEventType], None], ErrorEventType]] = set()
 
-        self.__session.headers = self.DEFAULT_OPTIONS['headers']
+        self.tokenfile = tokenfile
 
-        # Retry on internal server error (500)
-        retries = Retry(total=numRetries,
-                        backoff_factor=0.1,
-                        status_forcelist=[500],
-                        raise_on_status=False)
-        self.__session.mount('https://', HTTPAdapter(max_retries=retries))
-        self.timeout = timeout
-
-        self.tokenfile: Optional[str] = tokenfile
-        if self.tokenfile:
-            try:
-                with open(self.tokenfile, 'r', encoding='utf8') as file:
-                    tokens: RequestsCookieJar = requests.utils.cookiejar_from_dict(json.load(file))
-
-                if 'idToken' in tokens and all(key in tokens['idToken'] for key in ('type', 'token', 'expires')) \
-                        and all(tokens['idToken'][key] is not None for key in ('type', 'token', 'expires')):
-                    self.__token['type'] = tokens['idToken']['type']
-                    self.__token['token'] = tokens['idToken']['token']
-                    self.__token['expires'] = datetime.fromisoformat(tokens['idToken']['expires'])
-                    self.__session.auth = BearerAuth(cast(str, self.__token['token']))
-                else:
-                    LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
-
-                if 'accessToken' in tokens and all(key in tokens['accessToken'] for key in ('type', 'token', 'expires')) \
-                        and all(tokens['accessToken'][key] is not None for key in ('type', 'token', 'expires')):
-                    self.__aToken['type'] = tokens['accessToken']['type']
-                    self.__aToken['token'] = tokens['accessToken']['token']
-                    self.__aToken['expires'] = datetime.fromisoformat(tokens['accessToken']['expires'])
-                    self.__session.auth = BearerAuth(cast(str, self.__aToken['token']))
-                else:
-                    LOG.info('Could not use token from file %s (does not contain a token)', self.tokenfile)
-
-                if 'refreshToken' in tokens and all(key in tokens['refreshToken'] for key in ('type', 'token', 'expires')) \
-                        and all(tokens['refreshToken'][key] is not None for key in ('type', 'token', 'expires')):
-                    self.__rToken['type'] = tokens['refreshToken']['type']
-                    self.__rToken['token'] = tokens['refreshToken']['token']
-                    self.__rToken['expires'] = datetime.fromisoformat(tokens['refreshToken']['expires'])
-                else:
-                    LOG.info('Could not use refreshToken from file %s (does not contain a token)', self.tokenfile)
-
-                # Refresh tokens once
-                if loginOnInit or refreshTokens:
-                    self.__refreshToken()
-
-            except json.JSONDecodeError as err:
-                LOG.info('Could not use token from file %s (%s)', tokenfile, err.msg)
-            except FileNotFoundError as err:
-                LOG.info('Could not use token from file %s (%s)', tokenfile, err)
+        self.__manager = SessionManager(tokenstorefile=tokenfile)
+        self.__session = self.__manager.getSession(Service.WE_CONNECT, SessionUser(username=username, password=password))
+        self.__session.timeout = timeout
+        self.__session.retries = numRetries
 
         if loginOnInit:
-            if self.__token['expires'] is None or cast(datetime, self.__token['expires']) <= \
-                    datetime.utcnow().replace(tzinfo=timezone.utc):
-                self.login()
-            else:
-                LOG.info('Login not necessary, token still valid')
+            self.__session.login()
 
         if updateAfterLogin:
             self.update(updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective)
@@ -225,9 +119,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         return super().__del__()
 
     def disconnect(self) -> None:
-        if self.__refreshTimer is not None and self.__refreshTimer.is_alive():
-            self.__refreshTimer.cancel()
-            self.__refreshTimer = None
+        pass
 
     @property
     def session(self) -> requests.Session:
@@ -238,13 +130,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         return self.__cache
 
     def persistTokens(self) -> None:
-        if self.tokenfile:
-            try:
-                with open(self.tokenfile, 'w', encoding='utf8') as file:
-                    json.dump({'idToken': self.__token, 'refreshToken': self.__rToken, 'accessToken': self.__aToken}, file, cls=DateTimeEncoder)
-                LOG.info('Writing tokenfile %s', self.tokenfile)
-            except ValueError as err:  # pragma: no cover
-                LOG.info('Could not write tokenfile %s (%s)', self.tokenfile, err)
+        if self.__manager is not None and self.tokenfile is not None:
+            self.__manager.saveTokenstore(self.tokenfile)
 
     def persistCacheAsJson(self, filename: str) -> None:
         with open(filename, 'w', encoding='utf8') as file:
@@ -292,296 +179,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             vehicle.disableTracker()
 
     def login(self) -> None:  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
-        # Try to access page to be redirected to login form
-        tryLoginUrl: str = f'https://login.apps.emea.vwapps.io/authorize?nonce=' \
-            f'{"".join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=16))}' \
-            '&redirect_uri=weconnect://authenticated'
-
-        tryLoginResponse: requests.Response = self.__session.get(tryLoginUrl, allow_redirects=False, timeout=self.timeout)
-        if tryLoginResponse.status_code != requests.codes['see_other']:
-            if tryLoginResponse.status_code == requests.codes['internal_server_error']:
-                raise RetrievalError('Temporary server error during login')
-            raise APICompatibilityError('Forwarding to login page expected (status code 303),'
-                                        f' but got status code {tryLoginResponse.status_code}')
-        if 'Location' not in tryLoginResponse.headers:
-            raise APICompatibilityError('No url for forwarding in response headers')
-        # Login url is in response headers when response has status code see_others (303)
-        loginUrl: str = tryLoginResponse.headers['Location']
-
-        params: Optional[dict[str, str]] = None
-        consentURL: Optional[str] = None
-        while True:
-            if 'consent' in loginUrl:
-                consentURL = loginUrl
-            loginResponse: requests.Response = self.__session.get(loginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False,
-                                                                  timeout=self.timeout)
-
-            if 'Location' not in loginResponse.headers:
-                if consentURL is not None:
-                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
-                                                f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
-                break
-
-            loginUrl = loginResponse.headers['Location']
-
-            if loginUrl.startswith('weconnect://authenticated#'):
-                params = dict(parse.parse_qsl(parse.urlsplit(loginUrl.replace('authenticated#', 'authenticated?')).query))
-                break
-
-        if params is None:
-            if loginResponse.status_code != requests.codes['ok']:
-                if loginResponse.status_code == requests.codes['internal_server_error']:
-                    raise RetrievalError('Temporary server error during login')
-                raise APICompatibilityError('Retrieving login page was not successfull,'
-                                            f' status code: {loginResponse.status_code}')
-
-            # Find login form on page to obtain inputs
-            emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
-                r'(?P<formContent>.+?(?=</form>))</form>'
-            match: Optional[Match[str]] = re.search(emailFormRegex, loginResponse.text, flags=re.DOTALL)
-            if match is None:
-                raise APICompatibilityError('No login email form found')
-            # retrieve target url from form
-            target: str = match.groupdict()['formAction']
-
-            # Find all inputs and put those in formData dictionary
-            inputRegex = r'<input[\\n\\r\s][^/]*name=\"(?P<name>[^\"]+)\"([\\n\\r\s]value=\"(?P<value>[^\"]+)\")?[^/]*/>'
-            formData: Dict[str, str] = {}
-            for match in re.finditer(inputRegex, match.groupdict()['formContent']):
-                if match.groupdict()['name']:
-                    formData[match.groupdict()['name']] = match.groupdict()['value']
-            if not all(x in ['_csrf', 'relayState', 'hmac', 'email'] for x in formData):
-                raise APICompatibilityError('Could not find all required input fields in login page')
-
-            # Set email to the provided username
-            formData['email'] = self.username
-
-            # build url from form action
-            login2Url: str = 'https://identity.vwgroup.io' + target
-
-            loginHeadersForm: CaseInsensitiveDict = self.DEFAULT_OPTIONS['loginHeaders']
-            loginHeadersForm['Content-Type'] = 'application/x-www-form-urlencoded'
-
-            # Post form content and retrieve credentials page
-            login2Response: requests.Response = self.__session.post(login2Url, headers=loginHeadersForm, data=formData, allow_redirects=True,
-                                                                    timeout=self.timeout)
-
-            if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
-                if login2Response.status_code == requests.codes['internal_server_error']:
-                    raise RetrievalError('Temporary server error during login')
-                raise APICompatibilityError('Retrieving credentials page was not successfull,'
-                                            f' status code: {login2Response.status_code}')
-
-            credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \
-                r'(?P<templateModel>.+?(?=\s+\};\s+</script>))\s+\};\s+</script>'
-            match = re.search(credentialsTemplateRegex, login2Response.text, flags=re.DOTALL)
-            if match is None:
-                raise APICompatibilityError('No credentials form found')
-            if match.groupdict()['templateModel']:
-                lineRegex = r'\s*(?P<name>[^\:]+)\:\s+[\'\{]?(?P<value>.+)[\'\}][,]?'
-                form2Data: Dict[str, str] = {}
-                for match in re.finditer(lineRegex, match.groupdict()['templateModel']):
-                    if match.groupdict()['name'] == 'templateModel':
-                        templateModelString = '{' + match.groupdict()['value'] + '}'
-                        if templateModelString.endswith(','):
-                            templateModelString = templateModelString[:-len(',')]
-                        templateModel = json.loads(templateModelString)
-                        if 'relayState' in templateModel:
-                            form2Data['relayState'] = templateModel['relayState']
-                        if 'hmac' in templateModel:
-                            form2Data['hmac'] = templateModel['hmac']
-                        if 'emailPasswordForm' in templateModel and 'email' in templateModel['emailPasswordForm']:
-                            form2Data['email'] = templateModel['emailPasswordForm']['email']
-                        if 'errorCode' in templateModel:
-                            raise AuthentificationError('Error during login, is the username correct?')
-                    elif match.groupdict()['name'] == 'csrf_token':
-                        form2Data['_csrf'] = match.groupdict()['value']
-            form2Data['password'] = self.password
-            if not all(x in ['_csrf', 'relayState', 'hmac', 'email', 'password'] for x in form2Data):
-                raise APICompatibilityError('Could not find all required input fields in login page')
-            form2Data['password'] = self.password
-
-            # TODO improve build url from form action
-            login3Url = 'https://identity.vwgroup.io/signin-service/v1/a24fba63-34b3-4d43-b181-942111e6bda8@apps_vw-dilab_com/login/authenticate'
-
-            # Post form content and retrieve userId in forwarding Location
-            login3Response: requests.Response = self.__session.post(login3Url, headers=loginHeadersForm, data=form2Data, allow_redirects=False,
-                                                                    timeout=self.timeout)
-            if login3Response.status_code not in (requests.codes['found'], requests.codes['see_other']):
-                if login3Response.status_code == requests.codes['internal_server_error']:
-                    raise RetrievalError('Temporary server error during login')
-                raise APICompatibilityError('Forwarding expected (status code 302),'
-                                            f' but got status code {login3Response.status_code}')
-            if 'Location' not in login3Response.headers:
-                raise APICompatibilityError('No url for forwarding in response headers')
-
-            # Parse parametes from forwarding url
-            params: Dict[str, str] = dict(parse.parse_qsl(parse.urlsplit(login3Response.headers['Location']).query))
-
-            # Check if error
-            if 'error' in params and params['error']:
-                errorMessages: Dict[str, str] = {
-                    'login.errors.password_invalid': 'Password is invalid',
-                    'login.error.throttled': 'Login throttled, probably too many wrong logins. You have to wait some'
-                                             ' minutes until a new login attempt is possible'
-                }
-                if params['error'] in errorMessages:
-                    error = errorMessages[params['error']]
-                else:
-                    error = params['error']
-                raise AuthentificationError(error)
-
-            # Check for user id
-            if 'userId' not in params or not params['userId']:
-                if 'updated' in params and params['updated'] == 'dataprivacy':
-                    raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
-                raise APICompatibilityError('No user id provided')
-            self.__userId = params['userId']  # pylint: disable=unused-private-member
-
-            # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
-            afterLoginUrl: str = login3Response.headers['Location']
-
-            while True:
-                if 'consent' in afterLoginUrl:
-                    consentURL = afterLoginUrl
-                afterLoginResponse = self.__session.get(afterLoginUrl, headers=self.DEFAULT_OPTIONS['loginHeaders'], allow_redirects=False,
-                                                        timeout=self.timeout)
-
-                if 'Location' not in afterLoginResponse.headers:
-                    if consentURL is not None:
-                        raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
-                                                    f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
-                    raise APICompatibilityError('No Location for forwarding in response headers')
-
-                afterLoginUrl = afterLoginResponse.headers['Location']
-
-                if afterLoginUrl.startswith('weconnect://authenticated#'):
-                    break
-
-            params = dict(parse.parse_qsl(parse.urlsplit(afterLoginUrl.replace('authenticated#', 'authenticated?')).query))
-
-        if all(key in params for key in ('token_type', 'id_token', 'expires_in')):
-            self.__token = {
-                'type': params['token_type'],
-                'token': params['id_token'],
-                'expires': datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=int(params['expires_in']))
-            }
-            if cast(str, self.__token['type']).casefold() == 'Bearer'.casefold():
-                self.__session.auth = BearerAuth(cast(str, self.__token['token']))
-
-        if all(key in params for key in ('state', 'id_token', 'access_token', 'code')):
-
-            # Get Tokens
-            tokenUrl: str = 'https://login.apps.emea.vwapps.io/login/v1'
-            redirerctUri: str = 'weconnect://authenticated'
-
-            body: str = json.dumps(
-                {
-                    'state': params['state'],
-                    'id_token': params['id_token'],
-                    'redirect_uri': redirerctUri,
-                    'region': 'emea',
-                    'access_token': params['access_token'],
-                    'authorizationCode': params['code'],
-                })
-
-            tokenResponse = self.__session.post(tokenUrl, data=body, allow_redirects=False, timeout=self.timeout)
-            if tokenResponse.status_code == requests.codes['ok']:
-                data = tokenResponse.json()
-                if 'idToken' in data:
-                    self.__token['type'] = 'Bearer'
-                    self.__token['token'] = data['idToken']
-                    self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-                    self.__session.auth = BearerAuth(cast(str, self.__token['token']))
-                if 'accessToken' in data:
-                    self.__aToken['type'] = 'Bearer'
-                    self.__aToken['token'] = data['accessToken']
-                    self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-                if 'refreshToken' in data:
-                    self.__rToken['type'] = 'Bearer'
-                    self.__rToken['token'] = data['refreshToken']
-                    self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-            else:
-                if tokenResponse.status_code == requests.codes['internal_server_error']:
-                    raise RetrievalError('Temporary server error during login')
-                raise AuthentificationError(f'There was a problem fetching tokens during login. Status code was {tokenResponse.status_code}')
-
-            LOG.info('Login successful')
-            self.__refreshToken()
-
-    def __refreshToken(self) -> None:  # noqa C901
-        url: str = 'https://login.apps.emea.vwapps.io/refresh/v1'
-        failed = False
-        try:
-            refreshResponse: requests.Response = self.__session.get(url, allow_redirects=False, auth=BearerAuth(cast(str, self.__rToken['token'])),
-                                                                    timeout=self.timeout)
-        except requests.exceptions.ConnectionError:
-            self.notifyError(self, ErrorEventType.CONNECTION, 'connection', 'Could not refresh token due to connection problem')
-            failed = True
-        except requests.exceptions.ChunkedEncodingError:
-            self.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                             'Could not refresh token due to connection problem with chunked encoding')
-            failed = True
-        except requests.exceptions.ReadTimeout:
-            self.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not refresh token due to timeout')
-            failed = True
-        except requests.exceptions.RetryError:
-            failed = True
-        except requests.exceptions.HTTPError as e:
-            self.notifyError(self, ErrorEventType.HTTP, e.response.status_code, 'Could not refresh token due to error')
-            failed = True
-        if failed:
-            if self.__refreshTimer and self.__refreshTimer.is_alive():
-                self.__refreshTimer.cancel()
-            self.__refreshTimer = threading.Timer(60, self.__refreshToken)
-            self.__refreshTimer.daemon = True
-            self.__refreshTimer.start()
-            LOG.info('Token could not be refreshed, will try again after 60 seconds.')
-            return
-        if refreshResponse.status_code == requests.codes['unauthorized']:
-            self.login()
-        elif refreshResponse.status_code == requests.codes['ok']:
-            data: Dict[str, Any] = refreshResponse.json()
-
-            if 'idToken' in data:
-                self.__token['type'] = 'Bearer'
-                self.__token['token'] = data['idToken']
-                self.__token['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-                self.__session.auth = BearerAuth(cast(str, self.__token['token']))
-            else:
-                LOG.error('No id token received')
-
-            if 'accessToken' in data:
-                self.__aToken['type'] = 'Bearer'
-                self.__aToken['token'] = data['accessToken']
-                self.__aToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-                # THe access token is prefered to be used
-                self.__session.auth = BearerAuth(cast(str, self.__aToken['token']))
-            else:
-                LOG.error('No access token received')
-
-            if 'refreshToken' in data:
-                self.__rToken['type'] = 'Bearer'
-                self.__rToken['token'] = data['refreshToken']
-                self.__rToken['expires'] = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(seconds=3600)
-            else:
-                LOG.error('No refresh token received')
-
-            if self.__refreshTimer and self.__refreshTimer.is_alive():
-                self.__refreshTimer.cancel()
-            self.__refreshTimer = threading.Timer(3600 - 600, self.__refreshToken)
-            self.__refreshTimer.daemon = True
-            self.__refreshTimer.start()
-            LOG.info('Token refreshed')
-        elif refreshResponse.status_code in (requests.codes['internal_server_error'], requests.codes['service_unavailable'], requests.codes['gateway_timeout']):
-            if self.__refreshTimer and self.__refreshTimer.is_alive():
-                self.__refreshTimer.cancel()
-            self.__refreshTimer = threading.Timer(60, self.__refreshToken)
-            self.__refreshTimer.daemon = True
-            self.__refreshTimer.start()
-            LOG.info('Token could not be refreshed, will try again after 60 seconds.')
-        else:
-            raise RetrievalError(f'Status Code from WeConnect server was: {refreshResponse.status_code}')
+        self.__session.login()
 
     @property
     def vehicles(self) -> AddressableDict[str, Vehicle]:
@@ -759,7 +357,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         if data is None or self.maxAge is None \
                 or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.maxAge))):
             try:
-                statusResponse: requests.Response = self.session.get(url, allow_redirects=False, timeout=self.timeout)
+                statusResponse: requests.Response = self.session.get(url, allow_redirects=False)
                 self.recordElapsed(statusResponse.elapsed)
                 if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
                     data = statusResponse.json()
@@ -768,7 +366,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 elif statusResponse.status_code == requests.codes['unauthorized']:
                     LOG.info('Server asks for new authorization')
                     self.login()
-                    statusResponse = self.session.get(url, allow_redirects=False, timeout=self.timeout)
+                    statusResponse = self.session.get(url, allow_redirects=False)
                     self.recordElapsed(statusResponse.elapsed)
 
                     if statusResponse.status_code in (requests.codes['ok'], requests.codes['multiple_status']):
