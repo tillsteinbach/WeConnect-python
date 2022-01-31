@@ -2,7 +2,8 @@ from __future__ import annotations
 from typing import Callable, NoReturn, Optional, Dict, List, Set, Any, Tuple, Union, Type, TypeVar, Generic
 
 import logging
-from datetime import datetime, timezone
+import time as timemodule
+from datetime import datetime, timezone, time
 from enum import Enum, IntEnum, Flag, auto
 
 from weconnect.util import toBool, imgToASCIIArt, robustTimeParse
@@ -296,6 +297,9 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                     self.enabled = False
             elif issubclass(self.valueType, datetime):
                 self.setValueWithCarTime(robustTimeParse(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
+            elif issubclass(self.valueType, time):
+                parsedtime = timemodule.strptime(fromDict[key], "%H:%M")
+                self.setValueWithCarTime(time(hour=parsedtime.tm_hour, minute=parsedtime.tm_min), lastUpdateFromCar=None, fromServer=True)
             elif issubclass(self.valueType, str):
                 self.setValueWithCarTime(str(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
             else:

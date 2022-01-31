@@ -2,7 +2,7 @@ import logging
 
 from weconnect.addressable import AddressableLeaf, ChangeableAttribute
 from weconnect.elements.generic_settings import GenericSettings
-from weconnect.elements.control_operation import ControlInputEnum
+from weconnect.elements.enums import UnlockPlugState, MaximumChargeCurrent
 
 LOG = logging.getLogger("weconnect")
 
@@ -17,9 +17,9 @@ class ChargingSettings(GenericSettings):
         fixAPI=True,
     ):
         self.maxChargeCurrentAC = ChangeableAttribute(
-            localAddress='maxChargeCurrentAC', parent=self, value=None, valueType=ChargingSettings.MaximumChargeCurrent)
+            localAddress='maxChargeCurrentAC', parent=self, value=None, valueType=MaximumChargeCurrent)
         self.autoUnlockPlugWhenCharged = ChangeableAttribute(localAddress='autoUnlockPlugWhenCharged', value=None,
-                                                             parent=self, valueType=ChargingSettings.UnlockPlugState)
+                                                             parent=self, valueType=UnlockPlugState)
         self.targetSOC_pct = ChangeableAttribute(localAddress='targetSOC_pct', value=None, parent=self, valueType=int)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
@@ -59,23 +59,3 @@ class ChargingSettings(GenericSettings):
         if self.targetSOC_pct.enabled:
             string += f'\n\tTarget SoC: {self.targetSOC_pct.value} %'
         return string
-
-    class UnlockPlugState(ControlInputEnum,):
-        OFF = 'off'
-        ON = 'on'
-        PERMANENT = 'permanent'
-        UNKNOWN = 'unknown'
-
-        @classmethod
-        def allowedValues(cls):
-            return [ChargingSettings.UnlockPlugState.OFF, ChargingSettings.UnlockPlugState.ON]
-
-    class MaximumChargeCurrent(ControlInputEnum,):
-        MAXIMUM = 'maximum'
-        REDUCED = 'reduced'
-        INVALID = 'invalid'
-        UNKNOWN = 'unknown'
-
-        @classmethod
-        def allowedValues(cls):
-            return [ChargingSettings.MaximumChargeCurrent.MAXIMUM, ChargingSettings.MaximumChargeCurrent.REDUCED]
