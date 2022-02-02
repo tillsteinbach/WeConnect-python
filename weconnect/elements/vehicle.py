@@ -689,6 +689,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             GUEST_USER = 'GUEST_USER'
             UNKNOWN = 'UNKNOWN'
 
+            def __str__(self) -> str:
+                return self.value
+
         class EnrollmentStatus(Enum,):
             STARTED = 'STARTED'
             NOT_STARTED = 'NOT_STARTED'

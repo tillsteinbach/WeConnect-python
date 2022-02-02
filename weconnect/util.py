@@ -1,15 +1,18 @@
 from __future__ import annotations
+from enum import Enum
 from typing import Any
 
 import re
 from datetime import datetime
+
+import json
 
 import logging
 
 import shutil
 
 from PIL import Image  # type: ignore
-import ascii_magic  # type: ignore
+import ascii_magic
 
 
 def robustTimeParse(timeString: str) -> datetime:
@@ -81,3 +84,34 @@ class DuplicateFilter(logging.Filter):
         else:
             self.lastLog[record.module] = {record.levelno: (record.msg, record.args)}
         return True
+
+
+class ExtendedEncoder(json.JSONEncoder):
+    """Datetime object encode used for json serialization"""
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def default(self, o: Any) -> str:
+        """Serialize datetime object to isodate string
+
+        Args:
+            o (datetime): datetime object
+
+        Returns:
+            str: object represented as isoformat string
+        """
+        if isinstance(o, datetime):
+            return o.isoformat()
+        if isinstance(o, Enum):
+            return o.value
+        return super().default(o)
+
+
+class ExtendedWithNullEncoder(ExtendedEncoder):
+    """Datetime object encode used for json serialization"""
+
+    def default(self, o: Any) -> str:
+        try:
+            return super().default(o)
+        except TypeError:
+            return None

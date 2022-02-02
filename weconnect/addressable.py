@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import Callable, NoReturn, Optional, Dict, List, Set, Any, Tuple, Union, Type, TypeVar, Generic
 
+import json
 import logging
 import time as timemodule
 from datetime import datetime, timezone, time
 from enum import Enum, IntEnum, Flag, auto
 
-from weconnect.util import toBool, imgToASCIIArt, robustTimeParse
+from weconnect.util import toBool, imgToASCIIArt, robustTimeParse, ExtendedWithNullEncoder
 
 SUPPORT_IMAGES = False
 try:
@@ -205,6 +206,16 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
     def value(self, newValue: Optional[T]) -> NoReturn:
         raise NotImplementedError('You cannot set this attribute. Set is not implemented')
 
+    def asDict(self, filterCallable: Optional[Callable[[Any], None]] = None):
+        if filterCallable is None or not filterCallable(self.value):
+            return self.value
+        return None
+
+    def toJSON(self):
+        if SUPPORT_IMAGES and isinstance(self.value, Image.Image):
+            return None
+        return json.dumps(self.value, cls=ExtendedWithNullEncoder, skipkeys=True, indent=4)
+
     def setValueWithCarTime(self, newValue, lastUpdateFromCar: Optional[datetime] = None, fromServer: bool = False, noNotify: bool = False) -> None:
         if newValue is not None and not isinstance(newValue, self.valueType):
             raise ValueError(f'{self.getGlobalAddress()}: new value {newValue} must be of type {self.valueType}'
@@ -257,6 +268,11 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                         htmlfile.write('<pre/></body></html>')
                     else:
                         htmlfile.write(str(self))
+            elif filename.endswith(('.json')):
+                with open(filename, mode='w', encoding='utf8') as textfile:
+                    if SUPPORT_IMAGES and SUPPORT_ASCII_IMAGES and isinstance(self.value, Image.Image):
+                        raise ValueError('Attribute is an image and cannot be converted to json')
+                    textfile.write(self.toJSON() + '\n')
             elif filename.endswith(('.png', '.PNG')):
                 with open(filename, mode='wb') as pngfile:
                     if SUPPORT_IMAGES and isinstance(self.value, Image.Image):
@@ -415,6 +431,22 @@ class AddressableObject(AddressableLeaf):
                 child.enabled = False
         AddressableLeaf.enabled.fset(self, setEnabled)  # type: ignore
 
+    def asDict(self, filterCallable: Optional[Callable[[Any], None]] = None):
+        asDict = {}
+        for child in self.children:
+            if child.enabled:
+                childDict = child.asDict(filterCallable=filterCallable)
+                if childDict:
+                    asDict[child.getLocalAddress()] = childDict
+        return asDict
+
+    def toJSON(self):
+        def filterDict(element):
+            if SUPPORT_IMAGES and isinstance(element, Image.Image):
+                return True
+            return False
+        return json.dumps(self.asDict(filterCallable=filterDict), cls=ExtendedWithNullEncoder, skipkeys=True, indent=4)
+
     def isLeaf(self) -> bool:
         return not self.__children
 
@@ -468,6 +500,25 @@ class AddressableObject(AddressableLeaf):
         for child in self.__children.values():
             child.updateComplete()
         super().updateComplete()
+
+    def saveToFile(self, filename: str) -> None:  # noqa: C901
+        if filename.endswith(('.txt', '.TXT', '.text')):
+            with open(filename, mode='w', encoding='utf8') as textfile:
+                textfile.write(str(self))
+        elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
+            with open(filename, mode='w', encoding='utf8'):
+                raise ValueError('Object cannot be saved as HTML')
+        elif filename.endswith(('.json')):
+            with open(filename, mode='w', encoding='utf8') as textfile:
+                textfile.write(self.toJSON() + '\n')
+        elif filename.endswith(('.png', '.PNG')):
+            with open(filename, mode='wb'):
+                raise ValueError('Attribute is no image and cannot be converted to one')
+        elif filename.endswith(('.jpg', '.JPG', '.jpeg', '.JPEG')):
+            with open(filename, mode='wb'):
+                raise ValueError('Attribute is no image and cannot be converted to one')
+        else:
+            raise ValueError('I cannot recognize the target file extension')
 
 
 L = TypeVar('L', bound=AddressableLeaf)

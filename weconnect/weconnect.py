@@ -17,25 +17,9 @@ from weconnect.elements.charging_station import ChargingStation
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
 from weconnect.errors import RetrievalError
 from weconnect.weconnect_errors import ErrorEventType
+from weconnect.util import ExtendedEncoder
 
 LOG = logging.getLogger("weconnect")
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    """Datetime object encode used for json serialization"""
-
-    def default(self, o: datetime) -> str:
-        """Serialize datetime object to isodate string
-
-        Args:
-            o (datetime): datetime object
-
-        Returns:
-            str: object represented as isoformat string
-        """
-        if isinstance(o, datetime):
-            return o.isoformat()
-        return json.JSONEncoder.default(self, o)
 
 
 class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attributes, too-many-public-methods
@@ -135,7 +119,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def persistCacheAsJson(self, filename: str) -> None:
         with open(filename, 'w', encoding='utf8') as file:
-            json.dump(self.__cache, file, cls=DateTimeEncoder)
+            json.dump(self.__cache, file, cls=ExtendedEncoder)
         LOG.info('Writing cachefile %s', filename)
 
     def fillCacheFromJson(self, filename: str, maxAge: int, maxAgePictures: Optional[int] = None) -> None:
@@ -178,7 +162,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         for vehicle in self.vehicles:
             vehicle.disableTracker()
 
-    def login(self) -> None:  # noqa: C901 # pylint: disable=R0914, R0912, too-many-statements
+    def login(self) -> None:
         self.__session.login()
 
     @property
