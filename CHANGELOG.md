@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.36.0.devX] - in testing
+## [0.36.0] - 2022-02-03
 ### Changed
 - Refactors the OAuth procedure
 
 ### Added
 - Add authentification for WeCharge
 - Attributes for automation/chargingProfiles
+- Possibility to output and save json format for the whole or parts of the tree
+- Added status fail_charge_plug_not_connected
 
 ## [0.35.1] - 2022-01-28
 ### Fixed
