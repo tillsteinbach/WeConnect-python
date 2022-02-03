@@ -483,7 +483,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.35.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.36.0...HEAD
+[0.36.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.0
 [0.35.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.35.1
 [0.35.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.35.0
 [0.34.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.34.0
