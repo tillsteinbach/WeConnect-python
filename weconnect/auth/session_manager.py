@@ -9,6 +9,7 @@ from requests import Session
 
 from weconnect.auth.we_connect_session import WeConnectSession
 from weconnect.auth.we_charge_session import WeChargeSession
+from weconnect.auth.carnet_session import CarNetSession
 
 LOG = logging.getLogger("weconnect")
 
@@ -25,6 +26,7 @@ class SessionUser():
 class Service(Enum):
     WE_CONNECT = 'WeConnect'
     WE_CHARGE = 'WeCharge'
+    CARNET = 'CarNet'
 
     def __str__(self) -> str:
         return self.value
@@ -66,6 +68,8 @@ class SessionManager():
             session = WeConnectSession(sessionuser=sessionuser, token=token)
         elif service == Service.WE_CHARGE:
             session = WeChargeSession(sessionuser=sessionuser, token=token)
+        elif service == Service.CARNET:
+            session = CarNetSession(sessionuser=sessionuser, token=token)
         self.sessions[(service, sessionuser)] = session
         return session
 
