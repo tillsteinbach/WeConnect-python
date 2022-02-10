@@ -436,7 +436,7 @@ class AddressableObject(AddressableLeaf):
         for child in self.children:
             if child.enabled:
                 childDict = child.asDict(filterCallable=filterCallable)
-                if childDict:
+                if childDict is not None:
                     asDict[child.getLocalAddress()] = childDict
         return asDict
 
