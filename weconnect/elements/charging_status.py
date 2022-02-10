@@ -37,7 +37,34 @@ class ChargingStatus(GenericStatus):
             self.chargingState.fromDict(fromDict['value'], 'chargingState')
             self.chargeMode.fromDict(fromDict['value'], 'chargeMode')
             self.chargePower_kW.fromDict(fromDict['value'], 'chargePower_kW')
-            self.chargeRate_kmph.fromDict(fromDict['value'], 'chargeRate_kmph')
+            if 'chargePower_kW' in fromDict['value']:
+                chargePower_kW = float(fromDict['value']['chargePower_kW'])
+                if self.fixAPI and chargePower_kW != 0 \
+                        and self.chargingState.value in [ChargingStatus.ChargingState.OFF,
+                                                         ChargingStatus.ChargingState.READY_FOR_CHARGING,
+                                                         ChargingStatus.ChargingState.NOT_READY_FOR_CHARGING,
+                                                         ChargingStatus.ChargingState.CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING,
+                                                         ChargingStatus.ChargingState.ERROR]:
+                    chargePower_kW = 0.0
+                    LOG.debug('%s: Attribute chargePower_kW is %s while chargingState is %s. Setting 0 instead',
+                              self.getGlobalAddress(), fromDict['value']['chargePower_kW'], self.climatisationState.value)
+                self.chargePower_kW.setValueWithCarTime(chargePower_kW, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.chargePower_kW.enabled = False
+            if 'chargeRate_kmph' in fromDict['value']:
+                chargeRate_kmph = float(fromDict['value']['chargeRate_kmph'])
+                if self.fixAPI and chargeRate_kmph != 0 \
+                        and self.chargingState.value in [ChargingStatus.ChargingState.OFF,
+                                                         ChargingStatus.ChargingState.READY_FOR_CHARGING,
+                                                         ChargingStatus.ChargingState.NOT_READY_FOR_CHARGING,
+                                                         ChargingStatus.ChargingState.CHARGE_PURPOSE_REACHED_NOT_CONSERVATION_CHARGING,
+                                                         ChargingStatus.ChargingState.ERROR]:
+                    chargeRate_kmph = 0.0
+                    LOG.debug('%s: Attribute chargeRate_kmph is %s while chargingState is %s. Setting 0 instead',
+                              self.getGlobalAddress(), fromDict['value']['chargeRate_kmph'], self.climatisationState.value)
+                self.chargeRate_kmph.setValueWithCarTime(chargeRate_kmph, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.chargeRate_kmph.enabled = False
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
             self.chargingState.enabled = False
