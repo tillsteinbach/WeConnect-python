@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.36.1] - 2022-02-10
+### Fixed
+- Fixes for chargePower, chargeRate and remaining climatisationTime when fixAPI=True
+
 ## [0.36.0] - 2022-02-03
 ### Changed
 - Refactors the OAuth procedure
@@ -483,7 +487,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.36.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.36.1...HEAD
+[0.36.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.1
 [0.36.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.0
 [0.35.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.35.1
 [0.35.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.35.0
