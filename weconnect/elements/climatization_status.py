@@ -29,6 +29,15 @@ class ClimatizationStatus(GenericStatus):
         if 'value' in fromDict:
             self.remainingClimatisationTime_min.fromDict(fromDict['value'], 'remainingClimatisationTime_min')
             self.climatisationState.fromDict(fromDict['value'], 'climatisationState')
+            if 'remainingClimatisationTime_min' in fromDict['value']:
+                remainingClimatisationTime_min = int(fromDict['value']['remainingClimatisationTime_min'])
+                if self.fixAPI and remainingClimatisationTime_min != 0 and self.climatisationState.value == ClimatizationStatus.ClimatizationState.OFF:
+                    remainingClimatisationTime_min = 0
+                    LOG.info('%s: Attribute remainingClimatisationTime_min is %s while climatisationState is %s. Setting 0 instead',
+                             self.getGlobalAddress(), fromDict['value']['remainingClimatisationTime_min'], self.climatisationState.value)
+                self.remainingClimatisationTime_min.setValueWithCarTime(remainingClimatisationTime_min, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.remainingClimatisationTime_min.enabled = False
         else:
             self.remainingClimatisationTime_min.enabled = False
             self.climatisationState.enabled = False
