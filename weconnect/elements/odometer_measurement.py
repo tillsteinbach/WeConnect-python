@@ -24,7 +24,15 @@ class OdometerMeasurement(GenericStatus):
         LOG.debug('Odometer measurement from dict')
 
         if 'value' in fromDict:
-            self.odometer.fromDict(fromDict['value'], 'odometer')
+            if 'odometer' in fromDict['value']:
+                odometer = int(fromDict['value']['odometer'])
+                if self.fixAPI and odometer == 0x7FFFFFFF:
+                    odometer = None
+                    LOG.info('%s: Attribute odometer was error value 0x7FFFFFFF. Setting error state instead'
+                             ' of 2147483647 km.', self.getGlobalAddress())
+                self.odometer.setValueWithCarTime(odometer, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.odometer.enabled = False
         else:
             self.odometer.enabled = False
 

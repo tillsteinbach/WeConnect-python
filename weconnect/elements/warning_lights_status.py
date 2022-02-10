@@ -24,7 +24,16 @@ class WarningLightsStatus(GenericStatus):
         LOG.debug('Update maintenance status from dict')
 
         if 'value' in fromDict:
-            self.mileage_km.fromDict(fromDict['value'], 'mileage_km')
+            if 'mileage_km' in fromDict['value']:
+                mileage_km = int(fromDict['value']['mileage_km'])
+                if self.fixAPI and mileage_km == 0x7FFFFFFF:
+                    mileage_km = None
+                    LOG.info('%s: Attribute mileage_km was error value 0x7FFFFFFF. Setting error state instead'
+                             ' of 2147483647 km.', self.getGlobalAddress())
+                self.mileage_km.setValueWithCarTime(mileage_km, lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.mileage_km.enabled = False
+
             self.warningLights.fromDict(fromDict['value'], 'warningLights')
         else:
             self.mileage_km.enabled = False
