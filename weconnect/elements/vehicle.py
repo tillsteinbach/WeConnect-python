@@ -412,6 +412,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             badges: Set[Vehicle.Badge] = set()
 
+            doorNameMap: Dict[str, str] = {'frontLeft': 'door_left_front',
+                                           'frontRight': 'door_right_front',
+                                           'rearLeft': 'door_left_back',
+                                           'rearRight': 'door_right_back'}
+            windowNameMap: Dict[str, str] = {'frontLeft': 'window_left_front',
+                                             'frontRight': 'window_right_front',
+                                             'rearLeft': 'window_left_back',
+                                             'rearRight': 'window_right_back',
+                                             'sunRoof': 'sunroof'}
             if 'access' in self.domains and 'accessStatus' in self.domains['access']:
                 accessStatus: AccessStatus = cast(AccessStatus, self.domains['access']['accessStatus'])
 
@@ -424,10 +433,6 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         badges.add(Vehicle.Badge.WARNING)
 
                 for name, door in accessStatus.doors.items():
-                    doorNameMap: Dict[str, str] = {'frontLeft': 'door_left_front',
-                                                   'frontRight': 'door_right_front',
-                                                   'rearLeft': 'door_left_back',
-                                                   'rearRight': 'door_right_back'}
                     name = doorNameMap.get(name, name)
                     doorImageName: Optional[str] = None
 
@@ -444,11 +449,6 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         img.paste(doorImage, (0, 0), doorImage)
 
                 for name, window in accessStatus.windows.items():
-                    windowNameMap: Dict[str, str] = {'frontLeft': 'window_left_front',
-                                                     'frontRight': 'window_right_front',
-                                                     'rearLeft': 'window_left_back',
-                                                     'rearRight': 'window_right_back',
-                                                     'sunRoof': 'sunroof'}
                     name = windowNameMap.get(name, name)
                     windowImageName: Optional[str] = None
 
@@ -462,6 +462,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
                     if windowImageName is not None and windowImageName in self.__carImages:
                         windowImage = self.__carImages[windowImageName].convert("RGBA")
+                        img.paste(windowImage, (0, 0), windowImage)
+            else:
+                for name in doorNameMap.values():
+                    if name in self.__carImages:
+                        doorImage = self.__carImages[name].convert("RGBA")
+                        img.paste(doorImage, (0, 0), doorImage)
+                for name in windowNameMap.values():
+                    if name != 'sunroof' and name in self.__carImages:
+                        windowImage = self.__carImages[name].convert("RGBA")
                         img.paste(windowImage, (0, 0), windowImage)
 
             if 'vehicleLights' in self.domains and 'lightsStatus' in self.domains['vehicleLights']:
