@@ -134,7 +134,7 @@ class WeConnectSession(VWWebSession):
                                         f' status code: {login2Response.status_code}')
 
         credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \
-            r'(?P<templateModel>.+?(?=\s+\};\s+</script>))\s+\};\s+</script>'
+            r'(?P<templateModel>.+?(?=\s+\};?\s+</script>))\s+\};?\s+</script>'
         match = re.search(credentialsTemplateRegex, login2Response.text, flags=re.DOTALL)
         if match is None:
             raise APICompatibilityError('No credentials form found')
