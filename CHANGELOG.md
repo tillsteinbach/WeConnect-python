@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.36.3] - 2022-02-11
+### Fixed
+- Fixes login again after changes in the login form
+
 ## [0.36.2] - 2022-02-10
 ### Fixed
 - Fixes json output for values that are zero
@@ -491,7 +495,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.36.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.36.3...HEAD
+[0.36.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.3
 [0.36.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.2
 [0.36.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.1
 [0.36.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.36.0
