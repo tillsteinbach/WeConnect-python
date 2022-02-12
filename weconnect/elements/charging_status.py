@@ -47,7 +47,7 @@ class ChargingStatus(GenericStatus):
                                                          ChargingStatus.ChargingState.ERROR]:
                     chargePower_kW = 0.0
                     LOG.debug('%s: Attribute chargePower_kW is %s while chargingState is %s. Setting 0 instead',
-                              self.getGlobalAddress(), fromDict['value']['chargePower_kW'], self.climatisationState.value)
+                              self.getGlobalAddress(), fromDict['value']['chargePower_kW'], self.chargingState.value)
                 self.chargePower_kW.setValueWithCarTime(chargePower_kW, lastUpdateFromCar=None, fromServer=True)
             else:
                 self.chargePower_kW.enabled = False
@@ -61,7 +61,7 @@ class ChargingStatus(GenericStatus):
                                                          ChargingStatus.ChargingState.ERROR]:
                     chargeRate_kmph = 0.0
                     LOG.debug('%s: Attribute chargeRate_kmph is %s while chargingState is %s. Setting 0 instead',
-                              self.getGlobalAddress(), fromDict['value']['chargeRate_kmph'], self.climatisationState.value)
+                              self.getGlobalAddress(), fromDict['value']['chargeRate_kmph'], self.chargingState.value)
                 self.chargeRate_kmph.setValueWithCarTime(chargeRate_kmph, lastUpdateFromCar=None, fromServer=True)
             else:
                 self.chargeRate_kmph.enabled = False
