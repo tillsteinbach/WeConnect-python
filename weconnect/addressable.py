@@ -349,41 +349,54 @@ class ChangeableAttribute(AddressableAttribute):
 
     @AddressableAttribute.value.setter  # type: ignore # noqa: C901
     def value(self, newValue):  # noqa: C901
-        if isinstance(newValue, str) and self.valueType != str:
-            try:
-                if self.valueType in [int, float]:
-                    newValue = self.valueType(newValue)
-                elif self.valueType == bool:
-                    newValue = toBool(newValue)
-                elif issubclass(self.valueType, Enum):
-                    if not isinstance(newValue, Enum):
-                        newValue = self.valueType(newValue)
-                    try:
-                        allowedValues = self.valueType.allowedValues()
-                        if newValue not in allowedValues:
-                            raise ValueError('Value is not in allowed values')
-                    except AttributeError:
-                        pass
-                    newValue = self.valueType(newValue)
-            except ValueError as vErr:
-                valueFormat = ''
-                if self.valueType == int:
-                    valueFormat = 'N (Decimal number)'
-                elif self.valueType == float:
-                    valueFormat = 'F.F (Floating Point Number)'
-                elif self.valueType == bool:
-                    valueFormat = 'True/False (Boolean)'
-                elif issubclass(self.valueType, Enum):
-                    try:
-                        valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType.allowedValues()]) + ']'
-                    except AttributeError:
-                        valueFormat = 'select one of [' + ', '.join([enum.value for enum in self.valueType])
-                raise ValueError(f'id {self.getGlobalAddress()} cannot be set to value {newValue}.'
-                                 f' You need to provide it in the correct format {valueFormat}') from vErr
-        elif isinstance(newValue, int) and self.valueType != int:
-            if self.valueType == float:
-                newValue = float(newValue)
+        exceptions = []
+        for valType in self.valueType:  # pylint: disable=too-many-nested-blocks
+            if isinstance(newValue, str) and valType != str:
+                try:
+                    if valType in [int, float]:
+                        newValue = valType(newValue)
+                        exceptions = []
+                    elif valType == bool:
+                        newValue = toBool(newValue)
+                        exceptions = []
+                    elif issubclass(valType, Enum):
+                        if not isinstance(newValue, Enum):
+                            newValue = valType(newValue)
+                            exceptions = []
+                        try:
+                            allowedValues = valType.allowedValues()
+                            if newValue not in allowedValues:
+                                raise ValueError('Value is not in allowed values')
+                        except AttributeError:
+                            pass
+                        newValue = valType(newValue)
+                        exceptions = []
+                        break
+                except ValueError:
+                    valueFormat = ''
+                    if valType == int:
+                        valueFormat = 'N (Decimal number)'
+                    elif valType == float:
+                        valueFormat = 'F.F (Floating Point Number)'
+                    elif valType == bool:
+                        valueFormat = 'True/False (Boolean)'
+                    elif issubclass(valType, Enum):
+                        try:
+                            valueFormat = 'select one of [' + ', '.join([enum.value for enum in valType.allowedValues()]) + ']'
+                        except AttributeError:
+                            valueFormat = 'select one of [' + ', '.join([enum.value for enum in valType])
+                    exceptions.append(valueFormat)
+            elif isinstance(newValue, int) and valType != int:
+                if valType == float:
+                    newValue = float(newValue)
+                    exceptions = []
+                    break
+            else:
+                exceptions = []
 
+        if exceptions:
+            raise ValueError(f'id {self.getGlobalAddress()} cannot be set to value {newValue}.'
+                             f' You need to provide it in the correct format {" or ".join(exceptions)}')
         if self.valueSetter is not None:
             self.valueSetter(newValue)
         else:
