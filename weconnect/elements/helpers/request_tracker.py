@@ -45,7 +45,7 @@ class RequestTracker:
         for domain, statuses in self.vehicle.domains.items():
             for status in statuses.values():
                 if status.hasRequests():
-                    openRequests.extend(status.requests)
+                    openRequests.extend(status.requests.values())
 
         for domain, requests in list(self.requests.items()):
             for request in requests:
