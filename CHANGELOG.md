@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.37.0] - in testing
+### Fixed
+- Requests tracking behaviour
+
+### Changed
+- Requests changed from list to dict
+
+### Added
+- Possibility to use temperature when startng climatisation
+
 ## [0.36.4] - 2022-02-12
 ### Fixed
 - Fixes bug in charging state API fixing procedure
