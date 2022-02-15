@@ -32,7 +32,7 @@ class GenericStatus(AddressableObject):
         self.carCapturedTimestamp: AddressableAttribute[datetime] = AddressableAttribute(
             localAddress='carCapturedTimestamp', parent=self, value=None, valueType=datetime)
         self.error: Error = Error(localAddress='error', parent=self)
-        self.requests: AddressableList[GenericStatus.Request] = AddressableList(localAddress='request', parent=self)
+        self.requests: AddressableDict[GenericStatus.Request] = AddressableDict(localAddress='request', parent=self)
 
         if fromDict is not None:
             self.update(fromDict=fromDict)
@@ -89,36 +89,25 @@ class GenericStatus(AddressableObject):
             self.error.reset()
 
         if 'requests' in fromDict:
-            requestsToRemove = self.requests.copy()
+            requestsToRemove = list(self.requests.keys())
             for request in fromDict['requests']:
-                updated = False
+                key = None
                 if 'requestId' in request:
-                    for knownRequest in self.requests:
-                        if knownRequest.requestId.enabled and knownRequest.requestId.value == request['requestId']:
-                            knownRequest.update(fromDict=request)
-                            if knownRequest in requestsToRemove:
-                                requestsToRemove.remove(knownRequest)
-                            updated = True
+                    key = request['requestId']
                 elif 'operation' in request:
-                    for knownRequest in self.requests:
-                        if knownRequest.operation.enabled and knownRequest.operation.value.value == request['operation']:
-                            knownRequest.update(fromDict=request)
-                            if knownRequest in requestsToRemove:
-                                requestsToRemove.remove(knownRequest)
-                            updated = True
+                    key = request['operation']
+                else:
+                    key = "none"
+                if key in self.requests:
+                    self.requests[key].update(fromDict=request)
+                    requestsToRemove.remove(key)
+                else:
+                    newRequest = GenericStatus.Request(localAddress=key, parent=self.requests, fromDict=request)
+                    self.requests[key] = newRequest
 
-                if not updated:
-                    self.requests.append(GenericStatus.Request(localAddress=str(len(self.requests)), parent=self.requests, fromDict=request))
-            for request in requestsToRemove:
-                self.requests.remove(request)
-
-            index = 0
-            for request in self.requests:
-                if request != str(index):
-                    request.enabled = False
-                    request.localAddress = str(index)
-                    request.enabled = True
-                index += 1
+            for requestKey in requestsToRemove:
+                self.requests[requestKey].enabled = False
+                del self.requests[requestKey]
 
         else:
             self.requests.clear()
@@ -134,7 +123,7 @@ class GenericStatus(AddressableObject):
             returnString += f' (last captured {self.carCapturedTimestamp.value.isoformat()})'
         if self.error.enabled:
             returnString += '\n\tError: ' + ''.join(['\t' + line for line in str(self.error).splitlines(True)])
-        for request in self.requests:
+        for request in self.requests.values():
             returnString += f'\n\tRequest: {request}'
         return returnString
 
@@ -160,7 +149,7 @@ class GenericStatus(AddressableObject):
                 self.update(fromDict)
 
         def update(self, fromDict: Dict[str, Any]) -> None:  # noqa: C901
-            LOG.debug('Update Status Target from dict')
+            LOG.debug('Update Request from dict')
             self.status.fromDict(fromDict, 'status')
             self.operation.fromDict(fromDict, 'operation')
             self.body.fromDict(fromDict, 'body')
