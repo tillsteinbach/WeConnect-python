@@ -183,4 +183,5 @@ class GenericStatus(AddressableObject):
             FAIL_BATTERY_LOW = 'fail_battery_low'
             FAIL_PLUG_ERROR = 'fail_plug_error'
             FAIL_CHARGE_PLUG_NOT_CONNECTED = 'fail_charge_plug_not_connected'
+            FAIL_NO_EXTERNAL_POWER = 'fail_no_external_power'
             UNKNOWN = 'unknown status'

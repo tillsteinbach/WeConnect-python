@@ -26,6 +26,8 @@ class ChargingStatus(GenericStatus):
             localAddress='chargePower_kW', value=None, parent=self, valueType=float)
         self.chargeRate_kmph = AddressableAttribute(
             localAddress='chargeRate_kmph', value=None, parent=self, valueType=float)
+        self.chargeType = AddressableAttribute(localAddress='chargeType', value=None, parent=self, valueType=ChargingStatus.ChargeType)
+        self.chargingSettings = AddressableAttribute(localAddress='chargingSettings', value=None, parent=self, valueType=str)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
@@ -65,12 +67,16 @@ class ChargingStatus(GenericStatus):
                 self.chargeRate_kmph.setValueWithCarTime(chargeRate_kmph, lastUpdateFromCar=None, fromServer=True)
             else:
                 self.chargeRate_kmph.enabled = False
+            self.chargeType.fromDict(fromDict['value'], 'chargeType')
+            self.chargingSettings.fromDict(fromDict['value'], 'chargingSettings')
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
             self.chargingState.enabled = False
             self.chargeMode.enabled = False
             self.chargePower_kW.enabled = False
             self.chargeRate_kmph.enabled = False
+            self.chargeType.enabled = False
+            self.chargingSettings.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes
                                                             + [
@@ -78,7 +84,9 @@ class ChargingStatus(GenericStatus):
                                                                 'chargingState',
                                                                 'chargeMode',
                                                                 'chargePower_kW',
-                                                                'chargeRate_kmph'
+                                                                'chargeRate_kmph',
+                                                                'chargeType',
+                                                                'chargingSettings'
                                                             ]))
 
     def __str__(self):
@@ -93,6 +101,10 @@ class ChargingStatus(GenericStatus):
             string += f'\n\tCharge Power: {self.chargePower_kW.value} kW'
         if self.chargeRate_kmph.enabled:
             string += f'\n\tCharge Rate: {self.chargeRate_kmph.value} km/h'
+        if self.chargeType.enabled:
+            string += f'\n\tCharge Type: {self.chargeType.value.value}'
+        if self.chargingSettings.enabled:
+            string += f'\n\tCharging Settings: {self.chargingSettings.value}'
         return string
 
     class ChargingState(Enum,):
@@ -115,3 +127,8 @@ class ChargingStatus(GenericStatus):
         PREFERRED_CHARGING_TIMES = 'preferredChargingTimes'
         TIMER_CHARGING_WITH_CLIMATISATION = 'timerChargingWithClimatisation'
         UNKNOWN = 'unknown charge mode'
+
+    class ChargeType(Enum,):
+        INVALID = 'invalid'
+        OFF = 'off'
+        UNKNOWN = 'unknown charge type'
