@@ -131,4 +131,6 @@ class ChargingStatus(GenericStatus):
     class ChargeType(Enum,):
         INVALID = 'invalid'
         OFF = 'off'
+        AC = 'ac'
+        DC = 'dc'
         UNKNOWN = 'unknown charge type'
