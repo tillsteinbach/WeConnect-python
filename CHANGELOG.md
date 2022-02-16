@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.37.0] - 2022-02-16
+## [0.37.0] - in testing
 ### Fixed
 - Requests tracking behaviour
 
