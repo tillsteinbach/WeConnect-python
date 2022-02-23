@@ -6,6 +6,7 @@ import logging
 import time as timemodule
 from datetime import datetime, timezone, time
 from enum import Enum, IntEnum, Flag, auto
+from collections.abc import Iterable
 
 from weconnect.util import toBool, imgToASCIIArt, robustTimeParse, ExtendedWithNullEncoder
 
@@ -350,7 +351,12 @@ class ChangeableAttribute(AddressableAttribute):
     @AddressableAttribute.value.setter  # type: ignore # noqa: C901
     def value(self, newValue):  # noqa: C901
         exceptions = []
-        for valType in self.valueType:  # pylint: disable=too-many-nested-blocks
+
+        iterablevalueType = self.valueType
+        if not isinstance(iterablevalueType, Iterable):
+            iterablevalueType = (iterablevalueType,)
+
+        for valType in iterablevalueType:  # pylint: disable=too-many-nested-blocks
             if isinstance(newValue, str) and valType != str:
                 try:
                     if valType in [int, float]:
