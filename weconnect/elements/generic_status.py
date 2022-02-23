@@ -100,7 +100,8 @@ class GenericStatus(AddressableObject):
                     key = "none"
                 if key in self.requests:
                     self.requests[key].update(fromDict=request)
-                    requestsToRemove.remove(key)
+                    if key in requestsToRemove:
+                        requestsToRemove.remove(key)
                 else:
                     newRequest = GenericStatus.Request(localAddress=key, parent=self.requests, fromDict=request)
                     self.requests[key] = newRequest
