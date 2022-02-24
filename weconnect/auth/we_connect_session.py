@@ -249,12 +249,17 @@ class WeConnectSession(VWWebSession):
             loginHeadersForm['accept'] = 'application/json'
 
             tokenResponse = self.post(token_url, headers=loginHeadersForm, data=body, allow_redirects=False, access_type=AccessType.ID)
+            if tokenResponse.status_code != requests.codes['ok']:
+                raise TemporaryAuthentificationError('Token could not be fetched due to temporary WeConnect failure: {tokenResponse.status_code}')
             token = self.parseFromBody(tokenResponse.text)
 
             return token
 
     def parseFromBody(self, token_response, state=None):
-        token = json.loads(token_response)
+        try:
+            token = json.loads(token_response)
+        except json.decoder.JSONDecodeError:
+            raise TemporaryAuthentificationError('Token could not be refreshed due to temporary WeConnect failure: json could not be decoded')
         if 'accessToken' in token:
             token['access_token'] = token.pop('accessToken')
         if 'idToken' in token:

@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 ## [0.37.0] - in testing
 ### Fixed
 - Requests tracking behaviour
+- Catch error when token could not be fetched
 
 ### Changed
 - Requests changed from list to dict
