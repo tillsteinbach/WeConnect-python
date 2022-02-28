@@ -491,7 +491,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             if 'charging' in self.domains and 'chargingStatus' in self.domains['charging']:
                 chargingStatus: ChargingStatus = cast(ChargingStatus, self.domains['charging']['chargingStatus'])
-                if chargingStatus.chargingState.value == ChargingStatus.ChargingState.CHARGING:
+                if chargingStatus.chargingState.value in (ChargingStatus.ChargingState.CHARGING,
+                                                          ChargingStatus.ChargingState.CHARGE_PURPOSE_REACHED_CONSERVATION,
+                                                          ChargingStatus.ChargingState.CONSERVATION):
                     badges.add(Vehicle.Badge.CHARGING)
 
             if 'charging' in self.domains and 'plugStatus' in self.domains['charging']:
