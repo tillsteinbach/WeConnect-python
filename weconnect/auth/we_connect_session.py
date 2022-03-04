@@ -261,7 +261,7 @@ class WeConnectSession(VWWebSession):
 
             tokenResponse = self.post(token_url, headers=loginHeadersForm, data=body, allow_redirects=False, access_type=AccessType.ID)
             if tokenResponse.status_code != requests.codes['ok']:
-                raise TemporaryAuthentificationError('Token could not be fetched due to temporary WeConnect failure: {tokenResponse.status_code}')
+                raise TemporaryAuthentificationError(f'Token could not be fetched due to temporary WeConnect failure: {tokenResponse.status_code}')
             token = self.parseFromBody(tokenResponse.text)
 
             return token
