@@ -95,7 +95,16 @@ class WeConnectSession(VWWebSession):
             loginFormResponse: requests.Response = websession.get(authorizationUrl, allow_redirects=False)
             if loginFormResponse.status_code == requests.codes['ok']:
                 break
-            authorizationUrl = loginFormResponse.headers['Location']
+            elif loginFormResponse.status_code == requests.codes['found']:
+                if 'Location' in loginFormResponse.headers:
+                    authorizationUrl = loginFormResponse.headers['Location']
+                else:
+                    raise APICompatibilityError('Forwarding without Location in Header')
+            elif loginFormResponse.status_code == requests.codes['internal_server_error']:
+                raise RetrievalError('Temporary server error during login')
+            else:
+                raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                                            f' status code: {loginFormResponse.status_code}')
 
         # Find login form on page to obtain inputs
         emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
@@ -208,6 +217,8 @@ class WeConnectSession(VWWebSession):
             if 'consent' in afterLoginUrl:
                 consentURL = afterLoginUrl
             afterLoginResponse = self.get(afterLoginUrl, allow_redirects=False, access_type=AccessType.NONE)
+            if afterLoginResponse.status_code == requests.codes['internal_server_error']:
+                raise RetrievalError('Temporary server error during login')
 
             if 'Location' not in afterLoginResponse.headers:
                 if consentURL is not None:

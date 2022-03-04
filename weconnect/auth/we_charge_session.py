@@ -19,7 +19,7 @@ from requests.models import CaseInsensitiveDict
 
 from weconnect.auth.openid_session import AccessType
 from weconnect.auth.vw_web_session import VWWebSession
-from weconnect.errors import AuthentificationError, RetrievalError, TemporaryAuthentificationError
+from weconnect.errors import APICompatibilityError, AuthentificationError, RetrievalError, TemporaryAuthentificationError
 
 LOG = logging.getLogger("weconnect")
 
@@ -82,7 +82,16 @@ class WeChargeSession(VWWebSession):
             loginFormResponse: requests.Response = websession.get(authorizationUrl, allow_redirects=False)
             if loginFormResponse.status_code == requests.codes['ok']:
                 break
-            authorizationUrl = loginFormResponse.headers['Location']
+            elif loginFormResponse.status_code == requests.codes['found']:
+                if 'Location' in loginFormResponse.headers:
+                    authorizationUrl = loginFormResponse.headers['Location']
+                else:
+                    raise APICompatibilityError('Forwarding without Location in Header')
+            elif loginFormResponse.status_code == requests.codes['internal_server_error']:
+                raise RetrievalError('Temporary server error during login')
+            else:
+                raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                                            f' status code: {loginFormResponse.status_code}')
         # Find login form on page to obtain inputs
         emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
             r'(?P<formContent>.+?(?=</form>))</form>'
@@ -193,6 +202,8 @@ class WeChargeSession(VWWebSession):
             if 'consent' in afterLoginUrl:
                 consentURL = afterLoginUrl
             afterLoginResponse = self.get(afterLoginUrl, allow_redirects=False, access_type=AccessType.NONE)
+            if afterLoginResponse.status_code == requests.codes['internal_server_error']:
+                raise RetrievalError('Temporary server error during login')
 
             if 'Location' not in afterLoginResponse.headers:
                 if consentURL is not None:
