@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Added
+- Added BatteryPowerLevel 'off' in readiness status.
 
 ## [0.37.2] - 2022-03-04
 ### Fixed
