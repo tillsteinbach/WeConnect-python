@@ -58,4 +58,5 @@ class ClimatizationStatus(GenericStatus):
         HEATING = 'heating'
         COOLING = 'cooling'
         VENTILATION = 'ventilation'
+        INVALID = 'invalid'
         UNKNOWN = 'unknown climatization state'
