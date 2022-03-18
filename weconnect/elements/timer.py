@@ -147,7 +147,7 @@ class Timer(AddressableObject):
             else:
                 self.startDateTime.enabled = False
 
-            self.occurringOn.fromDict(fromDict['value'], 'occurringOn')
+            self.occurringOn.fromDict(fromDict, 'occurringOn')
 
             if 'startTime' in fromDict:
                 self.startTime.setValueWithCarTime(datetime.strptime(f'{fromDict["startTime"]}+00:00', '%H:%M%z'),
@@ -160,4 +160,11 @@ class Timer(AddressableObject):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return self.startDateTime.value.isoformat()  # pylint: disable=no-member
+            returnString = ""
+            if self.startDateTime.enabled:
+                returnString += self.startDateTime.value.isoformat()  # pylint: disable=no-member
+            if self.occurringOn.enabled:
+                returnString += self.occurringOn.value
+            if self.startTime.enabled:
+                returnString += f' {self.startTime.value.strftime("%H:%M")}'
+            return returnString
