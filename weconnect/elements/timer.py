@@ -132,6 +132,10 @@ class Timer(AddressableObject):
             super().__init__(localAddress=localAddress, parent=parent)
             self.startDateTime = AddressableAttribute(
                 localAddress='startDateTime', parent=self, value=None, valueType=datetime)
+            self.occurringOn = AddressableAttribute(
+                localAddress='occurringOn', parent=self, value=None, valueType=str)
+            self.startTime = AddressableAttribute(
+                localAddress='startTime', parent=self, value=None, valueType=datetime)
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -143,8 +147,16 @@ class Timer(AddressableObject):
             else:
                 self.startDateTime.enabled = False
 
+            self.occurringOn.fromDict(fromDict['value'], 'occurringOn')
+
+            if 'startTime' in fromDict:
+                self.startTime.setValueWithCarTime(datetime.strptime(f'{fromDict["startTime"]}+00:00', '%H:%M%z'),
+                                                   lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.startTime.enabled = False
+
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['startDateTime']}.items():
+                               if key not in ['startDateTime', 'occurringOn', 'startTime']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
