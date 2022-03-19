@@ -3,8 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- No unreleased changes so far
+
+## [0.38.0] - 2022-03-19
 ### Added
 - Added BatteryPowerLevel 'off' in readiness status.
+- Added ClimatizationStatus 'invalid'
+- Added occurringOn and startTime in singe timer
 
 ## [0.37.2] - 2022-03-04
 ### Fixed
@@ -522,7 +527,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.37.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.38.0...HEAD
+[0.38.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.38.0
 [0.37.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.37.2
 [0.37.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.37.1
 [0.37.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.37.0
