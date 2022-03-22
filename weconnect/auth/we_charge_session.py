@@ -148,12 +148,18 @@ class WeChargeSession(VWWebSession):
                         form2Data['hmac'] = templateModel['hmac']
                     if 'emailPasswordForm' in templateModel and 'email' in templateModel['emailPasswordForm']:
                         form2Data['email'] = templateModel['emailPasswordForm']['email']
+                    if 'error' in templateModel and templateModel['error'] is not None:
+                        if templateModel['error'] == 'validator.email.invalid':
+                            raise AuthentificationError('Error during login, email invalid')
+                        raise AuthentificationError(f'Error during login: {templateModel["error"]}')
+                    if 'registerCredentialsPath' in templateModel and templateModel['registerCredentialsPath'] == 'register':
+                        raise AuthentificationError(f'Error during login, account {self.sessionuser.username} does not exist')
                     if 'errorCode' in templateModel:
                         raise AuthentificationError('Error during login, is the username correct?')
                     if 'postAction' in templateModel:
                         target = templateModel['postAction']
                     else:
-                        raise AuthentificationError('Form does not contain postAction')
+                        raise APICompatibilityError('Form does not contain postAction')
                 elif match.groupdict()['name'] == 'csrf_token':
                     form2Data['_csrf'] = match.groupdict()['value']
         form2Data['password'] = self.sessionuser.password

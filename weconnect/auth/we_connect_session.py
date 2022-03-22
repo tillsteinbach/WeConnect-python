@@ -162,6 +162,12 @@ class WeConnectSession(VWWebSession):
                         form2Data['hmac'] = templateModel['hmac']
                     if 'emailPasswordForm' in templateModel and 'email' in templateModel['emailPasswordForm']:
                         form2Data['email'] = templateModel['emailPasswordForm']['email']
+                    if 'error' in templateModel and templateModel['error'] is not None:
+                        if templateModel['error'] == 'validator.email.invalid':
+                            raise AuthentificationError('Error during login, email invalid')
+                        raise AuthentificationError(f'Error during login: {templateModel["error"]}')
+                    if 'registerCredentialsPath' in templateModel and templateModel['registerCredentialsPath'] == 'register':
+                        raise AuthentificationError(f'Error during login, account {self.sessionuser.username} does not exist')
                     if 'errorCode' in templateModel:
                         raise AuthentificationError('Error during login, is the username correct?')
                     if 'postAction' in templateModel:

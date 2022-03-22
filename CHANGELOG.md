@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.38.1] - 2022-03-22
+### Changed
+- Improved error messages on login errors
+
 ## [0.38.0] - 2022-03-19
 ### Added
 - Added BatteryPowerLevel 'off' in readiness status.
@@ -527,7 +531,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.38.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.38.1...HEAD
+[0.38.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.38.1
 [0.38.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.38.0
 [0.37.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.37.2
 [0.37.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.37.1
