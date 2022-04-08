@@ -48,7 +48,7 @@ from weconnect.elements.helpers.request_tracker import RequestTracker
 
 SUPPORT_IMAGES = False
 try:
-    from PIL import Image  # type: ignore
+    from PIL import Image, ImageDraw  # type: ignore
     SUPPORT_IMAGES = True
 except ImportError:
     pass
@@ -526,6 +526,20 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 imgWithBadges.paste(badgeImage, (0, badgeoffset), badgeImage)
                 badgeoffset += 110
 
+            warningLightoffset = 0
+            imgWidth, _ = imgWithBadges.size
+            if 'vehicleHealthWarnings' in self.domains and 'warningLights' in self.domains['vehicleHealthWarnings']:
+                warningLightsStatus = self.domains['vehicleHealthWarnings']['warningLights']
+                if warningLightsStatus.warningLights.enabled:
+                    for warningLight in warningLightsStatus.warningLights.values():
+                        if warningLight.icon.enabled:
+                            draw = ImageDraw.Draw(imgWithBadges)
+                            draw.ellipse(((imgWidth - 100), warningLightoffset, (imgWidth - 1), (warningLightoffset + 100)), fill=(0, 0, 0, 200))
+                            lightImage = warningLight.icon.value
+                            lightImage = lightImage.resize((64, 64), Image.ANTIALIAS)
+                            imgWithBadges.paste(lightImage, ((imgWidth - 82), warningLightoffset + 18), lightImage)
+                            warningLightoffset += 110
+
             self.__carImages['statusWithBadge'] = imgWithBadges
 
             # Car with badges
@@ -537,6 +551,20 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     badgeImage = self.__badges[badge].convert("RGBA")
                     carWithBadges.paste(badgeImage, (0, badgeoffset), badgeImage)
                     badgeoffset += 110
+
+                warningLightoffset = 0
+                imgWidth, _ = carWithBadges.size
+                if 'vehicleHealthWarnings' in self.domains and 'warningLights' in self.domains['vehicleHealthWarnings']:
+                    warningLightsStatus = self.domains['vehicleHealthWarnings']['warningLights']
+                    if warningLightsStatus.warningLights.enabled:
+                        for warningLight in warningLightsStatus.warningLights.values():
+                            if warningLight.icon.enabled:
+                                draw = ImageDraw.Draw(carWithBadges)
+                                draw.ellipse(((imgWidth - 100), warningLightoffset, (imgWidth - 1), (warningLightoffset + 100)), fill=(0, 0, 0, 200))
+                                lightImage = warningLight.icon.value
+                                lightImage = lightImage.resize((64, 64), Image.ANTIALIAS)
+                                carWithBadges.paste(lightImage, ((imgWidth - 82), warningLightoffset + 18), lightImage)
+                                warningLightoffset += 110
 
                 self.__carImages['carWithBadge'] = carWithBadges
 
