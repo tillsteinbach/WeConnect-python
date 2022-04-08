@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Support for warning lights including png icons
 
+### Changed
+- Update pillow requirement from 9.0.1 to 9.1.0
+
 ## [0.38.1] - 2022-03-22
 ### Changed
 - Improved error messages on login errors
