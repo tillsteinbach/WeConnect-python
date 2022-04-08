@@ -132,7 +132,7 @@ class WarningLightsStatus(GenericStatus):
             self.customerRelevance.fromDict(fromDict, 'customerRelevance')
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['messageId', 'category', 'priority', 'icon', 'iconName',
-                                                                                            'serviceLead', 'customerRelevance']}.items():
+                                                                                            'serviceLead', 'customerRelevance', 'text']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
