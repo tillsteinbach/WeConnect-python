@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.39.0] - in testing
+## [0.39.0] - 2022-04-12
 ### Added
 - Support for warning lights including png icons
 
