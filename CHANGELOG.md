@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 ### Added
 - weconnect-trace-id header added
 
+### Fixed
+- Publish remaining climatization time only once
+
 ### Changed
 - user-agent header updated
 
