@@ -43,7 +43,7 @@ class WeConnectSession(VWWebSession):
             'user-agent': 'WeConnect/3 CFNetwork/1331.0.7 Darwin/21.4.0',
             'accept-language': 'de-de',
         })
-    
+
     def request(
         self,
         method,
@@ -56,7 +56,7 @@ class WeConnectSession(VWWebSession):
         timeout=None,
         **kwargs
     ):
-        """Intercept all requests."""
+        """Intercept all requests and add weconnect-trace-id header."""
 
         import secrets
         traceId = secrets.token_hex(16)
