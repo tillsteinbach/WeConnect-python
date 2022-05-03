@@ -40,9 +40,34 @@ class WeConnectSession(VWWebSession):
             'content-type': 'application/json',
             'content-version': '1',
             'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
-            'user-agent': 'WeConnect/5 CFNetwork/1206 Darwin/20.1.0',
+            'user-agent': 'WeConnect/3 CFNetwork/1331.0.7 Darwin/21.4.0',
             'accept-language': 'de-de',
         })
+    
+    def request(
+        self,
+        method,
+        url,
+        data=None,
+        headers=None,
+        withhold_token=False,
+        access_type=AccessType.ACCESS,
+        token=None,
+        timeout=None,
+        **kwargs
+    ):
+        """Intercept all requests."""
+
+        import secrets
+        traceId = secrets.token_hex(16)
+        weConnectTraceId = (traceId[:8] + '-' + traceId[8:12] + '-' + traceId[12:16] + '-' + traceId[16:20] + '-' + traceId[20:]).upper()
+        headers = headers or {}
+        headers['weconnect-trace-id'] = weConnectTraceId
+        print(headers)
+
+        return super(WeConnectSession, self).request(
+            method, url, headers=headers, data=data, withhold_token=withhold_token, access_type=access_type, token=token, timeout=timeout, **kwargs
+        )
 
     def login(self):
         authorizationUrl = self.authorizationUrl(url='https://identity.vwgroup.io/oidc/v1/authorize')
