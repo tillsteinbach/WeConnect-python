@@ -63,7 +63,6 @@ class WeConnectSession(VWWebSession):
         weConnectTraceId = (traceId[:8] + '-' + traceId[8:12] + '-' + traceId[12:16] + '-' + traceId[16:20] + '-' + traceId[20:]).upper()
         headers = headers or {}
         headers['weconnect-trace-id'] = weConnectTraceId
-        print(headers)
 
         return super(WeConnectSession, self).request(
             method, url, headers=headers, data=data, withhold_token=withhold_token, access_type=access_type, token=token, timeout=timeout, **kwargs
