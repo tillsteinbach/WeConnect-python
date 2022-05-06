@@ -268,7 +268,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         }
         if self.vin.value is None:
             raise APIError('')
-        if selective is None or Domain.ALL in selective:
+        if selective is None:
+            jobs = [domain.value for domain in Domain if domain != Domain.ALL and domain != Domain.PARKING]
+        elif Domain.ALL in selective:
             jobs = ['all']
         else:
             jobs = [domain.value for domain in selective]
