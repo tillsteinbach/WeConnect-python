@@ -423,7 +423,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                              'rearLeft': 'window_left_back',
                                              'rearRight': 'window_right_back',
                                              'sunRoof': 'sunroof'}
-            if 'access' in self.domains and 'accessStatus' in self.domains['access']:
+            if 'access' in self.domains and 'accessStatus' in self.domains['access'] and not self.domains['access']['accessStatus'].error.enabled:
                 accessStatus: AccessStatus = cast(AccessStatus, self.domains['access']['accessStatus'])
 
                 if accessStatus.overallStatus.enabled:
