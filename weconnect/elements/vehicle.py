@@ -43,6 +43,7 @@ from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
 from weconnect.domain import Domain
+from weconnect.elements.error import Error
 
 from weconnect.elements.helpers.request_tracker import RequestTracker
 
@@ -54,6 +55,21 @@ except ImportError:
     pass
 
 LOG: logging.Logger = logging.getLogger("weconnect")
+
+
+class DomainDict(AddressableDict):
+    def __init__(self, **kwargs):
+        self.error: Error = Error(localAddress='error', parent=self)
+        super(DomainDict, self).__init__(**kwargs)
+
+    def updateError(self, fromDict: Dict[str, Any]):
+        if 'error' in fromDict:
+            self.error.update(fromDict['error'])
+        else:
+            self.error.reset()
+
+    def hasError(self) -> bool:
+        return self.error.enabled
 
 
 class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attributes
@@ -86,7 +102,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                  valueType=Vehicle.DevicePlatform)
         self.nickname: AddressableAttribute[str] = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
-        self.domains: AddressableDict[str, AddressableDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
+        self.domains: AddressableDict[str, DomainDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
         self.images: AddressableAttribute[Dict[str, str]] = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
         self.tags: AddressableAttribute[List[str]] = AddressableAttribute(localAddress='tags', parent=self, value=None, valueType=list)
         self.coUsers: AddressableList[Vehicle.User] = AddressableList(localAddress='coUsers', parent=self)
@@ -282,7 +298,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     continue
                 if domain.value in data:
                     if domain.value not in self.domains:
-                        self.domains[domain.value] = AddressableDict(localAddress=domain.value, parent=self.domains)
+                        self.domains[domain.value] = DomainDict(localAddress=domain.value, parent=self.domains)
                     for key, className in keyClassMap.items():
                         if key in data[domain.value]:
                             if key in self.domains[domain.value]:
@@ -292,10 +308,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                 LOG.debug('Status %s does not exist, creating it', key)
                                 self.domains[domain.value][key] = className(vehicle=self, parent=self.domains[domain.value], statusId=key,
                                                                             fromDict=data[domain.value][key], fixAPI=self.fixAPI)
+                    if 'error' in data[domain.value]:
+                        self.domains[domain.value].updateError(data[domain.value])
 
                     # check that there is no additional status than the configured ones, except for "target" that we merge into
                     # the known ones
-                    for key, value in {key: value for key, value in data[domain.value].items() if key not in list(keyClassMap.keys())}.items():
+                    for key, value in {key: value for key, value in data[domain.value].items()
+                                       if key not in list(keyClassMap.keys()) and key not in ['error']}.items():
                         LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain.value)
             # check that there is no additional domain than the configured ones
             for key, value in {key: value for key, value in data.items() if key not in list([domain.value for domain in jobKeyClassMap.keys()])}.items():
@@ -314,7 +333,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             if data is not None:
                 if 'parking' not in self.domains:
-                    self.domains['parking'] = AddressableDict(localAddress='parking', parent=self)
+                    self.domains['parking'] = DomainDict(localAddress='parking', parent=self)
                 if 'parkingPosition' in self.domains['parking']:
                     self.domains['parking']['parkingPosition'].update(fromDict=data)
                 else:
@@ -645,6 +664,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 for status in self.domains[domain].values():
                     if status.enabled:
                         returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
+                if self.domains[domain].hasError():
+                    returnString += ''.join(['\t' + line for line in f'Error: {self.domains[domain].error}'.splitlines(True)]) + '\n'
         return returnString
 
     class Badge(Enum):
