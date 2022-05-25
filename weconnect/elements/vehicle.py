@@ -285,7 +285,17 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if self.vin.value is None:
             raise APIError('')
         if selective is None:
-            jobs = [domain.value for domain in Domain if domain != Domain.ALL and domain != Domain.PARKING]
+            jobs = [domain.value for domain in Domain if domain != Domain.ALL and domain != Domain.ALL_CAPABLE and domain != Domain.PARKING]
+        elif Domain.ALL_CAPABLE in selective:
+            if self.capabilities:
+                jobs = []
+                for dom in [domain for domain in Domain if domain != Domain.ALL and domain != Domain.ALL_CAPABLE and domain != Domain.PARKING]:
+                    if dom.value in self.capabilities and self.capabilities[dom.value].enabled and not self.capabilities[dom.value].status.enabled:
+                        jobs.append(dom.value)
+                if updateCapabilities:
+                    jobs.append(Domain.USER_CAPABILITIES.value)
+            else:
+                jobs = ['all']
         elif Domain.ALL in selective:
             jobs = ['all']
         else:
@@ -323,7 +333,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         # Controls
         self.controls.update()
 
-        if (selective is None or any(x in selective for x in [Domain.ALL, Domain.PARKING])) \
+        if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.PARKING])) \
                 and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
             url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
             data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
