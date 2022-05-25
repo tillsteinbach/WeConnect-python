@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.41.0] - 2022-05-25
+### Added
+- selective allCapable added to only fetch data that is provided by the car
+
+### Fixed
+- Errors in domains are catched and do not produce warnings anymore
+
 ## [0.40.0] - 2022-05-12
 ### Added
 - weconnect-trace-id header added
