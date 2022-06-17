@@ -5,9 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.41.0] - 2022-06-17
+## [0.42.0] - 2022-06-17
 ### Added
 - Added new attributes: brandCode, autoUnlockPlugWhenChargedAC, ledColor (warning, it is not yet clear what values are allowed, so use these with caution)
+
+## [0.41.0] - 2022-05-25
+ ### Added
+ - selective allCapable added to only fetch data that is provided by the car
+
+ ### Fixed
+ - Errors in domains are catched and do not produce warnings anymore
 
 ## [0.40.0] - 2022-05-12
 ### Added
@@ -553,7 +560,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.41.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.42.0...HEAD
+[0.42.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.42.0
 [0.41.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.41.0
 [0.40.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.40.0
 [0.39.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.39.0
