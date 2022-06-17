@@ -20,6 +20,7 @@ class PlugStatus(GenericStatus):
             localAddress='plugConnectionState', parent=self, value=None, valueType=PlugStatus.PlugConnectionState)
         self.plugLockState = AddressableAttribute(
             localAddress='plugLockState', value=None, parent=self, valueType=PlugStatus.PlugLockState)
+        self.ledColor = AddressableAttribute(localAddress='ledColor', value=None, parent=self, valueType=PlugStatus.LedColor)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
@@ -29,12 +30,14 @@ class PlugStatus(GenericStatus):
         if 'value' in fromDict:
             self.plugConnectionState.fromDict(fromDict['value'], 'plugConnectionState')
             self.plugLockState.fromDict(fromDict['value'], 'plugLockState')
+            self.ledColor.fromDict(fromDict['value'], 'ledColor')
         else:
             self.plugConnectionState.enabled = False
             self.plugLockState.enabled = False
+            self.ledColor.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(
-            ignoreAttributes + ['plugConnectionState', 'plugLockState']))
+            ignoreAttributes + ['plugConnectionState', 'plugLockState', 'ledColor']))
 
     def __str__(self):
         string = super().__str__()
@@ -43,6 +46,8 @@ class PlugStatus(GenericStatus):
             string += f' {self.plugConnectionState.value.value}, '  # pylint: disable=no-member
         if self.plugLockState.enabled:
             string += f'{self.plugLockState.value.value}'  # pylint: disable=no-member
+        if self.ledColor.enabled:
+            string += f', Led color: {self.ledColor.value.value}'  # pylint: disable=no-member
         return string
 
     class PlugConnectionState(Enum,):
@@ -58,3 +63,7 @@ class PlugStatus(GenericStatus):
         INVALID = 'invalid'
         UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown unlock plug state'
+
+    class LedColor(Enum,):
+        NONE = 'none'
+        UNKNOWN = 'unknown plug led color'

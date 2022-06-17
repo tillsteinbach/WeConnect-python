@@ -101,6 +101,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                  value=None,
                                                                                                  valueType=Vehicle.DevicePlatform)
         self.nickname: AddressableAttribute[str] = AddressableAttribute(localAddress='nickname', parent=self, value=None, valueType=str)
+        self.brandCode: AddressableAttribute[str] = AddressableAttribute(localAddress='brandCode', parent=self, value=None, valueType=Vehicle.BrandCode)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
         self.domains: AddressableDict[str, DomainDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
         self.images: AddressableAttribute[Dict[str, str]] = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
@@ -151,6 +152,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             self.model.fromDict(fromDict, 'model')
             self.devicePlatform.fromDict(fromDict, 'devicePlatform')
             self.nickname.fromDict(fromDict, 'nickname')
+            self.brandCode.fromDict(fromDict, 'brandCode')
 
             if updateCapabilities and 'capabilities' in fromDict and fromDict['capabilities'] is not None:
                 for capDict in fromDict['capabilities']:
@@ -204,6 +206,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                               'model',
                                               'devicePlatform',
                                               'nickname',
+                                              'brandCode',
                                               'capabilities',
                                               'images',
                                               'tags',
@@ -649,6 +652,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             returnString += f'Device Platform:   {self.devicePlatform.value.value}\n'
         if self.nickname.enabled and self.nickname.value is not None:
             returnString += f'Nickname:          {self.nickname.value}\n'
+        if self.brandCode.enabled and self.brandCode.value is not None:
+            returnString += f'Brand Code:        {self.brandCode.value.value}\n'
         if self.role.enabled and self.role.value is not None:
             returnString += f'Role:              {self.role.value.value}\n'  # pylint: disable=no-member
         if self.enrollmentStatus.enabled and self.enrollmentStatus.value is not None:
@@ -694,6 +699,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         MBB_ODP = 'MBB_ODP'
         WCAR = 'WCAR'
         UNKNOWN = 'UNKNOWN'
+
+    class BrandCode(Enum,):
+        V = 'V'
+        UNKNOWN = 'unknown brand code'
 
     class User(AddressableObject):
         def __init__(

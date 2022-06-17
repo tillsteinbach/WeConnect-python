@@ -5,12 +5,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.41.0] - 2022-05-25
+## [0.41.0] - 2022-06-17
 ### Added
-- selective allCapable added to only fetch data that is provided by the car
-
-### Fixed
-- Errors in domains are catched and do not produce warnings anymore
+- Added new attributes: brandCode, autoUnlockPlugWhenChargedAC, ledColor (warning, it is not yet clear what values are allowed, so use these with caution)
 
 ## [0.40.0] - 2022-05-12
 ### Added
