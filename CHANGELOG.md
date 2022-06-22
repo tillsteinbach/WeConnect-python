@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.43.0] - 2022-06-22
+### Added
+- Added new attribute: externalPower
+
 ## [0.42.0] - 2022-06-17
 ### Added
 - Added new attributes: brandCode, autoUnlockPlugWhenChargedAC, ledColor (warning, it is not yet clear what values are allowed, so use these with caution)
