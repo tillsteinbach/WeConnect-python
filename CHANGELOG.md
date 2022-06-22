@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.43.0] - 2022-06-22
+## [0.43.0] - 2022-06-22 (Happy birthday Peer!)
 ### Added
 - Added new attribute: externalPower
 
