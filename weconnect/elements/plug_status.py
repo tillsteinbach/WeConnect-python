@@ -74,7 +74,7 @@ class PlugStatus(GenericStatus):
         READY = 'ready'
         UNAVAILABLE = 'unavailable'
         UNKNOWN = 'unknown external power'
-    
+
     class LedColor(Enum,):
         NONE = 'none'
         UNKNOWN = 'unknown plug led color'
