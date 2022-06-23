@@ -116,6 +116,7 @@ class ChargingStatus(GenericStatus):
         CHARGE_PURPOSE_REACHED_CONSERVATION = 'chargePurposeReachedAndConservation'
         CHARGING = 'charging'
         ERROR = 'error'
+        UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown charging state'
 
     class ChargeMode(Enum,):
