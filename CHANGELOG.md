@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.43.1] - 2022-06-23
+### Added
+- Added new values for attribute externalPower: active
+- Added new values for attribute ledColor: green, red
+
 ## [0.43.0] - 2022-06-22 (Happy birthday Peer!)
 ### Added
 - Added new attribute: externalPower
@@ -564,7 +569,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.43.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.43.1...HEAD
+[0.43.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.43.1
 [0.43.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.43.0
 [0.42.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.42.0
 [0.41.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.41.0
