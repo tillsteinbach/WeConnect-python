@@ -697,6 +697,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     class DevicePlatform(Enum,):
         MBB = 'MBB'
         MBB_ODP = 'MBB_ODP'
+        MBB_OFFLINE = 'MBB_OFFLINE'
         WCAR = 'WCAR'
         UNKNOWN = 'UNKNOWN'
 
@@ -770,6 +771,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             PRIMARY_USER = 'PRIMARY_USER'
             SECONDARY_USER = 'SECONDARY_USER'
             GUEST_USER = 'GUEST_USER'
+            CDIS_UNKNOWN_USER = 'CDIS_UNKNOWN_USER'
             UNKNOWN = 'UNKNOWN'
 
             def __str__(self) -> str:
@@ -785,4 +787,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
         class UserRoleStatus(Enum,):
             ENABLED = 'ENABLED'
+            DISABLED_HMI = 'DISABLED_HMI'
+            DISABLED_SPIN = 'DISABLED_SPIN'
+            DISABLED_PU_SPIN_RESET = 'DISABLED_PU_SPIN_RESET'
+            CDIS_UNKNOWN_USER = 'CDIS_UNKNOWN_USER'
             UNKNOWN = 'UNKNOWN'

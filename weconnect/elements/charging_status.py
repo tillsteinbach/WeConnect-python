@@ -117,6 +117,7 @@ class ChargingStatus(GenericStatus):
         CHARGING = 'charging'
         ERROR = 'error'
         UNSUPPORTED = 'unsupported'
+        DISCHARGING = 'discharging'
         UNKNOWN = 'unknown charging state'
 
     class ChargeMode(Enum,):
@@ -127,6 +128,8 @@ class ChargingStatus(GenericStatus):
         ONLY_OWN_CURRENT = 'onlyOwnCurrent'
         PREFERRED_CHARGING_TIMES = 'preferredChargingTimes'
         TIMER_CHARGING_WITH_CLIMATISATION = 'timerChargingWithClimatisation'
+        HOME_STORAGE_CHARGING = 'homeStorageCharging'
+        IMMEDIATE_DISCHARGING = 'immediateDischarging'
         UNKNOWN = 'unknown charge mode'
 
     class ChargeType(Enum,):
