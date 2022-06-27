@@ -26,6 +26,8 @@ class Controls(AddressableObject):
         self.update()
         self.climatizationControl = None
         self.chargingControl = None
+        self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
+                                                 valueSetter=self.__setWakeupControlChange)
 
     def update(self):
         for domain in self.vehicle.domains.values():
@@ -129,3 +131,29 @@ class Controls(AddressableObject):
             if 'data' in responseDict and 'requestID' in responseDict['data']:
                 if self.vehicle.requestTracker is not None:
                     self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CHARGING, 20, 120)
+
+    def __setWakeupControlChange(self, value):  # noqa: C901
+        if value in [ControlOperation.START]:
+            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/vehiclewakeuptrigger'
+
+            controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
+
+            if controlResponse.status_code not in (requests.codes['ok'], requests.codes['no_content']):
+                errorDict = controlResponse.json()
+                if errorDict is not None and 'error' in errorDict:
+                    error = Error(localAddress='error', parent=self, fromDict=errorDict['error'])
+                    if error is not None:
+                        message = ''
+                        if error.message.enabled and error.message.value is not None:
+                            message += error.message.value
+                        if error.info.enabled and error.info.value is not None:
+                            message += ' - ' + error.info.value
+                        if error.retry.enabled and error.retry.value is not None:
+                            if error.retry.value:
+                                message += ' - Please retry in a moment'
+                            else:
+                                message += ' - No retry possible'
+                        raise SetterError(f'Could not control wakeup ({message})')
+                    else:
+                        raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
+                raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
