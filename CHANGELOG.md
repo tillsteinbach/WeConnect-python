@@ -3,8 +3,19 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- No unreleased changes so far
+
+## [0.44.0] - 2022-06-28
 ### Added
 - Allow to control window heating
+- Login procedure for MyCupra (this is login functionality only, no data retrieval yet!)
+- ChargingState: DISCHARGING
+- ChargeMode: HOME_STORAGE_CHARGING, IMMEDIATE_DISCHARGING
+- window heating control: only for MEB cars
+- wake-up control: not for MEB cars
+- DevicePlatform: MBB_OFFLINE
+- Role: CDIS_UNKNOWN_USER
+- UserRoleStatus: DISABLED_HMI, DISABLED_SPIN, DISABLED_PU_SPIN_RESET, CDIS_UNKNOWN_USER
 
 ## [0.43.2] - 2022-06-23
 ### Added
@@ -575,7 +586,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.43.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.44.0...HEAD
+[0.44.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.44.0
 [0.43.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.43.2
 [0.43.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.43.1
 [0.43.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.43.0
