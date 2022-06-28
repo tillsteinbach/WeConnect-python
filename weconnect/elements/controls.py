@@ -7,6 +7,7 @@ from weconnect.elements.control_operation import ControlOperation
 from weconnect.elements.charging_settings import ChargingSettings
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.error import Error
+from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.errors import ControlError, SetterError
 from weconnect.util import celsiusToKelvin, farenheitToKelvin
 from weconnect.domain import Domain
@@ -26,6 +27,7 @@ class Controls(AddressableObject):
         self.update()
         self.climatizationControl = None
         self.chargingControl = None
+        self.windowHeatingControl = None
         self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                  valueSetter=self.__setWakeupControlChange)
 
@@ -42,6 +44,11 @@ class Controls(AddressableObject):
                         self.chargingControl = ChangeableAttribute(
                             localAddress='charging', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setChargingControlChange)
+                elif isinstance(status, WindowHeatingStatus):
+                    if self.windowHeatingControl is None:
+                        self.windowHeatingControl = ChangeableAttribute(
+                            localAddress='windowheating', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
+                            valueSetter=self.__setWindowHeatingControlChange)
 
     def __setClimatizationControlChange(self, value):  # noqa: C901
         if isinstance(value, ControlOperation):
@@ -131,6 +138,35 @@ class Controls(AddressableObject):
             if 'data' in responseDict and 'requestID' in responseDict['data']:
                 if self.vehicle.requestTracker is not None:
                     self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CHARGING, 20, 120)
+
+    def __setWindowHeatingControlChange(self, value):  # noqa: C901
+        if value in [ControlOperation.START, ControlOperation.STOP]:
+            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/windowheating/{value.value}'
+
+            controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
+            if controlResponse.status_code != requests.codes['ok']:
+                errorDict = controlResponse.json()
+                if errorDict is not None and 'error' in errorDict:
+                    error = Error(localAddress='error', parent=self, fromDict=errorDict['error'])
+                    if error is not None:
+                        message = ''
+                        if error.message.enabled and error.message.value is not None:
+                            message += error.message.value
+                        if error.info.enabled and error.info.value is not None:
+                            message += ' - ' + error.info.value
+                        if error.retry.enabled and error.retry.value is not None:
+                            if error.retry.value:
+                                message += ' - Please retry in a moment'
+                            else:
+                                message += ' - No retry possible'
+                        raise SetterError(f'Could not control windowheating ({message})')
+                    else:
+                        raise SetterError(f'Could not control windowheating ({controlResponse.status_code})')
+                raise SetterError(f'Could not control windowheating ({controlResponse.status_code})')
+            responseDict = controlResponse.json()
+            if 'data' in responseDict and 'requestID' in responseDict['data']:
+                if self.vehicle.requestTracker is not None:
+                    self.vehicle.requestTracker.trackRequest(responseDict['data']['requestID'], Domain.CLIMATISATION, 20, 120)
 
     def __setWakeupControlChange(self, value):  # noqa: C901
         if value in [ControlOperation.START]:

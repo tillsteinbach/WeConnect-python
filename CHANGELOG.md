@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- No unreleased changes so far
+### Added
+- Allow to control window heating
 
 ## [0.43.2] - 2022-06-23
 ### Added
