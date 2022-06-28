@@ -112,7 +112,7 @@ class WarningLightsStatus(GenericStatus):
             self.category.fromDict(fromDict, 'category')
             self.priority.fromDict(fromDict, 'priority')
             if SUPPORT_IMAGES:
-                if 'icon' in fromDict:
+                if 'icon' in fromDict and fromDict['icon'] is not None:
                     prefix = 'data:image/png;base64,'
                     if fromDict['icon'].startswith(prefix):
                         img = fromDict['icon'][len(prefix):]
