@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.45.0] - in testing
+### Added
+- Allow to force relogin after a period of time
+
 ## [0.44.2] - 2022-06-28
 ### Fixed
 - Fixed error with warning light icon
