@@ -50,6 +50,7 @@ class WeChargeSession(VWWebSession):
         return None
 
     def login(self):
+        super(WeChargeSession, self).login()
         authorizationUrl = self.authorizationUrl(url='https://identity.vwgroup.io/oidc/v1/authorize')
         response = self.doWebAuth(authorizationUrl)
         self.fetchTokens('https://wecharge.apps.emea.vwapps.io/user-identity/v1/identity/login',

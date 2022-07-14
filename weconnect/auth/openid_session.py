@@ -27,7 +27,7 @@ class AccessType(Enum):
 
 
 class OpenIDSession(requests.Session):
-    def __init__(self, client_id=None, redirect_uri=None, refresh_url=None, scope=None, token=None, state=None, timeout=None, **kwargs):
+    def __init__(self, client_id=None, redirect_uri=None, refresh_url=None, scope=None, token=None, state=None, timeout=None, forceReloginAfter=None, **kwargs):
         super(OpenIDSession, self).__init__(**kwargs)
         self.client_id = client_id
         self.redirect_uri = redirect_uri
@@ -38,8 +38,20 @@ class OpenIDSession(requests.Session):
         self.timeout = timeout
         self._token = None
         self.token = token
+        self.lastLogin = None
+        self.forceReloginAfter = forceReloginAfter
 
         self._retries = False
+
+    @property
+    def forceReloginAfter(self):
+        return self._forceReloginAfter
+
+    @forceReloginAfter.setter
+    def forceReloginAfter(self, newValue):
+        self._forceReloginAfter = newValue
+        if newValue is not None and self.lastLogin is None:
+            self.lastLogin = time.time()
 
     @property
     def retries(self):
@@ -125,7 +137,7 @@ class OpenIDSession(requests.Session):
         return self.expiresAt is not None and self.expiresAt < time.time()
 
     def login(self):
-        pass
+        self.lastLogin = time.time()
 
     def refresh(self):
         pass
@@ -161,6 +173,9 @@ class OpenIDSession(requests.Session):
         if not is_secure_transport(url):
             raise InsecureTransportError()
         if access_type != AccessType.NONE and not withhold_token:
+            if self.forceReloginAfter is not None and self.lastLogin is not None and (self.lastLogin + self.forceReloginAfter) < time.time():
+                LOG.debug("Forced new login after %ds", self.forceReloginAfter)
+                self.login()
             try:
                 url, headers, data = self.addToken(url, body=data, headers=headers, access_type=access_type, token=token)
             # Attempt to retrieve and save new access token if expired

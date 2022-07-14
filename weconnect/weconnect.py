@@ -39,7 +39,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         updatePictures: bool = True,
         numRetries: int = 3,
         timeout: bool = None,
-        selective: Optional[list[Domain]] = None
+        selective: Optional[list[Domain]] = None,
+        forceReloginAfter: Optional[int] = None
     ) -> None:
         """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
            If loginOnInit is true also an initial fetch of data is performed.
@@ -60,6 +61,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             numRetries (int, optional): Number of retries when http requests are failing. Defaults to 3.
             timeout (bool, optional, optional): Timeout in seconds used for http connections to the VW servers
             selective (list[Domain], optional): Domains to request data for
+            forceReloginAfter (int, optional): Force a full relogin after number of seconds. This might be necessary to get fresh data
         """
         super().__init__(localAddress='', parent=None)
         self.username: str = username
@@ -91,6 +93,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__session = self.__manager.getSession(Service.WE_CONNECT, SessionUser(username=username, password=password))
         self.__session.timeout = timeout
         self.__session.retries = numRetries
+        self.__session.forceReloginAfter = forceReloginAfter
 
         if loginOnInit:
             self.__session.login()
