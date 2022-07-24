@@ -25,25 +25,26 @@ class ReadinessStatus(GenericStatus):
         ignoreAttributes = ignoreAttributes or []
         LOG.debug('Update readiness status from dict')
 
-        if 'connectionState' in fromDict:
-            if self.connectionState is None:
-                self.connectionState = ReadinessStatus.ConnectionState(parent=self, fromDict=fromDict['connectionState'])
-            else:
-                self.connectionState.update(fromDict=fromDict['connectionState'])
-        elif self.connectionState is not None:
-            self.connectionState.enabled = False
-            self.connectionState = None
+        if 'value' in fromDict:
+            if 'connectionState' in fromDict['value']:
+                if self.connectionState is None:
+                    self.connectionState = ReadinessStatus.ConnectionState(parent=self, fromDict=fromDict['value']['connectionState'])
+                else:
+                    self.connectionState.update(fromDict=fromDict['value']['connectionState'])
+            elif self.connectionState is not None:
+                self.connectionState.enabled = False
+                self.connectionState = None
 
-        if 'connectionWarning' in fromDict:
-            if self.connectionWarning is None:
-                self.connectionWarning = ReadinessStatus.ConnectionWarning(parent=self, fromDict=fromDict['connectionWarning'])
-            else:
-                self.connectionWarning.update(fromDict=fromDict['connectionWarning'])
-        elif self.connectionWarning is not None:
-            self.connectionWarning.enabled = False
-            self.connectionWarning = None
+            if 'connectionWarning' in fromDict['value']:
+                if self.connectionWarning is None:
+                    self.connectionWarning = ReadinessStatus.ConnectionWarning(parent=self, fromDict=fromDict['value']['connectionWarning'])
+                else:
+                    self.connectionWarning.update(fromDict=fromDict['value']['connectionWarning'])
+            elif self.connectionWarning is not None:
+                self.connectionWarning.enabled = False
+                self.connectionWarning = None
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['connectionState', 'connectionWarning']))
+            super().update(fromDict=fromDict['value'], ignoreAttributes=(ignoreAttributes + ['connectionState', 'connectionWarning']))
 
     def __str__(self):
         string = super().__str__()
