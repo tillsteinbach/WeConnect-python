@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.45.1] - 2022-07-25
+### Fixed
+- ReadinessStatus fixed after changes in backend
+
 ## [0.45.0] - 2022-07-14
 ### Added
 - Allow to force relogin after a period of time
@@ -598,7 +602,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.45.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.45.1...HEAD
+[0.45.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.45.1
 [0.45.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.45.0
 [0.44.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.44.2
 [0.44.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.44.1
