@@ -1,2 +1,4 @@
 requests~=2.28.1
 oauthlib~=3.2.0
+pillow~=9.2.0
+ascii_magic~=1.6
