@@ -21,6 +21,7 @@ from weconnect.elements.controls import Controls
 from weconnect.elements.access_status import AccessStatus
 from weconnect.elements.battery_status import BatteryStatus
 from weconnect.elements.lv_battery_status import LVBatteryStatus
+from weconnect.elements.battery_support_status import BatterySupportStatus
 from weconnect.elements.capability_status import CapabilityStatus
 from weconnect.elements.charging_status import ChargingStatus
 from weconnect.elements.charging_settings import ChargingSettings
@@ -282,7 +283,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'measurements': GenericStatus,
             },
             Domain.BATTERY_SUPPORT: {
-                'batterySupportStatus': GenericStatus,
+                'batterySupportStatus': BatterySupportStatus,
             }
         }
         if self.vin.value is None:
