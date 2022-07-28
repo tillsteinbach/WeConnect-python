@@ -12,7 +12,7 @@ from weconnect.util import toBool, robustTimeParse, ExtendedWithNullEncoder
 SUPPORT_IMAGES = False
 try:
     from PIL import Image  # type: ignore
-    from weconnect.util import imgToASCIIArt
+    from weconnect.util import imgToASCIIArt  # pylint: disable=ungrouped-imports
     SUPPORT_IMAGES = True
 except ImportError:
     pass
