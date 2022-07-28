@@ -11,8 +11,19 @@ import logging
 
 import shutil
 
-from PIL import Image  # type: ignore
-import ascii_magic
+SUPPORT_IMAGES = False
+try:
+    from PIL import Image  # type: ignore
+    SUPPORT_IMAGES = True
+except ImportError:
+    pass
+
+SUPPORT_ASCII_IMAGES = False
+try:
+    import ascii_magic  # type: ignore
+    SUPPORT_ASCII_IMAGES = True
+except ImportError:
+    pass
 
 
 def robustTimeParse(timeString: str) -> datetime:
@@ -32,25 +43,26 @@ def toBool(value: Any) -> bool:
     raise ValueError('Not a valid boolean value (True/False)')
 
 
-def imgToASCIIArt(img: Image, columns: int = 0, mode: ascii_magic.Modes = ascii_magic.Modes.TERMINAL) -> str:
-    bbox = img.getbbox()
+if SUPPORT_ASCII_IMAGES:
+    def imgToASCIIArt(img: Image, columns: int = 0, mode: ascii_magic.Modes = ascii_magic.Modes.TERMINAL) -> str:
+        bbox = img.getbbox()
 
-    # Crop the image to the contents of the bounding box
-    image = img.crop(bbox)
+        # Crop the image to the contents of the bounding box
+        image = img.crop(bbox)
 
-    # Determine the width and height of the cropped image
-    (width, height) = image.size
+        # Determine the width and height of the cropped image
+        (width, height) = image.size
 
-    # Create a new image object for the output image
-    cropped_image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        # Create a new image object for the output image
+        cropped_image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
 
-    # Paste the cropped image onto the new image
-    cropped_image.paste(image, (0, 0))
+        # Paste the cropped image onto the new image
+        cropped_image.paste(image, (0, 0))
 
-    if columns == 0:
-        columns = shutil.get_terminal_size()[0]
+        if columns == 0:
+            columns = shutil.get_terminal_size()[0]
 
-    return ascii_magic.from_image(cropped_image, columns=columns, mode=mode)
+        return ascii_magic.from_image(cropped_image, columns=columns, mode=mode)
 
 
 def celsiusToKelvin(value):

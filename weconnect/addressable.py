@@ -7,11 +7,12 @@ import time as timemodule
 from datetime import datetime, timezone, time
 from enum import Enum, IntEnum, Flag, auto
 
-from weconnect.util import toBool, imgToASCIIArt, robustTimeParse, ExtendedWithNullEncoder
+from weconnect.util import toBool, robustTimeParse, ExtendedWithNullEncoder
 
 SUPPORT_IMAGES = False
 try:
     from PIL import Image  # type: ignore
+    from weconnect.util import imgToASCIIArt
     SUPPORT_IMAGES = True
 except ImportError:
     pass
