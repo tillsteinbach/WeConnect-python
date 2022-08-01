@@ -19,6 +19,10 @@ class RangeMeasurements(GenericStatus):
             localAddress='electricRange', parent=self, value=None, valueType=int)
         self.gasolineRange = AddressableAttribute(
             localAddress='gasolineRange', value=None, parent=self, valueType=int)
+        self.adBlueRange = AddressableAttribute(
+            localAddress='adBlueRange', value=None, parent=self, valueType=int)
+        self.dieselRange = AddressableAttribute(
+            localAddress='dieselRange', value=None, parent=self, valueType=int)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
@@ -28,12 +32,16 @@ class RangeMeasurements(GenericStatus):
         if 'value' in fromDict:
             self.electricRange.fromDict(fromDict['value'], 'electricRange')
             self.gasolineRange.fromDict(fromDict['value'], 'gasolineRange')
+            self.adBlueRange.fromDict(fromDict['value'], 'adBlueRange')
+            self.dieselRange.fromDict(fromDict['value'], 'dieselRange')
         else:
             self.electricRange.enabled = False
             self.gasolineRange.enabled = False
+            self.adBlueRange.enabled = False
+            self.dieselRange.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(
-            ignoreAttributes + ['electricRange', 'gasolineRange']))
+            ignoreAttributes + ['electricRange', 'gasolineRange', 'adBlueRange', 'dieselRange']))
 
     def __str__(self):
         string = super().__str__()
@@ -41,4 +49,8 @@ class RangeMeasurements(GenericStatus):
             string += f'\n\tElectric Range: {self.electricRange.value}km'
         if self.gasolineRange.enabled:
             string += f'\n\tGasoline Range: {self.gasolineRange.value}km'
+        if self.adBlueRange.enabled:
+            string += f'\n\AdBlue Range: {self.adBlueRange.value}km'
+        if self.dieselRange.enabled:
+            string += f'\n\Diesel Range: {self.dieselRange.value}km'
         return string

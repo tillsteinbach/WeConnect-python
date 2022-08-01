@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - No unreleased changes so far
+### Added
+- Attributes for diesel cars
 
 ## [0.45.1] - 2022-07-25
 ### Fixed
