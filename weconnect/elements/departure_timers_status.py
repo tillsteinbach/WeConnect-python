@@ -54,7 +54,6 @@ class DepartureTimersStatus(GenericStatus):
             self.timers.clear()
             self.timers.enabled = False
 
-
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['timers', 'heaterSource', 'minSOC_pct']))
 
     def __str__(self):
