@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - No unreleased changes so far
 ### Added
 - Attributes for diesel cars
+- New status departureTimersStatus & chargingProfilesStatus
 
 ## [0.45.1] - 2022-07-25
 ### Fixed

@@ -29,6 +29,7 @@ from weconnect.elements.charge_mode import ChargeMode
 from weconnect.elements.climatization_status import ClimatizationStatus
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.climatization_timer import ClimatizationTimer
+from weconnect.elements.departure_timers_status import DepartureTimersStatus
 from weconnect.elements.lights_status import LightsStatus
 from weconnect.elements.maintenance_status import MaintenanceStatus
 from weconnect.elements.warning_lights_status import WarningLightsStatus
@@ -247,12 +248,18 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'chargingSettingsRequestStatus': GenericRequestStatus,
                 'chargingCareSettings': GenericSettings,
             },
+            Domain.CHARGING_PROFILES: {
+                'chargingProfilesStatus': ChargingProfiles,
+            },
             Domain.CLIMATISATION: {
                 'climatisationStatus': ClimatizationStatus,
                 'climatisationSettings': ClimatizationSettings,
                 'windowHeatingStatus': WindowHeatingStatus,
                 'climatisationRequestStatus': GenericRequestStatus,
                 'climatisationSettingsRequestStatus': GenericRequestStatus,
+            },
+            Domain.DEPARTURE_TIMERS: {
+                'departureTimersStatus': DepartureTimersStatus,
             },
             Domain.FUEL_STATUS: {
                 'rangeStatus': RangeStatus,
