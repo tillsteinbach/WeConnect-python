@@ -50,7 +50,7 @@ class RangeMeasurements(GenericStatus):
         if self.gasolineRange.enabled:
             string += f'\n\tGasoline Range: {self.gasolineRange.value}km'
         if self.adBlueRange.enabled:
-            string += f'\n\AdBlue Range: {self.adBlueRange.value}km'
+            string += f'\n\tAdBlue Range: {self.adBlueRange.value}km'
         if self.dieselRange.enabled:
-            string += f'\n\Diesel Range: {self.dieselRange.value}km'
+            string += f'\n\tDiesel Range: {self.dieselRange.value}km'
         return string

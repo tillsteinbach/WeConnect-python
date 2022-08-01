@@ -106,7 +106,7 @@ class DepartureTimersStatus(GenericStatus):
                 self.climatisation.setValueWithCarTime(toBool(fromDict['climatisation']), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.climatisation.enabled = False
-            
+
             if 'charging' in fromDict:
                 self.charging.setValueWithCarTime(toBool(fromDict['charging']), lastUpdateFromCar=None, fromServer=True)
             else:
@@ -253,12 +253,12 @@ class DepartureTimersStatus(GenericStatus):
 
                 if 'endTimeLocal' in fromDict:
                     self.endTimeLocal.setValueWithCarTime(datetime.strptime(f'{fromDict["endTimeLocal"]}+00:00', '%H:%M%z'),
-                                                            lastUpdateFromCar=None, fromServer=True)
+                                                          lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.endTimeLocal.enabled = False
 
                 for key, value in {key: value for key, value in fromDict.items()
-                                if key not in ['id', 'enabled', 'startTimeLocal', 'endTimeLocal']}.items():
+                                   if key not in ['id', 'enabled', 'startTimeLocal', 'endTimeLocal']}.items():
                     LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
@@ -286,7 +286,8 @@ class DepartureTimersStatus(GenericStatus):
                 LOG.debug('Update recurring timer from dict')
 
                 if 'departureDateTimeLocal' in fromDict:
-                    self.departureDateTimeLocal.setValueWithCarTime(robustTimeParse(fromDict["departureDateTimeLocal"]), lastUpdateFromCar=None, fromServer=True)
+                    self.departureDateTimeLocal.setValueWithCarTime(robustTimeParse(fromDict["departureDateTimeLocal"]), lastUpdateFromCar=None,
+                                                                    fromServer=True)
                 else:
                     self.departureDateTimeLocal.enabled = False
 
