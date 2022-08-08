@@ -29,6 +29,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self,
         username: str,
         password: str,
+        spin: str = None,
         tokenfile: Optional[str] = None,
         updateAfterLogin: bool = True,
         loginOnInit: bool = False,
@@ -66,6 +67,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         super().__init__(localAddress='', parent=None)
         self.username: str = username
         self.password: str = password
+        self.spin: str = spin
 
         self.__userId: Optional[str] = None  # pylint: disable=unused-private-member
         self.__session: requests.Session = requests.Session()

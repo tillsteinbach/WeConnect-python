@@ -43,6 +43,7 @@ class WeConnectSession(VWWebSession):
             'user-agent': 'WeConnect/3 CFNetwork/1331.0.7 Darwin/21.4.0',
             'accept-language': 'de-de',
         })
+        self.userId = None
 
     def request(
         self,
@@ -238,7 +239,7 @@ class WeConnectSession(VWWebSession):
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
             raise APICompatibilityError('No user id provided')
-        self.__userId = params['userId']  # pylint: disable=unused-private-member
+        self.userId = params['userId']
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLoginUrl: str = login3Response.headers['Location']
