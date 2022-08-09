@@ -3,11 +3,12 @@ import json
 import requests
 
 from weconnect.addressable import AddressableObject, ChangeableAttribute
-from weconnect.elements.control_operation import ControlOperation
+from weconnect.elements.control_operation import ControlOperation, AccessControlOperation
 from weconnect.elements.charging_settings import ChargingSettings
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.error import Error
 from weconnect.elements.window_heating_status import WindowHeatingStatus
+from weconnect.elements.access_status import AccessStatus
 from weconnect.errors import ControlError, SetterError
 from weconnect.util import celsiusToKelvin, farenheitToKelvin
 from weconnect.domain import Domain
@@ -28,27 +29,33 @@ class Controls(AddressableObject):
         self.climatizationControl = None
         self.chargingControl = None
         self.windowHeatingControl = None
+        self.lockControl = None
         self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                  valueSetter=self.__setWakeupControlChange)
 
     def update(self):
         for domain in self.vehicle.domains.values():
             for status in domain.values():
-                if isinstance(status, ClimatizationSettings):
+                if isinstance(status, ClimatizationSettings) and not status.error.enabled:
                     if self.climatizationControl is None:
                         self.climatizationControl = ChangeableAttribute(
                             localAddress='climatisation', parent=self, value=ControlOperation.NONE, valueType=(ControlOperation, float),
                             valueSetter=self.__setClimatizationControlChange)
-                elif isinstance(status, ChargingSettings):
+                elif isinstance(status, ChargingSettings) and not status.error.enabled:
                     if self.chargingControl is None:
                         self.chargingControl = ChangeableAttribute(
                             localAddress='charging', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setChargingControlChange)
-                elif isinstance(status, WindowHeatingStatus):
+                elif isinstance(status, WindowHeatingStatus) and not status.error.enabled:
                     if self.windowHeatingControl is None:
                         self.windowHeatingControl = ChangeableAttribute(
                             localAddress='windowheating', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setWindowHeatingControlChange)
+                elif isinstance(status, AccessStatus) and not status.error.enabled and self.vehicle.weConnect.spin is not None:
+                    if self.lockControl is None:
+                        self.lockControl = ChangeableAttribute(
+                            localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
+                            valueSetter=self.__setAccessControlChange)
 
     def __setClimatizationControlChange(self, value):  # noqa: C901
         if isinstance(value, ControlOperation):
@@ -193,3 +200,39 @@ class Controls(AddressableObject):
                     else:
                         raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
                 raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
+
+    def __setAccessControlChange(self, value):  # noqa: C901
+        if isinstance(value, AccessControlOperation):
+            if value not in [AccessControlOperation.LOCK, AccessControlOperation.UNLOCK]:
+                raise ControlError('Could not control access, control operation %s cannot be executed', value)
+            control = value
+        else:
+            raise ControlError('Could not control access, control argument %s cannot be understood', value)
+        if self.vehicle.weConnect.spin is None or type(self.vehicle.weConnect.spin) != str:
+            raise ControlError('Could not control access, control operation needs an S-PIN')
+        spin = self.vehicle.weConnect.spin
+
+        url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/access/{control.value}'
+
+        data = {}
+        data['spin'] = spin
+        controlResponse = self.vehicle.weConnect.session.post(url, json=data, allow_redirects=True)
+        if controlResponse.status_code != requests.codes['ok']:
+            errorDict = controlResponse.json()
+            if errorDict is not None and 'error' in errorDict:
+                error = Error(localAddress='error', parent=self, fromDict=errorDict['error'])
+                if error is not None:
+                    message = ''
+                    if error.message.enabled and error.message.value is not None:
+                        message += error.message.value
+                    if error.info.enabled and error.info.value is not None:
+                        message += ' - ' + error.info.value
+                    if error.retry.enabled and error.retry.value is not None:
+                        if error.retry.value:
+                            message += ' - Please retry in a moment'
+                        else:
+                            message += ' - No retry possible'
+                    raise SetterError(f'Could not control access ({message})')
+                else:
+                    raise SetterError(f'Could not control access ({controlResponse.status_code})')
+            raise SetterError(f'Could not control access ({controlResponse.status_code})')

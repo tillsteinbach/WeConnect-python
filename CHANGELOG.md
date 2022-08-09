@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.47.0] - in testing
+### Added
+- Support for S-PIN
+- Support for locking/unlocking
+
 ## [0.46.0] - 2022-08-02
 ### Added
 - Attributes for diesel cars

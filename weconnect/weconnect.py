@@ -14,6 +14,7 @@ from weconnect.auth.session_manager import SessionManager, Service, SessionUser
 from weconnect.elements.vehicle import Vehicle
 from weconnect.domain import Domain
 from weconnect.elements.charging_station import ChargingStation
+from weconnect.elements.general_controls import GeneralControls
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
 from weconnect.errors import RetrievalError
 from weconnect.weconnect_errors import ErrorEventType
@@ -74,6 +75,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         self.__vehicles: AddressableDict[str, Vehicle] = AddressableDict(localAddress='vehicles', parent=self)
         self.__stations: AddressableDict[str, ChargingStation] = AddressableDict(localAddress='chargingStations', parent=self)
+        self.__controls: GeneralControls = GeneralControls(localAddress='controls', parent=self)
         self.__cache: Dict[str, Any] = {}
         self.fixAPI: bool = fixAPI
         self.maxAge: Optional[int] = maxAge
@@ -278,7 +280,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def getLeafChildren(self) -> List[AddressableLeaf]:
         return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()] \
-            + [children for station in self.__stations.values() for children in station.getLeafChildren()]
+            + [children for station in self.__stations.values() for children in station.getLeafChildren()] \
+            + [self.__controls.spinControl]
 
     def __str__(self) -> str:
         returnString: str = ''
