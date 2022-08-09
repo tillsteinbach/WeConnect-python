@@ -33,7 +33,7 @@ class Controls(AddressableObject):
         self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                  valueSetter=self.__setWakeupControlChange)
 
-    def update(self):
+    def update(self):  # noqa: C901
         for domain in self.vehicle.domains.values():
             for status in domain.values():
                 if isinstance(status, ClimatizationSettings) and not status.error.enabled:

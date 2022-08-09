@@ -3,7 +3,6 @@ import logging
 import requests
 
 from weconnect.addressable import AddressableObject, ChangeableAttribute
-from weconnect.elements.error import Error
 from weconnect.errors import ControlError, SetterError
 
 LOG = logging.getLogger("weconnect")
@@ -29,7 +28,7 @@ class GeneralControls(AddressableObject):
         elif not re.match(r"^\d{4}$", value):
             raise ControlError(f'S-PIN {value} cannot be set/verified, needs to be 4 digits')
 
-        url = f'https://mobileapi.apps.emea.vwapps.io/spin/verify'
+        url = 'https://mobileapi.apps.emea.vwapps.io/spin/verify'
 
         data = {}
         data['spin'] = value
