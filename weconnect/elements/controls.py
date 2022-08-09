@@ -29,7 +29,7 @@ class Controls(AddressableObject):
         self.climatizationControl = None
         self.chargingControl = None
         self.windowHeatingControl = None
-        self.lockControl = None
+        self.accessControl = None
         self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                  valueSetter=self.__setWakeupControlChange)
 
@@ -51,9 +51,10 @@ class Controls(AddressableObject):
                         self.windowHeatingControl = ChangeableAttribute(
                             localAddress='windowheating', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setWindowHeatingControlChange)
-                elif isinstance(status, AccessStatus) and not status.error.enabled and self.vehicle.weConnect.spin is not None:
-                    if self.lockControl is None:
-                        self.lockControl = ChangeableAttribute(
+                elif isinstance(status, AccessStatus) and not status.error.enabled and self.vehicle.weConnect.spin is not None \
+                        and type(self.vehicle.weConnect.spin) != bool:
+                    if self.accessControl is None:
+                        self.accessControl = ChangeableAttribute(
                             localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
                             valueSetter=self.__setAccessControlChange)
 

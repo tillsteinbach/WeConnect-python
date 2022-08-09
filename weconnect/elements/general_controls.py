@@ -15,8 +15,11 @@ class GeneralControls(AddressableObject):
         parent,
     ):
         super().__init__(localAddress=localAddress, parent=parent)
-        self.spinControl = ChangeableAttribute(localAddress='spin', parent=self, value='', valueType=str, valueSetter=self.__setSPINControlChange,
-                                               valueGetter=self.__getSPINControlChange)
+        if self.parent.spin is not None:
+            self.spinControl = ChangeableAttribute(localAddress='spin', parent=self, value='', valueType=str, valueSetter=self.__setSPINControlChange,
+                                                   valueGetter=self.__getSPINControlChange)
+        else:
+            self.spinControl = None
 
     def __setSPINControlChange(self, value):  # noqa: C901
         if value is None:

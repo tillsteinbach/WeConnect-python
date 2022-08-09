@@ -279,9 +279,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     self.__cache[url] = (data, str(datetime.utcnow()))
 
     def getLeafChildren(self) -> List[AddressableLeaf]:
-        return [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()] \
-            + [children for station in self.__stations.values() for children in station.getLeafChildren()] \
-            + [self.__controls.spinControl]
+        leafChildren = [children for vehicle in self.__vehicles.values() for children in vehicle.getLeafChildren()] \
+            + [children for station in self.__stations.values() for children in station.getLeafChildren()]
+        if self.__controls.spinControl is not None and self.__controls.spinControl.enabled:
+            leafChildren += [self.__controls.spinControl]
+        return leafChildren
 
     def __str__(self) -> str:
         returnString: str = ''
