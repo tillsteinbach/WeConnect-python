@@ -27,7 +27,8 @@ class AccessType(Enum):
 
 
 class OpenIDSession(requests.Session):
-    def __init__(self, client_id=None, redirect_uri=None, refresh_url=None, scope=None, token=None, state=None, timeout=None, forceReloginAfter=None, **kwargs):
+    def __init__(self, client_id=None, redirect_uri=None, refresh_url=None, scope=None, token=None, metadata={}, state=None, timeout=None,
+                 forceReloginAfter=None, **kwargs):
         super(OpenIDSession, self).__init__(**kwargs)
         self.client_id = client_id
         self.redirect_uri = redirect_uri
@@ -38,6 +39,7 @@ class OpenIDSession(requests.Session):
         self.timeout = timeout
         self._token = None
         self.token = token
+        self.metadata = metadata
         self.lastLogin = None
         self.forceReloginAfter = forceReloginAfter
 
@@ -135,6 +137,16 @@ class OpenIDSession(requests.Session):
     @property
     def expired(self):
         return self.expiresAt is not None and self.expiresAt < time.time()
+
+    @property
+    def userId(self):
+        if 'userId' in self.metadata:
+            return self.metadata['userId']
+        return None
+
+    @userId.setter
+    def userId(self, newUserId):
+        self.metadata['userId'] = newUserId
 
     def login(self):
         self.lastLogin = time.time()

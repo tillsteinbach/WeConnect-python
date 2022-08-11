@@ -43,7 +43,6 @@ class WeConnectSession(VWWebSession):
             'user-agent': 'WeConnect/3 CFNetwork/1331.0.7 Darwin/21.4.0',
             'accept-language': 'de-de',
         })
-        self.userId = None
 
     def request(
         self,

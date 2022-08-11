@@ -70,7 +70,6 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.password: str = password
         self.spin: Union[str, bool] = spin
 
-        self.__userId: Optional[str] = None  # pylint: disable=unused-private-member
         self.__session: requests.Session = requests.Session()
 
         self.__vehicles: AddressableDict[str, Vehicle] = AddressableDict(localAddress='vehicles', parent=self)
@@ -230,8 +229,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             url += f'&locale={useLocale}'
         if searchRadius is not None:
             url += f'&searchRadius={searchRadius}'
-        if self.__userId is not None:
-            url += f'&userId={self.__userId}'
+        if self.session.userId is not None:
+            url += f'&userId={self.session.userId}'
         data = self.fetchData(url, force)
         if data is not None:
             if 'chargingStations' in data and data['chargingStations']:
@@ -255,8 +254,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                 url += f'&locale={self.useLocale}'
             if self.searchRadius is not None:
                 url += f'&searchRadius={self.searchRadius}'
-            if self.__userId is not None:
-                url += f'&userId={self.__userId}'
+            if self.session.userId is not None:
+                url += f'&userId={self.session.userId}'
             data = self.fetchData(url, force)
             if data is not None:
                 if 'chargingStations' in data and data['chargingStations']:

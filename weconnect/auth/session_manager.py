@@ -58,25 +58,31 @@ class SessionManager():
             return self.sessions[(service, sessionuser)]
 
         hash: str = SessionManager.generateHash(service, sessionuser)
+        token = None
+        metadata = {}
         if hash in self.tokenstore:
-            LOG.info('Reusing tokens from previous session')
-            token = self.tokenstore[hash]
-        else:
-            token = None
+            if 'token' in self.tokenstore[hash]:
+                LOG.info('Reusing tokens from previous session')
+                token = self.tokenstore[hash]['token']
+            if 'metadata' in self.tokenstore[hash]:
+                metadata = self.tokenstore[hash]['metadata']
 
         if service == Service.WE_CONNECT:
-            session = WeConnectSession(sessionuser=sessionuser, token=token)
+            session = WeConnectSession(sessionuser=sessionuser, token=token, metadata=metadata)
         elif service == Service.WE_CHARGE:
-            session = WeChargeSession(sessionuser=sessionuser, token=token)
+            session = WeChargeSession(sessionuser=sessionuser, token=token, metadata=metadata)
         elif service == Service.MY_CUPRA:
-            session = MyCupraSession(sessionuser=sessionuser, token=token)
+            session = MyCupraSession(sessionuser=sessionuser, token=token, metadata=metadata)
         self.sessions[(service, sessionuser)] = session
         return session
 
     def saveTokenstore(self, filename: str):
         refreshedTokenstore = {}
         for sessionkey, session in self.sessions.items():
-            refreshedTokenstore[SessionManager.generateHash(sessionkey[0], sessionkey[1])] = session.token
+            hash = SessionManager.generateHash(sessionkey[0], sessionkey[1])
+            refreshedTokenstore[hash] = {}
+            refreshedTokenstore[hash]['token'] = session.token
+            refreshedTokenstore[hash]['metadata'] = session.metadata
         self.tokenstore = refreshedTokenstore
         if self.tokenstore:
             try:

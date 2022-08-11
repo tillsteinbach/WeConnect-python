@@ -190,7 +190,7 @@ class MyCupraSession(VWWebSession):
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
             raise APICompatibilityError('No user id provided')
-        self.__userId = params['userId']  # pylint: disable=unused-private-member
+        self.userId = params['userId']  # pylint: disable=unused-private-member
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLoginUrl: str = login3Response.headers['Location']
@@ -336,9 +336,9 @@ class MyCupraSession(VWWebSession):
         """Intercept all requests and add userId if present."""
         if not is_secure_transport(url):
             raise InsecureTransportError()
-        if self.__userId is not None:
+        if self.userId is not None:
             headers = headers or {}
-            headers['user-id'] = self.__userId
+            headers['user-id'] = self.userId
 
         return super(MyCupraSession, self).request(method, url, headers=headers, data=data, withhold_token=withhold_token, access_type=access_type, token=token,
                                                    timeout=timeout, **kwargs)

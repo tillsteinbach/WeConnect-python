@@ -200,7 +200,7 @@ class WeChargeSession(VWWebSession):
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
             raise AuthentificationError('No user id provided')
-        self.__userId = params['userId']  # pylint: disable=unused-private-member
+        self.userId = params['userId']  # pylint: disable=unused-private-member
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
         afterLoginUrl: str = login3Response.headers['Location']
