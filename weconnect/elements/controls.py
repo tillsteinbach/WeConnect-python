@@ -91,6 +91,8 @@ class Controls(AddressableObject):
                     settingsDict['targetTemperature_K'] = farenheitToKelvin(settingsDict['targetTemperature_F'])
                 else:
                     settingsDict['targetTemperature_K'] = celsiusToKelvin(20.5)
+            if 'climatisationWithoutExternalPower' not in settingsDict:
+                settingsDict['climatisationWithoutExternalPower'] = True
 
         data = json.dumps(settingsDict)
         controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
