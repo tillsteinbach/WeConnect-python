@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.47.0] - in testing
+## [0.47.1] - 2022-08-24
+### Fixed
+- Allow climatization without external power when the real setting from the car was not received
+
+## [0.47.0] - 2022-08-09
 ### Added
 - Support for S-PIN
 - Support for locking/unlocking
@@ -616,7 +620,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.47.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.47.1...HEAD
+[0.47.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.47.1
 [0.47.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.47.0
 [0.46.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.46.0
 [0.45.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.45.1
