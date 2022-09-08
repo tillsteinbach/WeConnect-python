@@ -28,3 +28,14 @@ class AccessControlOperation(ControlInputEnum):
     @classmethod
     def allowedValues(cls):
         return [AccessControlOperation.LOCK, AccessControlOperation.UNLOCK]
+
+
+class HonkAndFlashControlOperation(ControlInputEnum):
+    FLASH = 'flash'
+    HONK_AND_FLASH = 'honkandflash'
+    NONE = 'none'
+    UNKNOWN = 'unknown'
+
+    @classmethod
+    def allowedValues(cls):
+        return [HonkAndFlashControlOperation.FLASH, HonkAndFlashControlOperation.HONK_AND_FLASH]

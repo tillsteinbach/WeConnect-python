@@ -3,13 +3,14 @@ import json
 import requests
 
 from weconnect.addressable import AddressableObject, ChangeableAttribute
-from weconnect.elements.control_operation import ControlOperation, AccessControlOperation
+from weconnect.elements.control_operation import ControlOperation, AccessControlOperation, HonkAndFlashControlOperation
 from weconnect.elements.charging_settings import ChargingSettings
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.error import Error
 from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.elements.access_status import AccessStatus
-from weconnect.errors import ControlError, SetterError
+from weconnect.elements.parking_position import ParkingPosition
+from weconnect.errors import ControlError
 from weconnect.util import celsiusToKelvin, farenheitToKelvin
 from weconnect.domain import Domain
 
@@ -32,6 +33,7 @@ class Controls(AddressableObject):
         self.accessControl = None
         self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                  valueSetter=self.__setWakeupControlChange)
+        self.honkAndFlashControl = None
 
     def update(self):  # noqa: C901
         for domain in self.vehicle.domains.values():
@@ -57,6 +59,12 @@ class Controls(AddressableObject):
                         self.accessControl = ChangeableAttribute(
                             localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
                             valueSetter=self.__setAccessControlChange)
+                elif isinstance(status, ParkingPosition) and not status.error.enabled:
+                    if self.honkAndFlashControl is None:
+                        self.honkAndFlashControl = ChangeableAttribute(
+                            localAddress='honkAndFlash', parent=self, value=HonkAndFlashControlOperation.NONE, valueType=(HonkAndFlashControlOperation, int),
+                            valueSetter=self.__setHonkAndFlashControlChange)
+                    self.honkAndFlashControl.enabled = False  # TODO: Remove this line when the endpoint becomes available
 
     def __setClimatizationControlChange(self, value):  # noqa: C901
         if isinstance(value, ControlOperation):
@@ -111,10 +119,10 @@ class Controls(AddressableObject):
                             message += ' - Please retry in a moment'
                         else:
                             message += ' - No retry possible'
-                    raise SetterError(f'Could not control climatisation ({message})')
+                    raise ControlError(f'Could not control climatisation ({message})')
                 else:
-                    raise SetterError(f'Could not control climatisation ({controlResponse.status_code})')
-            raise SetterError(f'Could not control climatisation ({controlResponse.status_code})')
+                    raise ControlError(f'Could not control climatisation ({controlResponse.status_code})')
+            raise ControlError(f'Could not control climatisation ({controlResponse.status_code})')
         responseDict = controlResponse.json()
         if 'data' in responseDict and 'requestID' in responseDict['data']:
             if self.vehicle.requestTracker is not None:
@@ -140,10 +148,10 @@ class Controls(AddressableObject):
                                 message += ' - Please retry in a moment'
                             else:
                                 message += ' - No retry possible'
-                        raise SetterError(f'Could not control charging ({message})')
+                        raise ControlError(f'Could not control charging ({message})')
                     else:
-                        raise SetterError(f'Could not control charging ({controlResponse.status_code})')
-                raise SetterError(f'Could not control charging ({controlResponse.status_code})')
+                        raise ControlError(f'Could not control charging ({controlResponse.status_code})')
+                raise ControlError(f'Could not control charging ({controlResponse.status_code})')
             responseDict = controlResponse.json()
             if 'data' in responseDict and 'requestID' in responseDict['data']:
                 if self.vehicle.requestTracker is not None:
@@ -169,10 +177,10 @@ class Controls(AddressableObject):
                                 message += ' - Please retry in a moment'
                             else:
                                 message += ' - No retry possible'
-                        raise SetterError(f'Could not control windowheating ({message})')
+                        raise ControlError(f'Could not control windowheating ({message})')
                     else:
-                        raise SetterError(f'Could not control windowheating ({controlResponse.status_code})')
-                raise SetterError(f'Could not control windowheating ({controlResponse.status_code})')
+                        raise ControlError(f'Could not control windowheating ({controlResponse.status_code})')
+                raise ControlError(f'Could not control windowheating ({controlResponse.status_code})')
             responseDict = controlResponse.json()
             if 'data' in responseDict and 'requestID' in responseDict['data']:
                 if self.vehicle.requestTracker is not None:
@@ -199,10 +207,10 @@ class Controls(AddressableObject):
                                 message += ' - Please retry in a moment'
                             else:
                                 message += ' - No retry possible'
-                        raise SetterError(f'Could not control wakeup ({message})')
+                        raise ControlError(f'Could not control wakeup ({message})')
                     else:
-                        raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
-                raise SetterError(f'Could not control wakeup ({controlResponse.status_code})')
+                        raise ControlError(f'Could not control wakeup ({controlResponse.status_code})')
+                raise ControlError(f'Could not control wakeup ({controlResponse.status_code})')
 
     def __setAccessControlChange(self, value):  # noqa: C901
         if isinstance(value, AccessControlOperation):
@@ -235,7 +243,59 @@ class Controls(AddressableObject):
                             message += ' - Please retry in a moment'
                         else:
                             message += ' - No retry possible'
-                    raise SetterError(f'Could not control access ({message})')
+                    raise ControlError(f'Could not control access ({message})')
                 else:
-                    raise SetterError(f'Could not control access ({controlResponse.status_code})')
-            raise SetterError(f'Could not control access ({controlResponse.status_code})')
+                    raise ControlError(f'Could not control access ({controlResponse.status_code})')
+            raise ControlError(f'Could not control access ({controlResponse.status_code})')
+
+    def __setHonkAndFlashControlChange(self, value):  # noqa: C901
+        if isinstance(value, HonkAndFlashControlOperation):
+            if value not in [HonkAndFlashControlOperation.FLASH, HonkAndFlashControlOperation.HONK_AND_FLASH]:
+                raise ControlError('Could not control honkandflash, control operation %s cannot be executed', value)
+            if value == HonkAndFlashControlOperation.HONK_AND_FLASH:
+                mode = 'HONK_AND_FLASH'
+            elif value == HonkAndFlashControlOperation.FLASH:
+                mode = 'FLASH_ONLY'
+            else:
+                raise ControlError('Could not control honkandflash, control mode %s cannot be understood', value.value)
+            duration = 10
+        elif isinstance(value, int):
+            mode = 'FLASH_ONLY'
+            duration = value
+        else:
+            raise ControlError('Could not control honkandflash, control argument %s cannot be understood', value)
+
+        url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/honkandflash'
+
+        if not self.vehicle.statusExists('parking', 'parkingPosition') or not self.vehicle.domains['parking']['parkingPosition'].enabled \
+                or self.vehicle.domains['parking']['parkingPosition'].latitude.value is None:
+            raise ControlError('Could not control honkandflash due to unavailability of parking position of the vehicle')
+
+        settingsDict = {}
+        settingsDict['duration_s'] = duration
+        settingsDict['mode'] = mode
+        settingsDict['userPosition'] = {}
+        settingsDict['userPosition']['latitude'] = self.vehicle.domains['parking']['parkingPosition'].latitude.value
+        settingsDict['userPosition']['longitude'] = self.vehicle.domains['parking']['parkingPosition'].longitude.value
+
+        data = json.dumps(settingsDict)
+        controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
+        if controlResponse.status_code not in (requests.codes['ok'], requests.codes['no_content']):
+            errorDict = controlResponse.json()
+            if errorDict is not None and 'error' in errorDict:
+                error = Error(localAddress='error', parent=self, fromDict=errorDict['error'])
+                if error is not None:
+                    message = ''
+                    if error.message.enabled and error.message.value is not None:
+                        message += error.message.value
+                    if error.info.enabled and error.info.value is not None:
+                        message += ' - ' + error.info.value
+                    if error.retry.enabled and error.retry.value is not None:
+                        if error.retry.value:
+                            message += ' - Please retry in a moment'
+                        else:
+                            message += ' - No retry possible'
+                    raise ControlError(f'Could not control honkandflash ({message})')
+                else:
+                    raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
+            raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')

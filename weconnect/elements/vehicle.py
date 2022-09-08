@@ -341,9 +341,6 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             for key, value in {key: value for key, value in data.items() if key not in list([domain.value for domain in jobKeyClassMap.keys()])}.items():
                 LOG.warning('%s: Unknown domain %s with value %s', self.getGlobalAddress(), key, value)
 
-        # Controls
-        self.controls.update()
-
         if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.PARKING])) \
                 and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
             url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
@@ -370,6 +367,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
                     parkingPosition.carCapturedTimestamp.enabled = False
                     parkingPosition.enabled = False
+
+        # Controls
+        self.controls.update()
 
     def updatePictures(self) -> None:  # noqa: C901
         if not SUPPORT_IMAGES:
