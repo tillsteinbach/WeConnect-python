@@ -26,16 +26,16 @@ class Controls(AddressableObject):
     ):
         self.vehicle = vehicle
         super().__init__(localAddress=localAddress, parent=parent)
-        self.update()
         self.climatizationControl = None
         self.chargingControl = None
         self.windowHeatingControl = None
         self.accessControl = None
-        self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
-                                                 valueSetter=self.__setWakeupControlChange)
+        self.wakeupControl = None
         self.honkAndFlashControl = None
+        self.update()
 
     def update(self):  # noqa: C901
+        capabilities = self.vehicle.capabilities
         for domain in self.vehicle.domains.values():
             for status in domain.values():
                 if isinstance(status, ClimatizationSettings) and not status.error.enabled:
@@ -60,11 +60,14 @@ class Controls(AddressableObject):
                             localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
                             valueSetter=self.__setAccessControlChange)
                 elif isinstance(status, ParkingPosition) and not status.error.enabled:
-                    if self.honkAndFlashControl is None:
+                    if self.honkAndFlashControl is None and 'honkAndFlash' in capabilities and not capabilities['honkAndFlash'].status.value:
                         self.honkAndFlashControl = ChangeableAttribute(
                             localAddress='honkAndFlash', parent=self, value=HonkAndFlashControlOperation.NONE, valueType=(HonkAndFlashControlOperation, int),
                             valueSetter=self.__setHonkAndFlashControlChange)
                     self.honkAndFlashControl.enabled = False  # TODO: Remove this line when the endpoint becomes available
+        if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
+            self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
+                                                     valueSetter=self.__setWakeupControlChange)
 
     def __setClimatizationControlChange(self, value):  # noqa: C901
         if isinstance(value, ControlOperation):
