@@ -17,6 +17,7 @@ class AccessStatus(GenericStatus):
         fixAPI=True,
     ):
         self.overallStatus = AddressableAttribute(localAddress='overallStatus', parent=self, value=None, valueType=AccessStatus.OverallState)
+        self.doorLockStatus = AddressableAttribute(localAddress='doorLockStatus', parent=self, value=None, valueType=AccessStatus.Door.LockState)
         self.doors = AddressableDict(localAddress='doors', parent=self)
         self.windows = AddressableDict(localAddress='windows', parent=self)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
@@ -27,6 +28,8 @@ class AccessStatus(GenericStatus):
 
         if 'value' in fromDict:
             self.overallStatus.fromDict(fromDict['value'], 'overallStatus')
+
+            self.doorLockStatus.fromDict(fromDict['value'], 'doorLockStatus')
 
             if 'doors' in fromDict['value'] and fromDict['value']['doors'] is not None:
                 for doorDict in fromDict['value']['doors']:
@@ -63,12 +66,14 @@ class AccessStatus(GenericStatus):
             self.windows.clear()
             self.windows.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['overallStatus', 'doors', 'windows']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['overallStatus', 'doorLockStatus', 'doors', 'windows']))
 
     def __str__(self):
         string = super().__str__()
         if self.overallStatus is not None and self.overallStatus.enabled:
             string += f'\n\tOverall Status: {self.overallStatus.value.value}'
+        if self.doorLockStatus is not None and self.doorLockStatus.enabled:
+            string += f'\n\tDoor Lock Status: {self.doorLockStatus.value.value}'
         if len(self.doors) > 0:
             string += f'\n\tDoors: {len(self.doors)} items'
             for door in self.doors.values():
@@ -145,7 +150,7 @@ class AccessStatus(GenericStatus):
             returnString = f'{self.id}: '
             if self.openState.enabled:
                 returnString += f'{self.openState.value.value}'  # pylint: disable=no-member
-            elif self.lockState.enabled:
+            if self.lockState.enabled:
                 returnString += f', {self.lockState.value.value}'  # pylint: disable=no-member
             return returnString
 
