@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.48.0] - 2022-09-19
+### Added
+- Preparations for Honk and Flash Endpoint
+- doorLockStatus attribute added
+
+### Changed
+- Show controls only if capability is available
+- Updated oauth requirements
+
+### Fixed
+- fix parsing of empty strings
+
 ## [0.47.1] - 2022-08-24
 ### Fixed
 - Allow climatization without external power when the real setting from the car was not received
