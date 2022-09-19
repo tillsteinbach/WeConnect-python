@@ -20,8 +20,8 @@ def main():
     weConnect.login()
     print('#  Register for events')
     weConnect.addObserver(onWeConnectEvent, addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED  # pylint: disable=unsupported-binary-operation
-                          | addressable.AddressableLeaf.ObserverEvent.ENABLED
-                          | addressable.AddressableLeaf.ObserverEvent.DISABLED)
+                          | addressable.AddressableLeaf.ObserverEvent.ENABLED  # pylint: disable=unsupported-binary-operation
+                          | addressable.AddressableLeaf.ObserverEvent.DISABLED)  # pylint: disable=unsupported-binary-operation
     print('#  update')
     while True:
         weConnect.update()
