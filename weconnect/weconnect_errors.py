@@ -6,4 +6,4 @@ class ErrorEventType(Flag):
     TIMEOUT = auto()
     CONNECTION = auto()
     JSON = auto()
-    ALL = HTTP | TIMEOUT | CONNECTION | JSON
+    ALL = HTTP | TIMEOUT | CONNECTION | JSON  # pylint: disable=unsupported-binary-operation

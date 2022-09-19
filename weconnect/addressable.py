@@ -162,7 +162,7 @@ class AddressableLeaf():
         VALUE_CHANGED = auto()
         UPDATED_FROM_SERVER = auto()
         UPDATED_FROM_CAR = auto()
-        ALL = ENABLED | DISABLED | VALUE_CHANGED | UPDATED_FROM_SERVER | UPDATED_FROM_CAR
+        ALL = ENABLED | DISABLED | VALUE_CHANGED | UPDATED_FROM_SERVER | UPDATED_FROM_CAR  # pylint: disable=unsupported-binary-operation
 
     class ObserverPriority(IntEnum):
         INTERNAL_FIRST = 1

@@ -19,7 +19,7 @@ def main():
     print('#  Login')
     weConnect.login()
     print('#  Register for events')
-    weConnect.addObserver(onWeConnectEvent, addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED
+    weConnect.addObserver(onWeConnectEvent, addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED  # pylint: disable=unsupported-binary-operation
                           | addressable.AddressableLeaf.ObserverEvent.ENABLED
                           | addressable.AddressableLeaf.ObserverEvent.DISABLED)
     print('#  update')
