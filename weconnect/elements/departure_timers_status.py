@@ -68,6 +68,7 @@ class DepartureTimersStatus(GenericStatus):
         return string
 
     class HeaterSource(Enum,):
+        AUTOMATIC = 'automatic'
         ELECTRIC = 'electric'
         UNKNOWN = 'unknown'
 
