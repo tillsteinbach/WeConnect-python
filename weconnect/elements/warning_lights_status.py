@@ -149,4 +149,5 @@ class WarningLightsStatus(GenericStatus):
 
         class Category(Enum,):
             LIGHTING = 'LIGHTING'
+            TIRE = 'TIRE'
             UNKNOWN = 'unknown category'
