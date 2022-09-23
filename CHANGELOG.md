@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.48.1] - 2022-09-23
+### Added
+- Tire warning light category
+
+### Fixed
+- Bug with honk and flash endpoint
+
 ## [0.48.0] - 2022-09-19
 ### Added
 - Preparations for Honk and Flash Endpoint
@@ -632,7 +639,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.48.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.48.1...HEAD
+[0.48.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.1
 [0.48.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.0
 [0.47.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.47.1
 [0.47.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.47.0
