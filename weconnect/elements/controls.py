@@ -64,7 +64,7 @@ class Controls(AddressableObject):
                         self.honkAndFlashControl = ChangeableAttribute(
                             localAddress='honkAndFlash', parent=self, value=HonkAndFlashControlOperation.NONE, valueType=(HonkAndFlashControlOperation, int),
                             valueSetter=self.__setHonkAndFlashControlChange)
-                    self.honkAndFlashControl.enabled = False  # TODO: Remove this line when the endpoint becomes available
+                        self.honkAndFlashControl.enabled = False  # TODO: Remove this line when the endpoint becomes available
         if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
             self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                      valueSetter=self.__setWakeupControlChange)
