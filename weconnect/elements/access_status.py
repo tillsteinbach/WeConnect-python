@@ -164,6 +164,7 @@ class AccessStatus(GenericStatus):
         class LockState(Enum):
             LOCKED = 'locked'
             UNLOCKED = 'unlocked'
+            INVALID = 'invalid'
             UNKNOWN = 'unknown lock state'
 
     class Window(AddressableObject):
