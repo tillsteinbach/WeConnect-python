@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.48.2] - 2022-10-04
+### Added
+- Add invalid door lock state
+
 ## [0.48.1] - 2022-09-23
 ### Added
 - Tire warning light category
@@ -639,7 +643,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.48.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.48.2...HEAD
+[0.48.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.2
 [0.48.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.1
 [0.48.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.0
 [0.47.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.47.1
