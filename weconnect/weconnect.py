@@ -181,6 +181,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force, selective=selective)
         self.updateChargingStations(force=force)
         self.updateComplete()
+        self.__session.cookies.clear()  # Clear cookies to have a fresh session afterwards
 
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
                        selective: Optional[list[Domain]] = None) -> None:

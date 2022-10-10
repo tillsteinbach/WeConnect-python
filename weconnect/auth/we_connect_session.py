@@ -42,6 +42,8 @@ class WeConnectSession(VWWebSession):
             'x-newrelic-id': 'VgAEWV9QDRAEXFlRAAYPUA==',
             'user-agent': 'WeConnect/3 CFNetwork/1331.0.7 Darwin/21.4.0',
             'accept-language': 'de-de',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         })
 
     def request(
