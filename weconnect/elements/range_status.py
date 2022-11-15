@@ -78,6 +78,8 @@ class RangeStatus(GenericStatus):
                                              valueType=RangeStatus.Engine.EngineType)
             self.currentSOC_pct = AddressableAttribute(
                 localAddress='currentSOC_pct', parent=self, value=None, valueType=int)
+            self.currentFuelLevel_pct = AddressableAttribute(
+                localAddress='currentFuelLevel_pct', parent=self, value=None, valueType=int)
             self.remainingRange_km = AddressableAttribute(
                 localAddress='remainingRange_km', parent=self, value=None, valueType=int)
             if fromDict is not None:
@@ -88,17 +90,20 @@ class RangeStatus(GenericStatus):
 
             self.type.fromDict(fromDict, 'type')
             self.currentSOC_pct.fromDict(fromDict, 'currentSOC_pct')
+            self.currentFuelLevel_pct.fromDict(fromDict, 'currentFuelLevel_pct')
             self.remainingRange_km.fromDict(fromDict, 'remainingRange_km')
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['type', 'currentSOC_pct', 'remainingRange_km']}.items():
+                               if key not in ['type', 'currentSOC_pct', 'currentFuelLevel_pct', 'remainingRange_km']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             string = ""
             if self.type.enabled:
                 string += f"{self.type.value.value} "
-            if self.currentSOC_pct.enabled:
+            if self.currentFuelLevel_pct.enabled:
+                string += f" Fuel Level: {self.currentFuelLevel_pct.value}%"
+            elif self.currentSOC_pct.enabled:
                 string += f" SoC: {self.currentSOC_pct.value}%"
             if self.remainingRange_km.enabled:
                 string += f" ({self.remainingRange_km.value} km)"
