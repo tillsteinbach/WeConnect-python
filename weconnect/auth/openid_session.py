@@ -169,7 +169,7 @@ class OpenIDSession(requests.Session):
         self.token = parse_token_response(token_response, scope=self.scope)
         return self.token
 
-    def request(
+    def request(  # noqa: C901
         self,
         method,
         url,
