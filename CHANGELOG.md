@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.49.0] - 2022-11-15
+### Added
+- Add new currentFuelLevel_pct attribute
+
+### Changed
+- Updated dependencies for pillow, oauthlib and pylint
+- Relogin if the refresh token expired
+
 ## [0.48.3] - 2022-10-13
 ### Changed
 - Don't store cookies in between requests
@@ -648,7 +656,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.48.3...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.49.0...HEAD
+[0.49.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.49.0
 [0.48.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.3
 [0.48.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.2
 [0.48.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.1
