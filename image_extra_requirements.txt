@@ -1,2 +1,2 @@
-pillow~=9.2.0
+pillow~=9.3.0
 ascii_magic~=1.6.0
