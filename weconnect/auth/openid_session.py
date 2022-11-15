@@ -198,6 +198,8 @@ class OpenIDSession(requests.Session):
                     self.refresh()
                 except AuthentificationError:
                     self.login()
+                except TokenExpiredError:
+                    self.login()
                 except RetrievalError:
                     raise
                 url, headers, data = self.addToken(url, body=data, headers=headers, access_type=access_type, token=token)
