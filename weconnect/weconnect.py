@@ -82,7 +82,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.proxy: Optional[str] = proxy
 
         if proxy:
-            self.proxystring = {'http': 'http://' + self.proxy, 'https': 'http://'+ self.proxy}
+            self.proxystring = {'http': 'http://' + self.proxy, 'https': 'http://' + self.proxy}
         else:
             self.proxystring = ""
 
