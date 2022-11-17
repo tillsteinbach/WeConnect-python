@@ -107,6 +107,7 @@ class WeConnectSession(VWWebSession):
                         backoff_factor=0.1,
                         status_forcelist=[500],
                         raise_on_status=False)
+        websession.proxies.update(self.proxies)
         websession.mount('https://', HTTPAdapter(max_retries=retries))
         websession.headers = CaseInsensitiveDict({
             'user-agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 '
