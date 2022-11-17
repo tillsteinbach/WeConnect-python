@@ -61,6 +61,7 @@ class MyCupraSession(VWWebSession):
                         backoff_factor=0.1,
                         status_forcelist=[500],
                         raise_on_status=False)
+        websession.proxies.update(self.proxies)
         websession.mount('https://', HTTPAdapter(max_retries=retries))
         websession.headers = CaseInsensitiveDict({
             'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
