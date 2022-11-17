@@ -80,12 +80,12 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__cache: Dict[str, Any] = {}
         self.fixAPI: bool = fixAPI
         self.proxy: Optional[str] = proxy
-        
+
         if proxy:
             self.proxystring = {'http': 'http://' + self.proxy, 'https': 'http://'+ self.proxy}
         else:
             self.proxystring = ""
-        
+
         self.maxAge: Optional[int] = maxAge
         self.maxAgePictures: Optional[int] = maxAgePictures
         self.latitude: Optional[float] = None
