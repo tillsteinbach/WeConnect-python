@@ -35,6 +35,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         updateAfterLogin: bool = True,
         loginOnInit: bool = False,
         fixAPI: bool = True,
+        proxy: Optional[str] = None,
         maxAge: Optional[int] = None,
         maxAgePictures: Optional[int] = None,
         updateCapabilities: bool = True,
@@ -55,6 +56,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             Defaults to True.
             loginOnInit (bool, optional): Login after initialization (If set to false, login needs to be called manually). Defaults to True.
             fixAPI (bool, optional): Automatically fix known issues with the WeConnect responses. Defaults to True.
+            proxy (str, optional): Set a proxy IP adress and port
             maxAge (int, optional): Maximum age of the cache before date is fetched again. None means no caching. Defaults to None.
             maxAgePictures (Optional[int], optional):  Maximum age of the pictures in the cache before date is fetched again. None means no caching.
             Defaults to None.
@@ -77,6 +79,13 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__controls: GeneralControls = GeneralControls(localAddress='controls', parent=self)
         self.__cache: Dict[str, Any] = {}
         self.fixAPI: bool = fixAPI
+        self.proxy: Optional[str] = proxy
+
+        if proxy:
+            self.proxystring = {'http': 'http://' + self.proxy, 'https': 'http://' + self.proxy}
+        else:
+            self.proxystring = ""
+
         self.maxAge: Optional[int] = maxAge
         self.maxAgePictures: Optional[int] = maxAgePictures
         self.latitude: Optional[float] = None
@@ -94,6 +103,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
         self.__manager = SessionManager(tokenstorefile=tokenfile)
         self.__session = self.__manager.getSession(Service.WE_CONNECT, SessionUser(username=username, password=password))
+        self.__session.proxies.update(self.proxystring)
         self.__session.timeout = timeout
         self.__session.retries = numRetries
         self.__session.forceReloginAfter = forceReloginAfter
