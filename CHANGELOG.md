@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.50.0] - 2022-11-21
+### Added
+- Support for proxy servers (thanks to user towe96)
+- New option for log handle filter
+
 ## [0.49.0] - 2022-11-15
 ### Added
 - Add new currentFuelLevel_pct attribute
