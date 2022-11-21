@@ -79,26 +79,29 @@ def farenheitToKelvin(value):
 
 class DuplicateFilter(logging.Filter):
 
-    def __init__(self, name: str = '') -> None:
+    def __init__(self, doNotFilterAbove=logging.ERROR, filterResetSeconds: int = 0, name: str = '') -> None:
         super().__init__(name=name)
         self.lastLog = {}
         self.firstTime = True
+        self.doNotFilterAbove = doNotFilterAbove
+        self.filterResetSeconds = filterResetSeconds
 
     def filter(self, record) -> bool:
         # don't filter critical or error messages:
-        if record.levelno >= logging.ERROR:
+        if record.levelno >= self.doNotFilterAbove:
             return True
 
         if record.module in self.lastLog:
             if record.levelno in self.lastLog[record.module]:
-                if self.lastLog[record.module][record.levelno] == (record.msg, record.args):
-                    if self.firstTime:
-                        self.firstTime = False
-                        logging.info('Repeated log messages from the same module are hidden (does not apply to errors or critical problems)')
-                    return False
-            self.lastLog[record.module][record.levelno] = (record.msg, record.args)
+                if self.lastLog[record.module][record.levelno][0] == (record.msg, record.args):
+                    if (datetime.now() - self.lastLog[record.module][record.levelno][1]).total_seconds() < self.filterResetSeconds:
+                        if self.firstTime:
+                            self.firstTime = False
+                            logging.info('Repeated log messages from the same module are hidden (does not apply to errors or critical problems)')
+                        return False
+            self.lastLog[record.module][record.levelno] = ((record.msg, record.args), datetime.now())
         else:
-            self.lastLog[record.module] = {record.levelno: (record.msg, record.args)}
+            self.lastLog[record.module] = {record.levelno: ((record.msg, record.args), datetime.now())}
         return True
 
 
