@@ -224,7 +224,7 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
         valueChanged: bool = newValue != self.__value
         self.__value = newValue
         flags: Optional[AddressableLeaf.ObserverEvent] = None
-        if not self.enabled and valueChanged:
+        if not self.enabled:
             self.enabled = True
         self.lastUpdateFromServer = datetime.utcnow().replace(microsecond=0, tzinfo=timezone.utc)
         if valueChanged:
