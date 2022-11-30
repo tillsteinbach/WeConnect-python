@@ -21,6 +21,7 @@ Python API for the Volkswagen WeConnect Services. If you are not a developer and
 ```
 pip3 install weconnect[Images]
 ```
+The minimum required python version is 3.8
 
 ## Getting started
 - To get started have a look in the [examples folder](https://github.com/tillsteinbach/WeConnect-python/tree/main/examples)
