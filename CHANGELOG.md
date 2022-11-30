@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.50.1] - 2022-11-30
+### Fixed
+- Fixed bug where an attribute was not correctly enabled again when it reappears without changed value (Big thanks to user @ColinRobbins for this finding)
+
 ## [0.50.0] - 2022-11-21
 ### Added
 - Support for proxy servers (thanks to user towe96)
@@ -661,7 +665,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.50.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.50.1...HEAD
+[0.50.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.1
 [0.50.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.0
 [0.49.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.49.0
 [0.48.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.48.3
