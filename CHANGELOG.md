@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.51.0] - 2023-01-13
+### Added
+- BrandCode 'N' added for ID Buzz (Nutzfahrzeuge) support
+
+### Changed
+- Updated dependencies for pillow and pylint
+
 ## [0.50.1] - 2022-11-30
 ### Fixed
 - Fixed bug where an attribute was not correctly enabled again when it reappears without changed value (Big thanks to user @ColinRobbins for this finding)
@@ -665,7 +672,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.50.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.51.0...HEAD
+[0.51.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.0
 [0.50.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.1
 [0.50.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.0
 [0.49.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.49.0
