@@ -710,6 +710,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         UNKNOWN = 'UNKNOWN'
 
     class BrandCode(Enum,):
+        N = 'N'
         V = 'V'
         UNKNOWN = 'unknown brand code'
 
