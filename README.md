@@ -18,7 +18,7 @@ Python API for the Volkswagen WeConnect Services. If you are not a developer and
 - [WeConnect-MQTT](https://github.com/tillsteinbach/WeConnect-mqtt): A MQTT Client that provides WeConnect data to the MQTT Broker of your choice (e.g. your home automation solution such as [ioBroker](https://www.iobroker.net), [FHEM](https://fhem.de) or [Home Assistant](https://www.home-assistant.io))
 
 ## WARNING
-Use this API with care. If you use it wrong (e.g. too many logins, wrong password, ...) your account may get blocked.
+Use this API with care. If you use it wrong (e.g. too many logins, repeated login attempts with wrong password, ...) your account may get blocked.
 
 ## Install
 ```
