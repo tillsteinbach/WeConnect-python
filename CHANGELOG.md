@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.52.0] - 2023-02-15
+### Added
+- Add new error state (Thanks to user madd0)
+- Add new timer attribute targetSOC_pct
+
+### Fixed
+- Bug that could make attributes disappear on certain values
+
 ## [0.51.1] - 2023-02-03
 ### Changed
 - Updated dependencies
@@ -679,7 +687,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.51.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.52.0...HEAD
+[0.52.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.52.0
 [0.51.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.1
 [0.51.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.0
 [0.50.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.1
