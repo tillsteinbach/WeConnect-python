@@ -296,22 +296,22 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
     def fromDict(self, fromDict: dict, key: str):  # noqa: C901
         if fromDict is not None and key in fromDict and fromDict[key] is not None:
             if issubclass(self.valueType, bool):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     self.setValueWithCarTime(toBool(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.enabled = False
             elif issubclass(self.valueType, int):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     self.setValueWithCarTime(int(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.enabled = False
             elif issubclass(self.valueType, float):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     self.setValueWithCarTime(float(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.enabled = False
             elif issubclass(self.valueType, Enum):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     try:
                         self.setValueWithCarTime(self.valueType(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
                     except ValueError:
@@ -322,12 +322,12 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                 else:
                     self.enabled = False
             elif issubclass(self.valueType, datetime):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     self.setValueWithCarTime(robustTimeParse(fromDict[key]), lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.enabled = False
             elif issubclass(self.valueType, time):
-                if fromDict[key]:
+                if not isinstance(fromDict[key], str) or len(fromDict[key]) > 0:
                     parsedtime = timemodule.strptime(fromDict[key], "%H:%M")
                     self.setValueWithCarTime(time(hour=parsedtime.tm_hour, minute=parsedtime.tm_min), lastUpdateFromCar=None, fromServer=True)
                 else:
