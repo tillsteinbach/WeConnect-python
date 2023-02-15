@@ -98,7 +98,6 @@ class DepartureTimersStatus(GenericStatus):
             else:
                 LOG.error('Timer is missing id attribute')
 
-
             self.timerEnabled.fromDict(fromDict, 'enabled')
             self.climatisation.fromDict(fromDict, 'climatisation')
             self.charging.fromDict(fromDict, 'charging')
