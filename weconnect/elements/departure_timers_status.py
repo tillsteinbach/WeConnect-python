@@ -82,6 +82,7 @@ class DepartureTimersStatus(GenericStatus):
             self.timerEnabled = AddressableAttribute(localAddress='enabled', parent=self, value=None, valueType=bool)
             self.climatisation = AddressableAttribute(localAddress='climatisation', parent=self, value=None, valueType=bool)
             self.charging = AddressableAttribute(localAddress='charging', parent=self, value=None, valueType=bool)
+            self.targetSOC_pct = AddressableAttribute(localAddress='targetSOC_pct', value=None, parent=self, valueType=int)
             self.recurringTimer = None
             self.singleTimer = None
             self.preferredChargingTimes = AddressableDict(localAddress='preferredChargingTimes', parent=self)
@@ -97,20 +98,11 @@ class DepartureTimersStatus(GenericStatus):
             else:
                 LOG.error('Timer is missing id attribute')
 
-            if 'enabled' in fromDict:
-                self.timerEnabled.setValueWithCarTime(toBool(fromDict['enabled']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.timerEnabled.enabled = False
 
-            if 'climatisation' in fromDict:
-                self.climatisation.setValueWithCarTime(toBool(fromDict['climatisation']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.climatisation.enabled = False
-
-            if 'charging' in fromDict:
-                self.charging.setValueWithCarTime(toBool(fromDict['charging']), lastUpdateFromCar=None, fromServer=True)
-            else:
-                self.charging.enabled = False
+            self.timerEnabled.fromDict(fromDict, 'enabled')
+            self.climatisation.fromDict(fromDict, 'climatisation')
+            self.charging.fromDict(fromDict, 'charging')
+            self.targetSOC_pct.fromDict(fromDict, 'targetSOC_pct')
 
             if 'recurringTimer' in fromDict:
                 if self.recurringTimer is None:
@@ -149,7 +141,8 @@ class DepartureTimersStatus(GenericStatus):
                 self.preferredChargingTimes.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['id', 'enabled', 'climatisation', 'charging', 'recurringTimer', 'singleTimer', 'preferredChargingTimes']}.items():
+                               if key not in ['id', 'enabled', 'climatisation', 'charging', 'targetSOC_pct', 'recurringTimer', 'singleTimer',
+                                              'preferredChargingTimes']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
@@ -158,6 +151,8 @@ class DepartureTimersStatus(GenericStatus):
                 string += f', Climatisation: {self.climatisation.value}'
             if self.charging.enabled:
                 string += f', Charging: {self.charging.value}'
+            if self.targetSOC_pct.enabled:
+                string += f' to {self.targetSOC_pct.value}% SoC'
             if self.recurringTimer is not None and self.recurringTimer.enabled:
                 string += f' at {self.recurringTimer} '
             if self.singleTimer is not None and self.singleTimer.enabled:
