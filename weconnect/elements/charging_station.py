@@ -79,7 +79,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                             authTypeEnum = ChargingStation.AUTHTYPE(authType)
                         except ValueError:
                             authTypeEnum = ChargingStation.AUTHTYPE.UNKNOWN
-                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authTypeEnum)
+                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authType)
                         self.authTypes[i].setValueWithCarTime(authTypeEnum, lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.authTypes.clear()
@@ -88,7 +88,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                             authTypeEnum = ChargingStation.AUTHTYPE(authType)
                         except ValueError:
                             authTypeEnum = ChargingStation.AUTHTYPE.UNKNOWN
-                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authTypeEnum)
+                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authType)
                         self.authTypes.append(AddressableAttribute(localAddress=len(self.authTypes),
                                               parent=self.authTypes, value=authTypeEnum, valueType=ChargingStation.AUTHTYPE))
             else:
