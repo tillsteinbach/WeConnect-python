@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Dict, List, Set, Tuple, Callable, Any, Optional, Union
 
 import os
+from threading import Lock
 import string
 import locale
 import logging
@@ -68,6 +69,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
             forceReloginAfter (int, optional): Force a full relogin after number of seconds. This might be necessary to get fresh data
         """
         super().__init__(localAddress='', parent=None)
+        self.lock = Lock()
         self.username: str = username
         self.password: str = password
         self.spin: Union[str, bool] = spin
@@ -195,6 +197,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
                        selective: Optional[list[Domain]] = None) -> None:
+        self.lock.acquire()
         url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
         data = self.fetchData(url, force)
         if data is not None:
@@ -221,6 +224,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     del self.__vehicles[vin]
 
                 self.__cache[url] = (data, str(datetime.utcnow()))
+        self.lock.release()
 
     def setChargingStationSearchParameters(self, latitude: float, longitude: float, searchRadius: Optional[int] = None, market: Optional[str] = None,
                                            useLocale: Optional[str] = locale.getlocale()[0]) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Dict, List, Set, Any, Type, Optional, cast, TYPE_CHECKING
 import os
+from threading import Lock
 from enum import Enum
 from datetime import datetime, timedelta
 import base64
@@ -90,6 +91,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     ) -> None:
         self.weConnect: WeConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
+        self.lock = Lock()
         self.vin: AddressableAttribute[str] = AddressableAttribute(localAddress='vin', parent=self, value=None, valueType=str)
         self.role: AddressableAttribute[Vehicle.User.Role] = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=Vehicle.User.Role)
         self.enrollmentStatus: AddressableAttribute[Vehicle.User.EnrollmentStatus] = AddressableAttribute(localAddress='enrollmentStatus', parent=self,
@@ -311,6 +313,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             jobs = ['all']
         else:
             jobs = [domain.value for domain in selective]
+        self.lock.acquire()
         url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
         data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
         if data is not None:
@@ -369,11 +372,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     parkingPosition.enabled = False
 
         # Controls
+        self.lock.release()
         self.controls.update()
 
     def updatePictures(self) -> None:  # noqa: C901
         if not SUPPORT_IMAGES:
             return
+        self.lock.acquire()
         url: str = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
         data = self.weConnect.fetchData(url, allowHttpError=True)
         if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
@@ -445,6 +450,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                         valueType=Image.Image)
 
             self.updateStatusPicture()
+        self.lock.release()
 
     def updateStatusPicture(self) -> None:  # noqa: C901
         if not SUPPORT_IMAGES:
