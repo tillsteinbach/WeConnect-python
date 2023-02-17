@@ -1,7 +1,7 @@
 from enum import Enum, auto
 import time
 import logging
-from oauthlib.oauth2.rfc6749.errors import InsecureTransportError, TokenExpiredError
+from oauthlib.oauth2.rfc6749.errors import InsecureTransportError, TokenExpiredError, MissingTokenError
 from oauthlib.oauth2.rfc6749.utils import is_secure_transport
 
 import requests
@@ -200,8 +200,14 @@ class OpenIDSession(requests.Session):
                     self.login()
                 except TokenExpiredError:
                     self.login()
+                except MissingTokenError:
+                    self.login()
                 except RetrievalError:
                     raise
+                url, headers, data = self.addToken(url, body=data, headers=headers, access_type=access_type, token=token)
+            except MissingTokenError:
+                LOG.error('Missing token')
+                self.login()
                 url, headers, data = self.addToken(url, body=data, headers=headers, access_type=access_type, token=token)
 
         if timeout is None:
@@ -218,17 +224,17 @@ class OpenIDSession(requests.Session):
         if token is None:
             if access_type == AccessType.ID:
                 if not (self.idToken):
-                    raise ValueError("Missing id token.")
+                    raise MissingTokenError(description="Missing id token.")
                 token = self.idToken
             elif access_type == AccessType.REFRESH:
                 if not (self.refreshToken):
-                    raise ValueError("Missing refresh token.")
+                    raise MissingTokenError(description="Missing refresh token.")
                 token = self.refreshToken
             else:
                 if not self.authorized:
                     self.login()
                 if not (self.accessToken):
-                    raise ValueError("Missing access token.")
+                    raise MissingTokenError(description="Missing access token.")
                 if self.expired:
                     raise TokenExpiredError()
                 token = self.accessToken
