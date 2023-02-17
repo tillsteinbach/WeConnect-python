@@ -197,34 +197,33 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
                        selective: Optional[list[Domain]] = None) -> None:
-        self.lock.acquire()
-        url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
-        data = self.fetchData(url, force)
-        if data is not None:
-            if 'data' in data and data['data']:
-                vins: List[str] = []
-                for vehicleDict in data['data']:
-                    if 'vin' not in vehicleDict:
-                        break
-                    vin: str = vehicleDict['vin']
-                    vins.append(vin)
-                    try:
-                        if vin not in self.__vehicles:
-                            vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict, fixAPI=self.fixAPI,
-                                              updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective,
-                                              enableTracker=self.__enableTracker)
-                            self.__vehicles[vin] = vehicle
-                        else:
-                            self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures,
-                                                        selective=selective)
-                    except RetrievalError as retrievalError:
-                        LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
-                # delete those vins that are not anymore available
-                for vin in [vin for vin in self.__vehicles if vin not in vins]:
-                    del self.__vehicles[vin]
+        with self.lock:
+            url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
+            data = self.fetchData(url, force)
+            if data is not None:
+                if 'data' in data and data['data']:
+                    vins: List[str] = []
+                    for vehicleDict in data['data']:
+                        if 'vin' not in vehicleDict:
+                            break
+                        vin: str = vehicleDict['vin']
+                        vins.append(vin)
+                        try:
+                            if vin not in self.__vehicles:
+                                vehicle = Vehicle(weConnect=self, vin=vin, parent=self.__vehicles, fromDict=vehicleDict, fixAPI=self.fixAPI,
+                                                  updateCapabilities=updateCapabilities, updatePictures=updatePictures, selective=selective,
+                                                  enableTracker=self.__enableTracker)
+                                self.__vehicles[vin] = vehicle
+                            else:
+                                self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures,
+                                                            selective=selective)
+                        except RetrievalError as retrievalError:
+                            LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
+                    # delete those vins that are not anymore available
+                    for vin in [vin for vin in self.__vehicles if vin not in vins]:
+                        del self.__vehicles[vin]
 
-                self.__cache[url] = (data, str(datetime.utcnow()))
-        self.lock.release()
+                    self.__cache[url] = (data, str(datetime.utcnow()))
 
     def setChargingStationSearchParameters(self, latitude: float, longitude: float, searchRadius: Optional[int] = None, market: Optional[str] = None,
                                            useLocale: Optional[str] = locale.getlocale()[0]) -> None:
