@@ -44,7 +44,7 @@ def toBool(value: Any) -> bool:
 
 
 if SUPPORT_ASCII_IMAGES:
-    def imgToASCIIArt(img: Image, columns: int = 0, mode: ascii_magic.Modes = ascii_magic.Modes.TERMINAL) -> str:
+    def imgToASCIIArt(img: Image, columns: int = 0) -> str:
         bbox = img.getbbox()
 
         # Crop the image to the contents of the bounding box
@@ -62,7 +62,7 @@ if SUPPORT_ASCII_IMAGES:
         if columns == 0:
             columns = shutil.get_terminal_size()[0]
 
-        return ascii_magic.from_image(cropped_image, columns=columns, mode=mode)
+        return ascii_magic.from_pillow_image(cropped_image).to_ascii(columns=columns)
 
 
 def celsiusToKelvin(value):
