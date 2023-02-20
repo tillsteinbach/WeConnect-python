@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.53.0] - 2023-02-20
+### Added
+- Add very basic thread safety by protecting update
+- Add ENGINE category for warning lights
+
+### Fixed
+- Problem with missing token
+
 ## [0.52.0] - 2023-02-15
 ### Added
 - Add new error state (Thanks to user madd0)
@@ -687,7 +695,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.52.0...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.53.0...HEAD
+[0.53.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.53.0
 [0.52.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.52.0
 [0.51.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.1
 [0.51.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.0
