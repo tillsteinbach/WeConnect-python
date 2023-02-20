@@ -12,14 +12,13 @@ from weconnect.util import toBool, robustTimeParse, ExtendedWithNullEncoder
 SUPPORT_IMAGES = False
 try:
     from PIL import Image  # type: ignore
-    from weconnect.util import imgToASCIIArt  # pylint: disable=ungrouped-imports
     SUPPORT_IMAGES = True
 except ImportError:
     pass
 
 SUPPORT_ASCII_IMAGES = False
 try:
-    import ascii_magic  # type: ignore
+    from weconnect.util import imgToASCIIArt, ASCIIModes  # pylint: disable=ungrouped-imports
     SUPPORT_ASCII_IMAGES = True
 except ImportError:
     pass
@@ -256,7 +255,7 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
             if filename.endswith(('.txt', '.TXT', '.text')):
                 with open(filename, mode='w', encoding='utf8') as textfile:
                     if SUPPORT_IMAGES and SUPPORT_ASCII_IMAGES and isinstance(self.value, Image.Image):
-                        textfile.write(imgToASCIIArt(self.value, columns=120, mode=ascii_magic.Modes.ASCII))
+                        textfile.write(imgToASCIIArt(self.value, columns=120, mode=ASCIIModes.ASCII))
                     else:
                         textfile.write(str(self))
             elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
@@ -265,7 +264,7 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                         html = """<!DOCTYPE html><head><title>ASCII art</title></head><body><pre style="display: inline-block; border-width: 4px 6px;
     border-color: black; border-style: solid; background-color:black; font-size: 8px;">"""
                         htmlfile.write(html)
-                        htmlfile.write(imgToASCIIArt(self.value, columns=240, mode=ascii_magic.Modes.HTML))
+                        htmlfile.write(imgToASCIIArt(self.value, columns=240, mode=ASCIIModes.HTML))
                         htmlfile.write('<pre/></body></html>')
                     else:
                         htmlfile.write(str(self))

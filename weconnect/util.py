@@ -44,7 +44,12 @@ def toBool(value: Any) -> bool:
 
 
 if SUPPORT_ASCII_IMAGES:
-    def imgToASCIIArt(img: Image, columns: int = 0) -> str:
+    class ASCIIModes(Enum):
+        TERMINAL = 'TERMINAL'
+        ASCII = 'ASCII'
+        HTML = 'HTML'
+
+    def imgToASCIIArt(img: Image, columns: int = 0, mode=ASCIIModes.TERMINAL) -> str:
         bbox = img.getbbox()
 
         # Crop the image to the contents of the bounding box
@@ -62,6 +67,10 @@ if SUPPORT_ASCII_IMAGES:
         if columns == 0:
             columns = shutil.get_terminal_size()[0]
 
+        if mode == ASCIIModes.ASCII:
+            return ascii_magic.from_pillow_image(cropped_image).to_ascii(columns=columns, monochrome=True)
+        if mode == ASCIIModes.HTML:
+            return ascii_magic.from_pillow_image(cropped_image).to_html(columns=columns)
         return ascii_magic.from_pillow_image(cropped_image).to_ascii(columns=columns)
 
 
