@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 from weconnect.util import robustTimeParse
 from weconnect.addressable import AddressableObject, AddressableAttribute, AddressableList, AddressableDict
-from weconnect.elements.control_operation import ControlOperation
+from weconnect.elements.control_operation import Operation
 from weconnect.elements.error import Error
 
 LOG: logging.Logger = logging.getLogger("weconnect")
@@ -138,8 +138,8 @@ class GenericStatus(AddressableObject):
             super().__init__(localAddress=localAddress, parent=parent)
             self.status: AddressableAttribute[GenericStatus.Request.Status] = AddressableAttribute(localAddress='status', parent=self,
                                                                                                    value=None, valueType=GenericStatus.Request.Status)
-            self.operation: AddressableAttribute[ControlOperation] = AddressableAttribute(
-                localAddress='operation', parent=self, value=None, valueType=ControlOperation)
+            self.operation: AddressableAttribute[Operation] = AddressableAttribute(
+                localAddress='operation', parent=self, value=None, valueType=Operation)
             self.body: AddressableAttribute[str] = AddressableAttribute(localAddress='body', parent=self, value=None, valueType=str)
             self.group: AddressableAttribute[int] = AddressableAttribute(localAddress='group', parent=self, value=None, valueType=int)
             self.info: AddressableAttribute[str] = AddressableAttribute(localAddress='info', parent=self, value=None, valueType=str)

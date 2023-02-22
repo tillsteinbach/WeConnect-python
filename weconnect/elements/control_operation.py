@@ -39,3 +39,13 @@ class HonkAndFlashControlOperation(ControlInputEnum):
     @classmethod
     def allowedValues(cls):
         return [HonkAndFlashControlOperation.FLASH, HonkAndFlashControlOperation.HONK_AND_FLASH]
+
+
+class Operation(Enum):
+    START = 'start'
+    STOP = 'stop'
+    SETTINGS = 'settings'
+    LOCK = 'lock'
+    UNLOCK = 'unlock'
+    FLASH = 'flash'
+    HONK_AND_FLASH = 'honkandflash'

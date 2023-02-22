@@ -53,4 +53,5 @@ class GenericRequestStatus(GenericStatus):
         FAIL_VEHICLE_IS_OFFLINE = 'fail_vehicle_is_offline'
         FAIL_IGNITION_ON = 'fail_ignition_on'
         FAIL_BATTERY_LOW = 'fail_battery_low'
+        FAIL_CHARGING_PRIORITY = 'fail_charging_priority'
         UNKNOWN = 'unknown status'
