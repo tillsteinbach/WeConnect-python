@@ -378,7 +378,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         if not SUPPORT_IMAGES:
             return
         with self.lock:
-            url: str = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
+            url: str = f'https://emea.bff.cariad.digital/media/v2/vehicle-images/{self.vin.value}?resolution=2x'
             data = self.weConnect.fetchData(url, allowHttpError=True)
             if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
                 for image in data['data']:
