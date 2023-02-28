@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.55.0] - 2023-02-28 (PLEASE NOTICE! All depending applications need to imediatly update to work again!)
+## [0.54.1] - 2023-02-28 (PLEASE NOTICE! All depending applications need to imediatly update to work again!)
 ### Fixed
 - Changed URLs to the new URLs necessary to contact the backend
 
@@ -703,8 +703,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.55.0...HEAD
-[0.55.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.55.0
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.54.1...HEAD
+[0.54.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.1
 [0.54.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.0
 [0.53.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.53.0
 [0.52.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.52.0
