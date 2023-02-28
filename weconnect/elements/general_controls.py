@@ -31,7 +31,7 @@ class GeneralControls(AddressableObject):
         elif not re.match(r"^\d{4}$", value):
             raise ControlError(f'S-PIN {value} cannot be set/verified, needs to be 4 digits')
 
-        url = 'https://mobileapi.apps.emea.vwapps.io/spin/verify'
+        url = 'https://emea.bff.cariad.digital/vehicle/v1/spin/verify'
 
         data = {}
         data['spin'] = value

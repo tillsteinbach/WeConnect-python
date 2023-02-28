@@ -198,7 +198,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
                        selective: Optional[list[Domain]] = None) -> None:
         with self.lock:
-            url = 'https://mobileapi.apps.emea.vwapps.io/vehicles'
+            url = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles'
             data = self.fetchData(url, force)
             if data is not None:
                 if 'data' in data and data['data']:
@@ -236,7 +236,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def getChargingStations(self, latitude, longitude, searchRadius=None, market=None, useLocale=None,  # noqa: C901
                             force=False) -> AddressableDict[str, ChargingStation]:
         chargingStationMap: AddressableDict[str, ChargingStation] = AddressableDict(localAddress='', parent=None)
-        url: str = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={latitude}&longitude={longitude}'
+        url: str = f'https://emea.bff.cariad.digital/vehicle/v1/charging-stations/v2?latitude={latitude}&longitude={longitude}'
         if market is not None:
             url += f'&market={market}'
         if useLocale is not None:
@@ -261,7 +261,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
 
     def updateChargingStations(self, force: bool = False) -> None:  # noqa: C901 # pylint: disable=too-many-branches
         if self.latitude is not None and self.longitude is not None:
-            url: str = f'https://mobileapi.apps.emea.vwapps.io/charging-stations/v2?latitude={self.latitude}&longitude={self.longitude}'
+            url: str = f'https://emea.bff.cariad.digital/vehicle/v1/charging-stations/v2?latitude={self.latitude}&longitude={self.longitude}'
             if self.market is not None:
                 url += f'&market={self.market}'
             if self.useLocale is not None:

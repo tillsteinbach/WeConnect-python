@@ -81,7 +81,7 @@ class Controls(AddressableObject):
         else:
             raise ControlError('Could not control climatisation, control argument %s cannot be understood', value)
 
-        url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/climatisation/{control.value}'
+        url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/climatisation/{control.value}'
 
         settingsDict = dict()
         if control == ControlOperation.START:
@@ -133,7 +133,7 @@ class Controls(AddressableObject):
 
     def __setChargingControlChange(self, value):  # noqa: C901
         if value in [ControlOperation.START, ControlOperation.STOP]:
-            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/charging/{value.value}'
+            url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/charging/{value.value}'
 
             controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
             if controlResponse.status_code != requests.codes['ok']:
@@ -162,7 +162,7 @@ class Controls(AddressableObject):
 
     def __setWindowHeatingControlChange(self, value):  # noqa: C901
         if value in [ControlOperation.START, ControlOperation.STOP]:
-            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/windowheating/{value.value}'
+            url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/windowheating/{value.value}'
 
             controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
             if controlResponse.status_code != requests.codes['ok']:
@@ -191,7 +191,7 @@ class Controls(AddressableObject):
 
     def __setWakeupControlChange(self, value):  # noqa: C901
         if value in [ControlOperation.START]:
-            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/vehiclewakeuptrigger'
+            url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/vehiclewakeuptrigger'
 
             controlResponse = self.vehicle.weConnect.session.post(url, data='{}', allow_redirects=True)
 
@@ -226,7 +226,7 @@ class Controls(AddressableObject):
             raise ControlError('Could not control access, control operation needs an S-PIN')
         spin = self.vehicle.weConnect.spin
 
-        url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/access/{control.value}'
+        url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/access/{control.value}'
 
         data = {}
         data['spin'] = spin
@@ -268,7 +268,7 @@ class Controls(AddressableObject):
         else:
             raise ControlError('Could not control honkandflash, control argument %s cannot be understood', value)
 
-        url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/honkandflash'
+        url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/honkandflash'
 
         if not self.vehicle.statusExists('parking', 'parkingPosition') or not self.vehicle.domains['parking']['parkingPosition'].enabled \
                 or self.vehicle.domains['parking']['parkingPosition'].latitude.value is None:

@@ -314,7 +314,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         else:
             jobs = [domain.value for domain in selective]
         with self.lock:
-            url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
+            url: str = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
             data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
             if data is not None:
                 for domain, keyClassMap in jobKeyClassMap.items():
@@ -346,7 +346,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
 
             if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.PARKING])) \
                     and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
-                url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
+                url = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles/' + self.vin.value + '/parkingposition'
                 data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
                                                                                                                  codes['no_content'],
                                                                                                                  codes['bad_gateway'],
