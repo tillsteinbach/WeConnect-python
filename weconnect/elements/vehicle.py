@@ -26,6 +26,7 @@ from weconnect.elements.battery_support_status import BatterySupportStatus
 from weconnect.elements.capability_status import CapabilityStatus
 from weconnect.elements.charging_status import ChargingStatus
 from weconnect.elements.charging_settings import ChargingSettings
+from weconnect.elements.charging_care_settings import ChargingCareSettings
 from weconnect.elements.charge_mode import ChargeMode
 from weconnect.elements.climatization_status import ClimatizationStatus
 from weconnect.elements.climatization_settings import ClimatizationSettings
@@ -248,10 +249,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'plugStatus': PlugStatus,
                 'chargingRequestStatus': GenericRequestStatus,
                 'chargingSettingsRequestStatus': GenericRequestStatus,
-                'chargingCareSettings': GenericSettings,
+                'chargingCareSettings': ChargingCareSettings,
             },
             Domain.CHARGING_PROFILES: {
                 'chargingProfilesStatus': ChargingProfiles,
+            },
+            Domain.BATTERY_CHARGING_CARE: {
+                'chargingCareSettings': ChargingCareSettings
             },
             Domain.CLIMATISATION: {
                 'climatisationStatus': ClimatizationStatus,

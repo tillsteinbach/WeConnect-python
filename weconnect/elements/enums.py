@@ -21,3 +21,12 @@ class UnlockPlugState(ControlInputEnum,):
     @classmethod
     def allowedValues(cls):
         return [UnlockPlugState.OFF, UnlockPlugState.ON]
+
+
+class BatteryCareMode(ControlInputEnum,):
+    ACTIVATED = 'activated'
+    UNKNOWN = 'unknown'
+
+    @classmethod
+    def allowedValues(cls):
+        return [BatteryCareMode.ACTIVATED]
