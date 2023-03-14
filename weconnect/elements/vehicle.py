@@ -8,7 +8,6 @@ import base64
 import io
 import logging
 
-from weconnect.elements.generic_settings import GenericSettings
 from weconnect.elements.generic_status import GenericStatus
 
 from requests import exceptions, codes

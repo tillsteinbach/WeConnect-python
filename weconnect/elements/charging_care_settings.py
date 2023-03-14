@@ -21,7 +21,7 @@ class ChargingCareSettings(GenericSettings):
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
         self.batteryCareMode.addObserver(self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
-                                            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+                                         priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
