@@ -123,7 +123,7 @@ class WeConnectSession(VWWebSession):
             loginFormResponse: requests.Response = websession.get(authorizationUrl, allow_redirects=False)
             if loginFormResponse.status_code == requests.codes['ok']:
                 break
-            elif loginFormResponse.status_code == requests.codes['found']:
+            elif loginFormResponse.status_code in (requests.codes['found'], requests.codes['see_other']):
                 if 'Location' in loginFormResponse.headers:
                     authorizationUrl = loginFormResponse.headers['Location']
                 else:
