@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.54.2] - 2023-03-02
+### Fixed
+- Fixes unknown operation error
+
+## [0.54.1] - 2023-02-28 (PLEASE NOTICE! All depending applications need to imediatly update to work again!)
+### Fixed
+- Changed URLs to the new URLs necessary to contact the backend
+
+## [0.54.0] - 2023-02-20
+### Changed
+- Update acii_magic to 2.2.1
+
+## [0.53.0] - 2023-02-20
+### Added
+- Add very basic thread safety by protecting update
+- Add ENGINE category for warning lights
+
+### Fixed
+- Problem with missing token
+
+## [0.52.0] - 2023-02-15
+### Added
+- Add new error state (Thanks to user madd0)
+- Add new timer attribute targetSOC_pct
+
+### Fixed
+- Bug that could make attributes disappear on certain values
+
 ## [0.51.1] - 2023-02-03
 ### Changed
 - Updated dependencies
@@ -679,7 +707,12 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.51.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.54.2...HEAD
+[0.54.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.2
+[0.54.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.1
+[0.54.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.0
+[0.53.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.53.0
+[0.52.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.52.0
 [0.51.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.1
 [0.51.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.51.0
 [0.50.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.50.1

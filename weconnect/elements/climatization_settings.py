@@ -145,7 +145,7 @@ class ClimatizationSettings(GenericSettings):
     def valueChanged(self, element, flags):  # noqa: C901
         if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED \
                 and not flags & AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER:
-            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/climatisation/settings'
+            url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/climatisation/settings'
             settingsDict = dict()
             regex = re.compile('zone(Front|Rear)(Right|Left)Enabled')
             if self.targetTemperature_C.enabled:

@@ -74,13 +74,13 @@ class WeConnectSession(VWWebSession):
         super(WeConnectSession, self).login()
         authorizationUrl = self.authorizationUrl(url='https://identity.vwgroup.io/oidc/v1/authorize')
         response = self.doWebAuth(authorizationUrl)
-        self.fetchTokens('https://login.apps.emea.vwapps.io/login/v1',
+        self.fetchTokens('https://emea.bff.cariad.digital/user-login/login/v1',
                          authorization_response=response
                          )
 
     def refresh(self):
         self.refreshTokens(
-            'https://login.apps.emea.vwapps.io/refresh/v1',
+            'https://emea.bff.cariad.digital/user-login/refresh/v1',
         )
 
     def authorizationUrl(self, url, state=None, **kwargs):
@@ -90,7 +90,7 @@ class WeConnectSession(VWWebSession):
         params = [(('redirect_uri', self.redirect_uri)),
                   (('nonce', generate_nonce()))]
 
-        authUrl = add_params_to_uri('https://login.apps.emea.vwapps.io/authorize', params)
+        authUrl = add_params_to_uri('https://emea.bff.cariad.digital/user-login/v1/authorize', params)
 
         tryLoginResponse: requests.Response = self.get(authUrl, allow_redirects=False, access_type=AccessType.NONE)
         redirect = tryLoginResponse.headers['Location']

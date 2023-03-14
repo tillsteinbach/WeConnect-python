@@ -19,7 +19,7 @@ class GenericSettings(GenericStatus):
         if flags & AddressableLeaf.ObserverEvent.VALUE_CHANGED \
                 and not flags & AddressableLeaf.ObserverEvent.UPDATED_FROM_SERVER:
             setting = self.id.partition('Settings')[0]
-            url = f'https://mobileapi.apps.emea.vwapps.io/vehicles/{self.vehicle.vin.value}/{setting}/settings'
+            url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/{setting}/settings'
             settingsDict = dict()
             for child in self.getLeafChildren():
                 if isinstance(child, ChangeableAttribute) and not isinstance(child, AliasChangeableAttribute):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Dict, List, Set, Any, Type, Optional, cast, TYPE_CHECKING
 import os
+from threading import Lock
 from enum import Enum
 from datetime import datetime, timedelta
 import base64
@@ -90,6 +91,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     ) -> None:
         self.weConnect: WeConnect = weConnect
         super().__init__(localAddress=vin, parent=parent)
+        self.lock = Lock()
         self.vin: AddressableAttribute[str] = AddressableAttribute(localAddress='vin', parent=self, value=None, valueType=str)
         self.role: AddressableAttribute[Vehicle.User.Role] = AddressableAttribute(localAddress='role', parent=self, value=None, valueType=Vehicle.User.Role)
         self.enrollmentStatus: AddressableAttribute[Vehicle.User.EnrollmentStatus] = AddressableAttribute(localAddress='enrollmentStatus', parent=self,
@@ -311,62 +313,63 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             jobs = ['all']
         else:
             jobs = [domain.value for domain in selective]
-        url: str = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
-        data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
-        if data is not None:
-            for domain, keyClassMap in jobKeyClassMap.items():
-                if not updateCapabilities and domain == Domain.USER_CAPABILITIES:
-                    continue
-                if domain.value in data:
-                    if domain.value not in self.domains:
-                        self.domains[domain.value] = DomainDict(localAddress=domain.value, parent=self.domains)
-                    for key, className in keyClassMap.items():
-                        if key in data[domain.value]:
-                            if key in self.domains[domain.value]:
-                                LOG.debug('Status %s exists, updating it', key)
-                                self.domains[domain.value][key].update(fromDict=data[domain.value][key])
-                            else:
-                                LOG.debug('Status %s does not exist, creating it', key)
-                                self.domains[domain.value][key] = className(vehicle=self, parent=self.domains[domain.value], statusId=key,
-                                                                            fromDict=data[domain.value][key], fixAPI=self.fixAPI)
-                    if 'error' in data[domain.value]:
-                        self.domains[domain.value].updateError(data[domain.value])
-
-                    # check that there is no additional status than the configured ones, except for "target" that we merge into
-                    # the known ones
-                    for key, value in {key: value for key, value in data[domain.value].items()
-                                       if key not in list(keyClassMap.keys()) and key not in ['error']}.items():
-                        LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain.value)
-            # check that there is no additional domain than the configured ones
-            for key, value in {key: value for key, value in data.items() if key not in list([domain.value for domain in jobKeyClassMap.keys()])}.items():
-                LOG.warning('%s: Unknown domain %s with value %s', self.getGlobalAddress(), key, value)
-
-        if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.PARKING])) \
-                and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
-            url = 'https://mobileapi.apps.emea.vwapps.io/vehicles/' + self.vin.value + '/parkingposition'
-            data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
-                                                                                                             codes['no_content'],
-                                                                                                             codes['bad_gateway'],
-                                                                                                             codes['forbidden']])
-
+        with self.lock:
+            url: str = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
+            data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
             if data is not None:
-                if 'parking' not in self.domains:
-                    self.domains['parking'] = DomainDict(localAddress='parking', parent=self)
-                if 'parkingPosition' in self.domains['parking']:
-                    self.domains['parking']['parkingPosition'].update(fromDict=data)
+                for domain, keyClassMap in jobKeyClassMap.items():
+                    if not updateCapabilities and domain == Domain.USER_CAPABILITIES:
+                        continue
+                    if domain.value in data:
+                        if domain.value not in self.domains:
+                            self.domains[domain.value] = DomainDict(localAddress=domain.value, parent=self.domains)
+                        for key, className in keyClassMap.items():
+                            if key in data[domain.value]:
+                                if key in self.domains[domain.value]:
+                                    LOG.debug('Status %s exists, updating it', key)
+                                    self.domains[domain.value][key].update(fromDict=data[domain.value][key])
+                                else:
+                                    LOG.debug('Status %s does not exist, creating it', key)
+                                    self.domains[domain.value][key] = className(vehicle=self, parent=self.domains[domain.value], statusId=key,
+                                                                                fromDict=data[domain.value][key], fixAPI=self.fixAPI)
+                        if 'error' in data[domain.value]:
+                            self.domains[domain.value].updateError(data[domain.value])
+
+                        # check that there is no additional status than the configured ones, except for "target" that we merge into
+                        # the known ones
+                        for key, value in {key: value for key, value in data[domain.value].items()
+                                           if key not in list(keyClassMap.keys()) and key not in ['error']}.items():
+                            LOG.warning('%s: Unknown attribute %s with value %s in domain %s', self.getGlobalAddress(), key, value, domain.value)
+                # check that there is no additional domain than the configured ones
+                for key, value in {key: value for key, value in data.items() if key not in list([domain.value for domain in jobKeyClassMap.keys()])}.items():
+                    LOG.warning('%s: Unknown domain %s with value %s', self.getGlobalAddress(), key, value)
+
+            if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.PARKING])) \
+                    and (not updateCapabilities or ('parkingPosition' in self.capabilities and self.capabilities['parkingPosition'].status.value is None)):
+                url = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles/' + self.vin.value + '/parkingposition'
+                data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
+                                                                                                                 codes['no_content'],
+                                                                                                                 codes['bad_gateway'],
+                                                                                                                 codes['forbidden']])
+
+                if data is not None:
+                    if 'parking' not in self.domains:
+                        self.domains['parking'] = DomainDict(localAddress='parking', parent=self)
+                    if 'parkingPosition' in self.domains['parking']:
+                        self.domains['parking']['parkingPosition'].update(fromDict=data)
+                    else:
+                        self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
+                                                                                     parent=self.domains['parking'],
+                                                                                     statusId='parkingPosition',
+                                                                                     fromDict=data)
                 else:
-                    self.domains['parking']['parkingPosition'] = ParkingPosition(vehicle=self,
-                                                                                 parent=self.domains['parking'],
-                                                                                 statusId='parkingPosition',
-                                                                                 fromDict=data)
-            else:
-                if self.statusExists('parking', 'parkingPosition'):
-                    parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
-                    parkingPosition.latitude.enabled = False
-                    parkingPosition.longitude.enabled = False
-                    parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
-                    parkingPosition.carCapturedTimestamp.enabled = False
-                    parkingPosition.enabled = False
+                    if self.statusExists('parking', 'parkingPosition'):
+                        parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
+                        parkingPosition.latitude.enabled = False
+                        parkingPosition.longitude.enabled = False
+                        parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+                        parkingPosition.carCapturedTimestamp.enabled = False
+                        parkingPosition.enabled = False
 
         # Controls
         self.controls.update()
@@ -374,33 +377,22 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
     def updatePictures(self) -> None:  # noqa: C901
         if not SUPPORT_IMAGES:
             return
-        url: str = f'https://vehicle-images-service.apps.emea.vwapps.io/v2/vehicle-images/{self.vin.value}?resolution=2x'
-        data = self.weConnect.fetchData(url, allowHttpError=True)
-        if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
-            for image in data['data']:
-                img = None
-                cacheDate = None
-                imageurl: str = image['url']
-                if self.weConnect.maxAgePictures is not None and self.weConnect.cache is not None and imageurl in self.weConnect.cache:
-                    img, cacheDateString = self.weConnect.cache[imageurl]
-                    img = base64.b64decode(img)
-                    img = Image.open(io.BytesIO(img))
-                    cacheDate = datetime.fromisoformat(cacheDateString)
-                if img is None or self.weConnect.maxAgePictures is None \
-                        or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
-                    try:
-                        imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
-                        self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
-                        if imageDownloadResponse.status_code == codes['ok']:
-                            img = Image.open(imageDownloadResponse.raw)
-                            if self.weConnect.cache is not None:
-                                buffered = io.BytesIO()
-                                img.save(buffered, format="PNG")
-                                imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
-                                self.weConnect.cache[imageurl] = (imgStr, str(datetime.utcnow()))
-                        elif imageDownloadResponse.status_code == codes['unauthorized']:
-                            LOG.info('Server asks for new authorization')
-                            self.weConnect.login()
+        with self.lock:
+            url: str = f'https://emea.bff.cariad.digital/media/v2/vehicle-images/{self.vin.value}?resolution=2x'
+            data = self.weConnect.fetchData(url, allowHttpError=True)
+            if data is not None and 'data' in data:  # pylint: disable=too-many-nested-blocks
+                for image in data['data']:
+                    img = None
+                    cacheDate = None
+                    imageurl: str = image['url']
+                    if self.weConnect.maxAgePictures is not None and self.weConnect.cache is not None and imageurl in self.weConnect.cache:
+                        img, cacheDateString = self.weConnect.cache[imageurl]
+                        img = base64.b64decode(img)
+                        img = Image.open(io.BytesIO(img))
+                        cacheDate = datetime.fromisoformat(cacheDateString)
+                    if img is None or self.weConnect.maxAgePictures is None \
+                            or (cacheDate is not None and cacheDate < (datetime.utcnow() - timedelta(seconds=self.weConnect.maxAgePictures))):
+                        try:
                             imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
                             self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
                             if imageDownloadResponse.status_code == codes['ok']:
@@ -410,41 +402,53 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                     img.save(buffered, format="PNG")
                                     imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
                                     self.weConnect.cache[imageurl] = (imgStr, str(datetime.utcnow()))
-                            else:
+                            elif imageDownloadResponse.status_code == codes['unauthorized']:
+                                LOG.info('Server asks for new authorization')
+                                self.weConnect.login()
+                                imageDownloadResponse = self.weConnect.session.get(imageurl, stream=True)
+                                self.weConnect.recordElapsed(imageDownloadResponse.elapsed)
+                                if imageDownloadResponse.status_code == codes['ok']:
+                                    img = Image.open(imageDownloadResponse.raw)
+                                    if self.weConnect.cache is not None:
+                                        buffered = io.BytesIO()
+                                        img.save(buffered, format="PNG")
+                                        imgStr = base64.b64encode(buffered.getvalue()).decode("utf-8")
+                                        self.weConnect.cache[imageurl] = (imgStr, str(datetime.utcnow()))
+                                else:
+                                    self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
+                                                               'Could not fetch vehicle image due to server error')
+                                    raise RetrievalError('Could not retrieve vehicle image even after re-authorization.'
+                                                         f' Status Code was: {imageDownloadResponse.status_code}')
                                 self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
                                                            'Could not fetch vehicle image due to server error')
-                                raise RetrievalError('Could not retrieve vehicle image even after re-authorization.'
-                                                     f' Status Code was: {imageDownloadResponse.status_code}')
-                            self.weConnect.notifyError(self, ErrorEventType.HTTP, str(imageDownloadResponse.status_code),
-                                                       'Could not fetch vehicle image due to server error')
-                            raise RetrievalError(f'Could not retrieve vehicle image. Status Code was: {imageDownloadResponse.status_code}')
-                        else:
-                            LOG.warning('Failed downloading picture %s with status code %d will try again in next update', image['id'],
-                                        imageDownloadResponse.status_code)
-                    except exceptions.ConnectionError as connectionError:
-                        self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
-                                                   'Could not fetch vehicle image due to connection problem')
-                        raise RetrievalError from connectionError
-                    except exceptions.ChunkedEncodingError as chunkedEncodingError:
-                        self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
-                                                   'Could not refresh token due to connection problem with chunked encoding')
-                        raise RetrievalError from chunkedEncodingError
-                    except exceptions.ReadTimeout as timeoutError:
-                        self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
-                        raise RetrievalError from timeoutError
-                    except exceptions.RetryError as retryError:
-                        raise RetrievalError from retryError
+                                raise RetrievalError(f'Could not retrieve vehicle image. Status Code was: {imageDownloadResponse.status_code}')
+                            else:
+                                LOG.warning('Failed downloading picture %s with status code %d will try again in next update', image['id'],
+                                            imageDownloadResponse.status_code)
+                        except exceptions.ConnectionError as connectionError:
+                            self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'connection',
+                                                       'Could not fetch vehicle image due to connection problem')
+                            raise RetrievalError from connectionError
+                        except exceptions.ChunkedEncodingError as chunkedEncodingError:
+                            self.weConnect.notifyError(self, ErrorEventType.CONNECTION, 'chunked encoding error',
+                                                       'Could not refresh token due to connection problem with chunked encoding')
+                            raise RetrievalError from chunkedEncodingError
+                        except exceptions.ReadTimeout as timeoutError:
+                            self.weConnect.notifyError(self, ErrorEventType.TIMEOUT, 'timeout', 'Could not fetch vehicle image due to timeout')
+                            raise RetrievalError from timeoutError
+                        except exceptions.RetryError as retryError:
+                            raise RetrievalError from retryError
 
-                if img is not None:
-                    self.__carImages[image['id']] = img
-                    if image['id'] == 'car_34view':
-                        if 'car' in self.pictures:
-                            self.pictures['car'].setValueWithCarTime(self.__carImages['car_34view'], lastUpdateFromCar=None, fromServer=True)
-                        else:
-                            self.pictures['car'] = AddressableAttribute(localAddress='car', parent=self.pictures, value=self.__carImages['car_34view'],
-                                                                        valueType=Image.Image)
+                    if img is not None:
+                        self.__carImages[image['id']] = img
+                        if image['id'] == 'car_34view':
+                            if 'car' in self.pictures:
+                                self.pictures['car'].setValueWithCarTime(self.__carImages['car_34view'], lastUpdateFromCar=None, fromServer=True)
+                            else:
+                                self.pictures['car'] = AddressableAttribute(localAddress='car', parent=self.pictures, value=self.__carImages['car_34view'],
+                                                                            valueType=Image.Image)
 
-            self.updateStatusPicture()
+                self.updateStatusPicture()
 
     def updateStatusPicture(self) -> None:  # noqa: C901
         if not SUPPORT_IMAGES:
