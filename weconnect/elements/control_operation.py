@@ -49,4 +49,5 @@ class Operation(Enum):
     UNLOCK = 'unlock'
     FLASH = 'flash'
     HONK_AND_FLASH = 'honkandflash'
+    TIMERS = 'timers'
     UNKNOWN = 'unknown'
