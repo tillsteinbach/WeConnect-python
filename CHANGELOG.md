@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.55.0] - in testing
+### Added
+- Add suport for battery care settings
+- Add timers operation to fix warnings
+
+### Changed
+- Updated dependencies
+
 ## [0.54.2] - 2023-03-02
 ### Fixed
 - Fixes unknown operation error
@@ -707,7 +715,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.54.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.55.0...HEAD
+[0.55.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.55.0
 [0.54.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.2
 [0.54.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.1
 [0.54.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.0
