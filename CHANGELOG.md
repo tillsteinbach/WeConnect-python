@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 - No unreleased changes so far
 
 ## [0.55.0] - in testing
+### Fixed
+- Library will retry login (but give an error) if refresh token got invalidated
+
 ### Added
 - Add suport for battery care settings
 - Add timers operation to fix warnings
