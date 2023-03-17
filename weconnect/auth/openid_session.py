@@ -203,7 +203,8 @@ class OpenIDSession(requests.Session):
                 except MissingTokenError:
                     self.login()
                 except RetrievalError:
-                    raise
+                    LOG.error('Retrieval Error while refreshing token. Probably the token was invalidated. Trying to do a new login instead.')
+                    self.login()
                 url, headers, data = self.addToken(url, body=data, headers=headers, access_type=access_type, token=token)
             except MissingTokenError:
                 LOG.error('Missing token')
