@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Add suport for battery care settings
 - Add timers operation to fix warnings
+- Add invalid light status
 
 ### Changed
 - Updated dependencies

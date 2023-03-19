@@ -83,4 +83,5 @@ class LightsStatus(GenericStatus):
         class LightState(Enum,):
             ON = 'on'
             OFF = 'off'
-            UNKNOWN = 'unknown open state'
+            INVALID = 'invalid'
+            UNKNOWN = 'unknown light state'
