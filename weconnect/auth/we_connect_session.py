@@ -240,7 +240,7 @@ class WeConnectSession(VWWebSession):
         if 'userId' not in params or not params['userId']:
             if 'updated' in params and params['updated'] == 'dataprivacy':
                 raise AuthentificationError('You have to login at myvolkswagen.de and accept the terms and conditions')
-            raise APICompatibilityError('No user id provided')
+            raise APICompatibilityError('No user id provided. A possible reason is that you have to reconfirm the terms and conditions.')
         self.userId = params['userId']
 
         # Now follow the forwarding until forwarding URL starts with 'weconnect://authenticated#'
