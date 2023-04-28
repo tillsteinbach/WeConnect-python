@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.55.0] - in testing
+## [0.55.0] - 2029-04-28
 ### Fixed
 - Library will retry login (but give an error) if refresh token got invalidated
 
