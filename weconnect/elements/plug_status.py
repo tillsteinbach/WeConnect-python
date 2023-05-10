@@ -74,6 +74,7 @@ class PlugStatus(GenericStatus):
         READY = 'ready'
         ACTIVE = 'active'
         UNAVAILABLE = 'unavailable'
+        INVALID = 'invalid'
         UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown external power'
 
