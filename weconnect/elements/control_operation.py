@@ -51,4 +51,5 @@ class Operation(Enum):
     HONK_AND_FLASH = 'honkandflash'
     TIMERS = 'timers'
     MDOE = 'mode'
+    PROFILES = 'profiles'
     UNKNOWN = 'unknown'
