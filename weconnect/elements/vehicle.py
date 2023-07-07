@@ -588,7 +588,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                             draw = ImageDraw.Draw(imgWithBadges)
                             draw.ellipse(((imgWidth - 100), warningLightoffset, (imgWidth - 1), (warningLightoffset + 100)), fill=(0, 0, 0, 200))
                             lightImage = warningLight.icon.value
-                            lightImage = lightImage.resize((64, 64), Image.ANTIALIAS)
+                            lightImage = lightImage.resize((64, 64), Image.LANCZOS)
                             imgWithBadges.paste(lightImage, ((imgWidth - 82), warningLightoffset + 18), lightImage)
                             warningLightoffset += 110
 
@@ -614,7 +614,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                 draw = ImageDraw.Draw(carWithBadges)
                                 draw.ellipse(((imgWidth - 100), warningLightoffset, (imgWidth - 1), (warningLightoffset + 100)), fill=(0, 0, 0, 200))
                                 lightImage = warningLight.icon.value
-                                lightImage = lightImage.resize((64, 64), Image.ANTIALIAS)
+                                lightImage = lightImage.resize((64, 64), Image.LANCZOS)
                                 carWithBadges.paste(lightImage, ((imgWidth - 82), warningLightoffset + 18), lightImage)
                                 warningLightoffset += 110
 
