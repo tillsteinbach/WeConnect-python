@@ -44,6 +44,7 @@ from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.elements.range_measurements import RangeMeasurements
 from weconnect.elements.readiness_status import ReadinessStatus
 from weconnect.elements.charging_profiles import ChargingProfiles
+from weconnect.elements.trip import Trip
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
@@ -110,6 +111,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         self.brandCode: AddressableAttribute[str] = AddressableAttribute(localAddress='brandCode', parent=self, value=None, valueType=Vehicle.BrandCode)
         self.capabilities: AddressableDict[str, GenericCapability] = AddressableDict(localAddress='capabilities', parent=self)
         self.domains: AddressableDict[str, DomainDict[str, GenericStatus]] = AddressableDict(localAddress='domains', parent=self)
+        self.trips: AddressableDict[str, Dict[str, str]] = AddressableDict(localAddress='trips', parent=self)
         self.images: AddressableAttribute[Dict[str, str]] = AddressableAttribute(localAddress='images', parent=self, value=None, valueType=dict)
         self.tags: AddressableAttribute[List[str]] = AddressableAttribute(localAddress='tags', parent=self, value=None, valueType=list)
         self.coUsers: AddressableList[Vehicle.User] = AddressableList(localAddress='coUsers', parent=self)
@@ -363,7 +365,6 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                                  codes['no_content'],
                                                                                                                  codes['bad_gateway'],
                                                                                                                  codes['forbidden']])
-
                 if data is not None:
                     if 'parking' not in self.domains:
                         self.domains['parking'] = DomainDict(localAddress='parking', parent=self)
@@ -382,6 +383,27 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
                         parkingPosition.carCapturedTimestamp.enabled = False
                         parkingPosition.enabled = False
+
+            if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS])):
+                for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
+                    url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'
+                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
+                                                                                                                    codes['no_content'],
+                                                                                                                    codes['bad_gateway'],
+                                                                                                                    codes['forbidden']])
+                    if data is not None and 'data' in data:
+                        self.trips[tripType.value] = Trip(vehicle=self,
+                                                        parent=self.trips,
+                                                        tripType=tripType.value,
+                                                        fromDict=data['data'])
+                    else:
+                        if self.statusExists('parking', 'parkingPosition'):
+                            parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
+                            parkingPosition.latitude.enabled = False
+                            parkingPosition.longitude.enabled = False
+                            parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
+                            parkingPosition.carCapturedTimestamp.enabled = False
+                            parkingPosition.enabled = False
 
         # Controls
         self.controls.update()
@@ -705,6 +727,11 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         returnString += ''.join(['\t' + line for line in str(status).splitlines(True)]) + '\n'
                 if self.domains[domain].hasError():
                     returnString += ''.join(['\t' + line for line in f'Error: {self.domains[domain].error}'.splitlines(True)]) + '\n'
+        if self.trips.enabled:
+            returnString += f'Trips: {len(self.trips)} items\n'
+            for trip in self.trips.values():
+                if trip.enabled:
+                    returnString += ''.join(['\t' + line for line in str(trip).splitlines(True)]) + '\n'
         return returnString
 
     class Badge(Enum):

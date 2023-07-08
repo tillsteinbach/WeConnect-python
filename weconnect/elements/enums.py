@@ -1,3 +1,5 @@
+from enum import Enum
+
 from weconnect.elements.control_operation import ControlInputEnum
 
 
@@ -31,3 +33,15 @@ class BatteryCareMode(ControlInputEnum,):
     @classmethod
     def allowedValues(cls):
         return [BatteryCareMode.ACTIVATED, BatteryCareMode.DEACTIVATED]
+
+
+class CarType(Enum,):
+    ELECTRIC = 'electric'
+    HYBRID = 'hybrid'
+    GASOLINE = 'gasoline'
+    PETROL = 'petrol'
+    DIESEL = 'diesel'
+    CNG = 'cng'
+    LPG = 'lpg'
+    INVALID = 'invalid'
+    UNKNOWN = 'unknown car type'
