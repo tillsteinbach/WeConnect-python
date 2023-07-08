@@ -387,23 +387,15 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS])):
                 for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
                     url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'
-                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
-                                                                                                                    codes['no_content'],
-                                                                                                                    codes['bad_gateway'],
-                                                                                                                    codes['forbidden']])
+                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found']])
                     if data is not None and 'data' in data:
                         self.trips[tripType.value] = Trip(vehicle=self,
                                                         parent=self.trips,
                                                         tripType=tripType.value,
                                                         fromDict=data['data'])
                     else:
-                        if self.statusExists('parking', 'parkingPosition'):
-                            parkingPosition: ParkingPosition = cast(ParkingPosition, self.domains['parking']['parkingPosition'])
-                            parkingPosition.latitude.enabled = False
-                            parkingPosition.longitude.enabled = False
-                            parkingPosition.carCapturedTimestamp.setValueWithCarTime(None, fromServer=True)
-                            parkingPosition.carCapturedTimestamp.enabled = False
-                            parkingPosition.enabled = False
+                        if tripType.value in self.trips:
+                            self.self.trips.enabled = False
 
         # Controls
         self.controls.update()
