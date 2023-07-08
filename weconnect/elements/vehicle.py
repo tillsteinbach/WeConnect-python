@@ -19,6 +19,8 @@ from weconnect.elements.generic_capability import GenericCapability
 from weconnect.elements.generic_request_status import GenericRequestStatus
 from weconnect.elements.controls import Controls
 from weconnect.elements.access_status import AccessStatus
+from weconnect.elements.activeventilation_timer import ActiveVentilationTimer
+from weconnect.elements.auxiliaryheating_timer import AuxiliaryHeatingTimer
 from weconnect.elements.battery_status import BatteryStatus
 from weconnect.elements.lv_battery_status import LVBatteryStatus
 from weconnect.elements.battery_support_status import BatterySupportStatus
@@ -237,6 +239,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'climatisationTimersRequestStatus': GenericRequestStatus,
                 'chargingProfiles': ChargingProfiles,
             },
+            Domain.ACTIVEVENTILATION: {
+            },
             Domain.USER_CAPABILITIES: {
                 'capabilitiesStatus': CapabilityStatus,
             },
@@ -265,6 +269,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             },
             Domain.CLIMATISATION_TIMERS: {
                 'climatisationTimersStatus': ClimatizationTimer,
+                'activeVentilationTimersStatus': ActiveVentilationTimer,
+                'auxiliaryHeatingTimersStatus': AuxiliaryHeatingTimer,
             },
             Domain.DEPARTURE_TIMERS: {
                 'departureTimersStatus': DepartureTimersStatus,

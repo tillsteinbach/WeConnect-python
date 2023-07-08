@@ -47,6 +47,8 @@ class ClimatizationSettings(GenericSettings):
             localAddress='zoneRearLeftEnabled', parent=self, value=None, valueType=bool)
         self.zoneRearRightEnabled = ChangeableAttribute(
             localAddress='zoneRearRightEnabled', parent=self, value=None, valueType=bool)
+        self.heaterSource = ChangeableAttribute(
+            localAddress='heaterSource', parent=self, value=None, valueType=ClimatizationSettings.HeaterSource)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
         self.targetTemperature_K.addObserver(
@@ -73,6 +75,9 @@ class ClimatizationSettings(GenericSettings):
         self.zoneRearRightEnabled.addObserver(
             self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
             priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
+        self.heaterSource.addObserver(
+            self.valueChanged, AddressableLeaf.ObserverEvent.VALUE_CHANGED,
+            priority=AddressableLeaf.ObserverPriority.INTERNAL_MID)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
         ignoreAttributes = ignoreAttributes or []
@@ -90,6 +95,7 @@ class ClimatizationSettings(GenericSettings):
             self.zoneFrontRightEnabled.fromDict(fromDict['value'], 'zoneFrontRightEnabled')
             self.zoneRearLeftEnabled.fromDict(fromDict['value'], 'zoneRearLeftEnabled')
             self.zoneRearRightEnabled.fromDict(fromDict['value'], 'zoneRearRightEnabled')
+            self.heaterSource.fromDict(fromDict['value'], 'heaterSource')
         else:
             self.targetTemperature_K.enabled = False
             self.targetTemperature_C.enabled = False
@@ -102,6 +108,7 @@ class ClimatizationSettings(GenericSettings):
             self.zoneFrontRightEnabled.enabled = False
             self.zoneRearLeftEnabled.enabled = False
             self.zoneRearRightEnabled.enabled = False
+            self.heaterSource.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + [
             'targetTemperature_K',
@@ -114,10 +121,13 @@ class ClimatizationSettings(GenericSettings):
             'zoneFrontLeftEnabled',
             'zoneFrontRightEnabled',
             'zoneRearLeftEnabled',
-            'zoneRearRightEnabled']))
+            'zoneRearRightEnabled',
+            'heaterSource']))
 
     def __str__(self):  # noqa: C901
         string = super().__str__()
+        if self.heaterSource.enabled:
+            string += f'\n\tHeating Source: {self.heaterSource.value.value}'
         if self.targetTemperature_C.enabled:
             string += f'\n\tTarget Temperature in °C: {self.targetTemperature_C.value} °C '
         if self.targetTemperature_F.enabled:
@@ -164,6 +174,8 @@ class ClimatizationSettings(GenericSettings):
                 settingsDict['climatizationAtUnlock'] = self.climatizationAtUnlock.value
             if self.windowHeatingEnabled.enabled:
                 settingsDict['windowHeatingEnabled'] = self.windowHeatingEnabled.value
+            if self.heaterSource.enabled:
+                settingsDict['heaterSource'] = self.heaterSource.value.value
             for child in self.getLeafChildren():
                 if re.match(regex, child.getLocalAddress()):
                     settingsDict[child.getLocalAddress()] = child.value
@@ -197,3 +209,7 @@ class ClimatizationSettings(GenericSettings):
         CELSIUS = 'celsius'
         FARENHEIT = 'farenheit'
         UNKNOWN = 'unknown unit'
+
+    class HeaterSource(Enum,):
+        ELECTRIC = 'electric'
+        UNKNOWN = 'unknown heater source'
