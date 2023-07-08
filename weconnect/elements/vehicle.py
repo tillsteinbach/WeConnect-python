@@ -390,9 +390,9 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                     data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found']])
                     if data is not None and 'data' in data:
                         self.trips[tripType.value] = Trip(vehicle=self,
-                                                        parent=self.trips,
-                                                        tripType=tripType.value,
-                                                        fromDict=data['data'])
+                                                          parent=self.trips,
+                                                          tripType=tripType.value,
+                                                          fromDict=data['data'])
                     else:
                         if tripType.value in self.trips:
                             self.self.trips.enabled = False
