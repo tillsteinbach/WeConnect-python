@@ -5,14 +5,24 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.55.1] - 2029-06-09
+## [0.56.0] - 2023-07-10
+### Added
+- BETA: functionality to read status for active ventilation and auxiliary heating (non electric cars)
+- BETA: functionality to control active ventilation and auxiliary heating (non electric cars)
+- Added heaterSource attribute in climatization settings
+- Possibility to read trip statistics (if supported by the car)
+
+### Changed
+- Updated pillow dependency to 10.0.0
+
+## [0.55.1] - 2023-06-09
 ### Added
 - added INVALID ExternalPower state
 
 ### Changed
 - Updated requests dependency to 2.31.0
 
-## [0.55.0] - 2029-04-28
+## [0.55.0] - 2023-04-28
 ### Fixed
 - Library will retry login (but give an error) if refresh token got invalidated
 
@@ -726,7 +736,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.55.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.56.0...HEAD
+[0.56.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.56.0
 [0.55.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.55.1
 [0.55.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.55.0
 [0.54.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.54.2
