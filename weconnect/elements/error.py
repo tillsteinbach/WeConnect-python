@@ -28,7 +28,8 @@ class Error(AddressableObject):
         self.timestamp: AddressableAttribute[str] = AddressableAttribute(localAddress='timestamp', parent=self, value=None, valueType=datetime)
         self.retry: AddressableAttribute[bool] = AddressableAttribute(localAddress='retry', parent=self, value=None, valueType=bool)
         self.remainingTries: AddressableAttribute[int] = AddressableAttribute(localAddress='remainingTries', parent=self, value=None, valueType=int)
-        self.spinLockedWaitingTime: AddressableAttribute[int] = AddressableAttribute(localAddress='spinLockedWaitingTime', parent=self, value=None, valueType=int)
+        self.spinLockedWaitingTime: AddressableAttribute[int] = AddressableAttribute(localAddress='spinLockedWaitingTime', parent=self, value=None,
+                                                                                     valueType=int)
         self.spinState: AddressableAttribute[int] = AddressableAttribute(localAddress='spinState', parent=self, value=None, valueType=SpinState)
 
         if fromDict is not None:
