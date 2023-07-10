@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.56.0] - 2023-06-09
+## [0.56.0] - 2023-07-10
 ### Added
 - BETA: functionality to read status for active ventilation and auxiliary heating (non electric cars)
 - BETA: functionality to control active ventilation and auxiliary heating (non electric cars)
