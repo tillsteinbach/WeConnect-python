@@ -45,3 +45,8 @@ class CarType(Enum,):
     LPG = 'lpg'
     INVALID = 'invalid'
     UNKNOWN = 'unknown car type'
+
+
+class SpinState(Enum,):
+    DEFINED = 'DEFINED'
+    UNKNOWN = 'unknown spin state'

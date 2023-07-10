@@ -63,7 +63,8 @@ class Controls(AddressableObject):
                         self.accessControl = ChangeableAttribute(
                             localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
                             valueSetter=self.__setAccessControlChange)
-                elif isinstance(status, AuxiliaryHeatingTimer) and not status.error.enabled:
+                elif isinstance(status, AuxiliaryHeatingTimer) and not status.error.enabled and self.vehicle.weConnect.spin is not None \
+                        and type(self.vehicle.weConnect.spin) != bool:
                     if self.accessControl is None:
                         self.auxiliaryHeating = ChangeableAttribute(
                             localAddress='auxiliaryHeating', parent=self, value=ControlOperation.NONE, valueType=(ControlOperation, int),
