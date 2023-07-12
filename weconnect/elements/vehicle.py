@@ -398,7 +398,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                           fromDict=data['data'])
                     else:
                         if tripType.value in self.trips:
-                            self.self.trips.enabled = False
+                            self.trips[tripType.value].enabled = False
 
         # Controls
         self.controls.update()
