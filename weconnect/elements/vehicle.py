@@ -387,7 +387,10 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
             if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS])):
                 for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
                     url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'
-                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found']])
+                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
+                                                                                                                     codes['no_content'],
+                                                                                                                     codes['bad_gateway'],
+                                                                                                                     codes['forbidden']])
                     if data is not None and 'data' in data:
                         self.trips[tripType.value] = Trip(vehicle=self,
                                                           parent=self.trips,
