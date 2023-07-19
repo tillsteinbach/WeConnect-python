@@ -92,7 +92,9 @@ class WarningLightsStatus(GenericStatus):
             self.priority = AddressableAttribute(localAddress='priority', parent=self, value=None, valueType=int)
             self.icon = AddressableAttribute(localAddress='icon', parent=self, value=None, valueType=Image.Image)
             self.iconName = AddressableAttribute(localAddress='iconName', parent=self, value=None, valueType=str)
+            self.iconColor = AddressableAttribute(localAddress='iconColor', parent=self, value=None, valueType=WarningLightsStatus.WarningLight.IconColor)
             self.messageId = AddressableAttribute(localAddress='messageId', parent=self, value=None, valueType=str)
+            self.notificationId = AddressableAttribute(localAddress='notificationId', parent=self, value=None, valueType=int)
             self.serviceLead = AddressableAttribute(localAddress='serviceLead', parent=self, value=None, valueType=bool)
             self.customerRelevance = AddressableAttribute(localAddress='customerRelevance', parent=self, value=None, valueType=bool)
 
@@ -111,6 +113,7 @@ class WarningLightsStatus(GenericStatus):
             self.text.fromDict(fromDict, 'text')
             self.category.fromDict(fromDict, 'category')
             self.priority.fromDict(fromDict, 'priority')
+            self.notificationId.fromDict(fromDict, 'notificationId')
             if SUPPORT_IMAGES:
                 if 'icon' in fromDict and fromDict['icon'] is not None:
                     prefix = 'data:image/png;base64,'
@@ -127,19 +130,21 @@ class WarningLightsStatus(GenericStatus):
                     self.icon.setValueWithCarTime(None, lastUpdateFromCar=None, fromServer=True)
                     self.icon.enabled = False
 
-                self.iconName.fromDict(fromDict, 'iconName')
+            self.iconName.fromDict(fromDict, 'iconName')
+            self.iconColor.fromDict(fromDict, 'iconColor')
             self.serviceLead.fromDict(fromDict, 'serviceLead')
             self.customerRelevance.fromDict(fromDict, 'customerRelevance')
 
             for key, value in {key: value for key, value in fromDict.items() if key not in ['messageId', 'category', 'priority', 'icon', 'iconName',
-                                                                                            'serviceLead', 'customerRelevance', 'text']}.items():
+                                                                                            'serviceLead', 'customerRelevance', 'text',
+                                                                                            'notificationId', 'iconColor']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             returnStr = f'{self.messageId.value}: {self.text.value}'  # pylint: disable=no-member
             if self.category.enabled:
                 returnStr += f'\n\tCategory: {self.category.value.value}'
-            if self.category.enabled:
+            if self.priority.enabled:
                 returnStr += f'\n\tPriority: {self.priority.value}'
             if self.customerRelevance.enabled:
                 returnStr += f'\n\tCustomer Relevance: {self.customerRelevance.value}'
@@ -152,3 +157,8 @@ class WarningLightsStatus(GenericStatus):
             TIRE = 'TIRE'
             ENGINE = 'ENGINE'
             UNKNOWN = 'unknown category'
+        
+        class IconColor(Enum,):
+            YELLOW = 'Yellow'
+            RED = 'Red'
+            UNKNOWN = 'unknown color'
