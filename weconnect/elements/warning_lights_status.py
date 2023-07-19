@@ -157,7 +157,7 @@ class WarningLightsStatus(GenericStatus):
             TIRE = 'TIRE'
             ENGINE = 'ENGINE'
             UNKNOWN = 'unknown category'
-        
+
         class IconColor(Enum,):
             YELLOW = 'Yellow'
             RED = 'Red'
