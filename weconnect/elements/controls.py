@@ -79,7 +79,6 @@ class Controls(AddressableObject):
                         self.honkAndFlashControl = ChangeableAttribute(
                             localAddress='honkAndFlash', parent=self, value=HonkAndFlashControlOperation.NONE, valueType=(HonkAndFlashControlOperation, int),
                             valueSetter=self.__setHonkAndFlashControlChange)
-                        self.honkAndFlashControl.enabled = False  # TODO: Remove this line when the endpoint becomes available
         if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
             self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                      valueSetter=self.__setWakeupControlChange)
@@ -249,7 +248,7 @@ class Controls(AddressableObject):
 
         data = {}
         data['spin'] = spin
-        data['duration'] = duration
+        data['duration_min'] = duration
 
         controlResponse = self.vehicle.weConnect.session.post(url, json=data, allow_redirects=True)
         if controlResponse.status_code != requests.codes['ok']:
@@ -348,12 +347,12 @@ class Controls(AddressableObject):
             if value == HonkAndFlashControlOperation.HONK_AND_FLASH:
                 mode = 'HONK_AND_FLASH'
             elif value == HonkAndFlashControlOperation.FLASH:
-                mode = 'FLASH_ONLY'
+                mode = 'flash'
             else:
                 raise ControlError('Could not control honkandflash, control mode %s cannot be understood', value.value)
             duration = 10
         elif isinstance(value, int):
-            mode = 'FLASH_ONLY'
+            mode = 'flash'
             duration = value
         else:
             raise ControlError('Could not control honkandflash, control argument %s cannot be understood', value)
