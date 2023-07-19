@@ -364,15 +364,14 @@ class Controls(AddressableObject):
                 or self.vehicle.domains['parking']['parkingPosition'].latitude.value is None:
             raise ControlError('Could not control honkandflash due to unavailability of parking position of the vehicle')
 
-        settingsDict = {}
-        settingsDict['duration_s'] = duration
-        settingsDict['mode'] = mode
-        settingsDict['userPosition'] = {}
-        settingsDict['userPosition']['latitude'] = self.vehicle.domains['parking']['parkingPosition'].latitude.value
-        settingsDict['userPosition']['longitude'] = self.vehicle.domains['parking']['parkingPosition'].longitude.value
+        data = {}
+        data['duration_s'] = duration
+        data['mode'] = mode
+        data['userPosition'] = {}
+        data['userPosition']['latitude'] = self.vehicle.domains['parking']['parkingPosition'].latitude.value
+        data['userPosition']['longitude'] = self.vehicle.domains['parking']['parkingPosition'].longitude.value
 
-        data = json.dumps(settingsDict)
-        controlResponse = self.vehicle.weConnect.session.post(url, data=data, allow_redirects=True)
+        controlResponse = self.vehicle.weConnect.session.post(url, json=data, allow_redirects=True)
         if controlResponse.status_code not in (requests.codes['ok'], requests.codes['no_content']):
             errorDict = controlResponse.json()
             if errorDict is not None and 'error' in errorDict:
