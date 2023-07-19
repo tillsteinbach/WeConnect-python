@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.56.2] - 2023-07-12
+### Fixed
+- Another small bugfix for fetching trips
+
 ## [0.56.1] - 2023-07-12
 ### Fixed
 - Don't throw error when fetching trips and car is not supporting certain categories
@@ -740,7 +744,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.56.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.56.2...HEAD
+[0.56.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.56.2
 [0.56.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.56.1
 [0.56.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.56.0
 [0.55.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.55.1
