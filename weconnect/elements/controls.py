@@ -344,15 +344,13 @@ class Controls(AddressableObject):
         if isinstance(value, HonkAndFlashControlOperation):
             if value not in [HonkAndFlashControlOperation.FLASH, HonkAndFlashControlOperation.HONK_AND_FLASH]:
                 raise ControlError('Could not control honkandflash, control operation %s cannot be executed', value)
-            if value == HonkAndFlashControlOperation.HONK_AND_FLASH:
-                mode = 'HONK_AND_FLASH'
-            elif value == HonkAndFlashControlOperation.FLASH:
-                mode = 'flash'
+            if value in [HonkAndFlashControlOperation.HONK_AND_FLASH, HonkAndFlashControlOperation.FLASH]:
+                mode = value.value
             else:
                 raise ControlError('Could not control honkandflash, control mode %s cannot be understood', value.value)
             duration = 10
         elif isinstance(value, int):
-            mode = 'flash'
+            mode = HonkAndFlashControlOperation.FLASH.value
             duration = value
         else:
             raise ControlError('Could not control honkandflash, control argument %s cannot be understood', value)
