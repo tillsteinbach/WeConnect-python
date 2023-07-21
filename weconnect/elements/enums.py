@@ -37,6 +37,7 @@ class BatteryCareMode(ControlInputEnum,):
 
 class CarType(Enum,):
     ELECTRIC = 'electric'
+    FUEL = 'fuel'
     HYBRID = 'hybrid'
     GASOLINE = 'gasoline'
     PETROL = 'petrol'
