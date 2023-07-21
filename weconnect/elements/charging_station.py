@@ -79,7 +79,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                             authTypeEnum = ChargingStation.AUTHTYPE(authType)
                         except ValueError:
                             authTypeEnum = ChargingStation.AUTHTYPE.UNKNOWN
-                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authType)
+                            LOG.warning('An unsupported auth type: %s was provided, please report this as a bug', authType)
                         self.authTypes[i].setValueWithCarTime(authTypeEnum, lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.authTypes.clear()
@@ -88,7 +88,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                             authTypeEnum = ChargingStation.AUTHTYPE(authType)
                         except ValueError:
                             authTypeEnum = ChargingStation.AUTHTYPE.UNKNOWN
-                            LOG.warning('An unsupported type: %s was provided, please report this as a bug', authType)
+                            LOG.warning('An unsupported auth type: %s was provided, please report this as a bug', authType)
                         self.authTypes.append(AddressableAttribute(localAddress=len(self.authTypes),
                                               parent=self.authTypes, value=authTypeEnum, valueType=ChargingStation.AUTHTYPE))
             else:
@@ -229,7 +229,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                 except ValueError:
                     self.available.setValueWithCarTime(ChargingStation.ChargingSpot.AVAILABILITY.UNKNOWN,
                                                        lastUpdateFromCar=None, fromServer=True)
-                    LOG.warning('An unsupported type: %s was provided,'
+                    LOG.warning('An availability type: %s was provided,'
                                 ' please report this as a bug', fromDict['available'])
             else:
                 self.available.enabled = False
@@ -287,7 +287,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                     except ValueError:
                         self.plugType.setValueWithCarTime(ChargingStation.ChargingSpot.PlugType.UNKNOWN,
                                                           lastUpdateFromCar=None, fromServer=True)
-                        LOG.warning('An unsupported type: %s was provided,'
+                        LOG.warning('An unsupported plug type: %s was provided,'
                                     ' please report this as a bug', fromDict['plugType'])
                 else:
                     self.plugType.enabled = False
