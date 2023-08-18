@@ -96,6 +96,7 @@ class ReadinessStatus(GenericStatus):
 
         class BatteryPowerLevel(Enum):
             COMFORT = 'comfort'
+            EMERGENCY = 'emergency'
             OFF = 'off'
             UNKNOWN = 'unknown battery power level'
 
