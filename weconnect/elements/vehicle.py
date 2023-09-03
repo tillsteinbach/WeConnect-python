@@ -392,10 +392,13 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                                                                                                                      codes['bad_gateway'],
                                                                                                                      codes['forbidden']])
                     if data is not None and 'data' in data:
-                        self.trips[tripType.value] = Trip(vehicle=self,
-                                                          parent=self.trips,
-                                                          tripType=tripType.value,
-                                                          fromDict=data['data'])
+                        if tripType.value in self.trips:
+                            self.trips[tripType.value].update(fromDict=data['data'])
+                        else:
+                            self.trips[tripType.value] = Trip(vehicle=self,
+                                                              parent=self.trips,
+                                                              tripType=tripType.value,
+                                                              fromDict=data['data'])
                     else:
                         if tripType.value in self.trips:
                             self.trips[tripType.value].enabled = False
