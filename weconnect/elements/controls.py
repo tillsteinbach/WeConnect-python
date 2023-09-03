@@ -58,13 +58,13 @@ class Controls(AddressableObject):
                             localAddress='windowheating', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setWindowHeatingControlChange)
                 elif isinstance(status, AccessStatus) and not status.error.enabled and self.vehicle.weConnect.spin is not None \
-                        and type(self.vehicle.weConnect.spin) != bool:
+                        and type(self.vehicle.weConnect.spin) is not bool:
                     if self.accessControl is None:
                         self.accessControl = ChangeableAttribute(
                             localAddress='access', parent=self, value=AccessControlOperation.NONE, valueType=AccessControlOperation,
                             valueSetter=self.__setAccessControlChange)
                 elif isinstance(status, AuxiliaryHeatingTimer) and not status.error.enabled and self.vehicle.weConnect.spin is not None \
-                        and type(self.vehicle.weConnect.spin) != bool:
+                        and type(self.vehicle.weConnect.spin) is not bool:
                     if self.accessControl is None:
                         self.auxiliaryHeating = ChangeableAttribute(
                             localAddress='auxiliaryHeating', parent=self, value=ControlOperation.NONE, valueType=(ControlOperation, int),
@@ -240,7 +240,7 @@ class Controls(AddressableObject):
             duration = int(value)
         else:
             raise ControlError('Could not control auxiliary heating, control argument %s cannot be understood', value)
-        if self.vehicle.weConnect.spin is None or type(self.vehicle.weConnect.spin) != str:
+        if self.vehicle.weConnect.spin is None or type(self.vehicle.weConnect.spin) is not str:
             raise ControlError('Could not control access, control operation needs an S-PIN')
         spin = self.vehicle.weConnect.spin
 
@@ -311,7 +311,7 @@ class Controls(AddressableObject):
             control = value
         else:
             raise ControlError('Could not control access, control argument %s cannot be understood', value)
-        if self.vehicle.weConnect.spin is None or type(self.vehicle.weConnect.spin) != str:
+        if self.vehicle.weConnect.spin is None or type(self.vehicle.weConnect.spin) is not str:
             raise ControlError('Could not control access, control operation needs an S-PIN')
         spin = self.vehicle.weConnect.spin
 
