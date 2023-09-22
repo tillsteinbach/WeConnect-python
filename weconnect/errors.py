@@ -2,6 +2,10 @@ class RetrievalError(Exception):
     pass
 
 
+class TooManyRequestsError(RetrievalError):
+    pass
+
+
 class SetterError(Exception):
     pass
 

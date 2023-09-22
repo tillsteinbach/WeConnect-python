@@ -17,7 +17,7 @@ from weconnect.domain import Domain
 from weconnect.elements.charging_station import ChargingStation
 from weconnect.elements.general_controls import GeneralControls
 from weconnect.addressable import AddressableLeaf, AddressableObject, AddressableDict
-from weconnect.errors import RetrievalError
+from weconnect.errors import RetrievalError, TooManyRequestsError
 from weconnect.weconnect_errors import ErrorEventType
 from weconnect.util import ExtendedEncoder
 
@@ -370,6 +370,11 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     data = statusResponse.json()
                     if self.cache is not None:
                         self.cache[url] = (data, str(datetime.utcnow()))
+                elif statusResponse.status_code in (requests.codes['too_many_requests']):
+                    self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
+                                     'Could not fetch data due to too many requests from your account')
+                    raise TooManyRequestsError('Could not fetch data due to too many requests from your account. '
+                                               f'Status Code was: {statusResponse.status_code}')
                 elif statusResponse.status_code == requests.codes['unauthorized']:
                     LOG.info('Server asks for new authorization')
                     self.login()
