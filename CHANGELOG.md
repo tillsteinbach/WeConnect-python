@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.58.2] - 2023-09-22
+### Added
+- New error class to deal with 429 errors from server (too many requests)
+
 ## [0.58.1] - 2023-09-22
 ### Added
 - Added some new auth types for charging stations
@@ -770,7 +774,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.58.1...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.58.2...HEAD
+[0.58.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.58.2
 [0.58.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.58.1
 [0.58.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.58.0
 [0.57.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.57.0
