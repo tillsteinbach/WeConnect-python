@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.58.3] - 2023-09-23
+### Fixed
+- Fixed bug with new handling of 429 errors
+
 ## [0.58.2] - 2023-09-22
 ### Added
 - New error class to deal with 429 errors from server (too many requests)
