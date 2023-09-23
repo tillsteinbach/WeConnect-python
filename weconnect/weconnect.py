@@ -370,7 +370,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                     data = statusResponse.json()
                     if self.cache is not None:
                         self.cache[url] = (data, str(datetime.utcnow()))
-                elif statusResponse.status_code in (requests.codes['too_many_requests']):
+                elif statusResponse.status_code == requests.codes['too_many_requests']:
                     self.notifyError(self, ErrorEventType.HTTP, str(statusResponse.status_code),
                                      'Could not fetch data due to too many requests from your account')
                     raise TooManyRequestsError('Could not fetch data due to too many requests from your account. '
