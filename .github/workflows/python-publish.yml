@@ -32,7 +32,7 @@ jobs:
           echo "version=$(echo $GITHUB_REF | sed 's#.*/v##')" >> $GITHUB_ENV
       - name: Autobump version
         run: |
-          PLACEHOLDER="__version__ = 'develop'"
+          PLACEHOLDER="__version__ = '0.0.0dev'"
           REPLACEMENT="__version__ = '${{ env.version }}'"
           VERSION_FILE="weconnect/__version.py"
           # ensure the placeholder is there. If grep doesn't find the placeholder
