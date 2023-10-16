@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.59.0] - 2023-10-16
+### Added
+- Added several new statuses and attributes
+
 ## [0.58.3] - 2023-09-23
 ### Fixed
 - Fixed bug with new handling of 429 errors
