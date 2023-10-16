@@ -25,7 +25,7 @@ class RangeStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        LOG.debug('Update Climatization settings from dict')
+        LOG.debug('Update range status from dict')
 
         if 'value' in fromDict:
             self.carType.fromDict(fromDict['value'], 'carType')

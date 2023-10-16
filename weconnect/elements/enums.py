@@ -48,6 +48,17 @@ class CarType(Enum,):
     UNKNOWN = 'unknown car type'
 
 
+class EngineType(Enum,):
+    GASOLINE = 'gasoline'
+    ELECTRIC = 'electric'
+    PETROL = 'petrol'
+    DIESEL = 'diesel'
+    CNG = 'cng'
+    LPG = 'lpg'
+    INVALID = 'invalid'
+    UNKNOWN = 'unknown engine type'
+
+
 class SpinState(Enum,):
     DEFINED = 'DEFINED'
     UNKNOWN = 'unknown spin state'

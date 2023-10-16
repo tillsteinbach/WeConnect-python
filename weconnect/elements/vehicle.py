@@ -33,6 +33,7 @@ from weconnect.elements.climatization_status import ClimatizationStatus
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.climatization_timer import ClimatizationTimer
 from weconnect.elements.departure_timers_status import DepartureTimersStatus
+from weconnect.elements.fuel_level_status import FuelLevelStatus
 from weconnect.elements.lights_status import LightsStatus
 from weconnect.elements.maintenance_status import MaintenanceStatus
 from weconnect.elements.warning_lights_status import WarningLightsStatus
@@ -304,6 +305,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'odometerStatus': OdometerMeasurement,
                 'oilLevelStatus': GenericStatus,
                 'measurements': GenericStatus,
+                'temperatureBatteryStatus': GenericStatus,
+                'fuelLevelStatus': FuelLevelStatus,
             },
             Domain.BATTERY_SUPPORT: {
                 'batterySupportStatus': BatterySupportStatus,

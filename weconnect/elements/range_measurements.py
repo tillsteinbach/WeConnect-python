@@ -15,6 +15,8 @@ class RangeMeasurements(GenericStatus):
         fromDict=None,
         fixAPI=True,
     ):
+        self.totalRange_km = AddressableAttribute(
+            localAddress='totalRange_km', value=None, parent=self, valueType=int)
         self.electricRange = AddressableAttribute(
             localAddress='electricRange', parent=self, value=None, valueType=int)
         self.gasolineRange = AddressableAttribute(
@@ -30,21 +32,25 @@ class RangeMeasurements(GenericStatus):
         LOG.debug('Update battery status from dict')
 
         if 'value' in fromDict:
+            self.totalRange_km.fromDict(fromDict['value'], 'totalRange_km')
             self.electricRange.fromDict(fromDict['value'], 'electricRange')
             self.gasolineRange.fromDict(fromDict['value'], 'gasolineRange')
             self.adBlueRange.fromDict(fromDict['value'], 'adBlueRange')
             self.dieselRange.fromDict(fromDict['value'], 'dieselRange')
         else:
+            self.totalRange_km.enabled = False
             self.electricRange.enabled = False
             self.gasolineRange.enabled = False
             self.adBlueRange.enabled = False
             self.dieselRange.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(
-            ignoreAttributes + ['electricRange', 'gasolineRange', 'adBlueRange', 'dieselRange']))
+            ignoreAttributes + ['totalRange_km', 'electricRange', 'gasolineRange', 'adBlueRange', 'dieselRange']))
 
     def __str__(self):
         string = super().__str__()
+        if self.totalRange_km.enabled:
+            string += f'\n\tTotal Range: {self.totalRange_km.value}km'
         if self.electricRange.enabled:
             string += f'\n\tElectric Range: {self.electricRange.value}km'
         if self.gasolineRange.enabled:
