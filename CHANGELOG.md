@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.59.1] - 2023-10-16
+### Added
+- Added PCS_REMOTE authentification to charging stations enum
+
+### Changed
+- Updated pillow dependencies
+
 ## [0.59.0] - 2023-10-16
 ### Added
 - Added several new statuses and attributes
