@@ -131,6 +131,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
         NO_AUTH = 'NO_AUTH'
         ONLINE = 'ONLINE'
         DCS_REMOTE = 'DCS_REMOTE'
+        PCS_REMOTE = 'PCS_REMOTE'
         ELLI_REMOTE = 'ELLI_REMOTE'
         UNKNOWN = 'UNKNOWN'
 
