@@ -40,7 +40,7 @@ class RangeStatus(GenericStatus):
             else:
                 self.secondaryEngine.enabled = False
 
-            if self.fixAPI and round((self.totalRange_km.value or 0)*0.621371) == int(fromDict['value'],['totalRange_km']):
+            if self.fixAPI and round((self.totalRange_km.value or 0)*0.621371) == int(fromDict['value']['totalRange_km']):
                 LOG.info('%s: Attribute totalRange_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used', self.getGlobalAddress())
             else:
                 self.totalRange_km.fromDict(fromDict['value'], 'totalRange_km')
@@ -96,8 +96,8 @@ class RangeStatus(GenericStatus):
             self.currentFuelLevel_pct.fromDict(fromDict, 'currentFuelLevel_pct')
             
             if (self.parent.fixAPI
-                and round((self.remainingRange_km.value or 0)*0.621371) == int(fromDict['value'],['remainingRange_km'])
-                and self.currentSOC_pct.value == int(fromDict['value'], ['currentSOC_pct'])):
+                and round((self.remainingRange_km.value or 0)*0.621371) == int(fromDict['value']['remainingRange_km'])
+                and self.currentSOC_pct.value == int(fromDict['value']['currentSOC_pct'])):
                 LOG.info('%s: Attribute remainingRange_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used', self.getGlobalAddress())
             else:
                 self.remainingRange_km.fromDict(fromDict, 'remainingRange_km')
