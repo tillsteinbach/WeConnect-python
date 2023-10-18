@@ -40,7 +40,10 @@ class RangeStatus(GenericStatus):
             else:
                 self.secondaryEngine.enabled = False
 
-            self.totalRange_km.fromDict(fromDict['value'], 'totalRange_km')
+            if self.fixAPI and round((self.totalRange_km.value or 0)*0.621371) == int(fromDict['value'],'totalRange_km'):
+                LOG.info('%s: Attribute totalRange_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used', self.getGlobalAddress())
+            else:
+                self.totalRange_km.fromDict(fromDict['value'], 'totalRange_km')
 
         else:
             self.carType.enabled = False
@@ -82,6 +85,7 @@ class RangeStatus(GenericStatus):
                 localAddress='currentFuelLevel_pct', parent=self, value=None, valueType=int)
             self.remainingRange_km = AddressableAttribute(
                 localAddress='remainingRange_km', parent=self, value=None, valueType=int)
+
             if fromDict is not None:
                 self.update(fromDict)
 
@@ -89,9 +93,16 @@ class RangeStatus(GenericStatus):
             LOG.debug('Update Engine from dict')
 
             self.type.fromDict(fromDict, 'type')
-            self.currentSOC_pct.fromDict(fromDict, 'currentSOC_pct')
             self.currentFuelLevel_pct.fromDict(fromDict, 'currentFuelLevel_pct')
-            self.remainingRange_km.fromDict(fromDict, 'remainingRange_km')
+            
+            if (self.parent.fixAPI
+                and round((self.remainingRange_km.value or 0)*0.621371) == int(fromDict['value'],'remainingRange_km')
+                and self.currentSOC_pct.value == int(fromDict['value'], 'currentSOC_pct')):
+                LOG.info('%s: Attribute remainingRange_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used', self.getGlobalAddress())
+            else:
+                self.remainingRange_km.fromDict(fromDict, 'remainingRange_km')
+            
+            self.currentSOC_pct.fromDict(fromDict, 'currentSOC_pct')
 
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['type', 'currentSOC_pct', 'currentFuelLevel_pct', 'remainingRange_km']}.items():
