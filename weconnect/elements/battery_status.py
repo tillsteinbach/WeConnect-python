@@ -32,17 +32,18 @@ class BatteryStatus(GenericStatus):
                     cruisingRangeElectric_km = None
                     LOG.info('%s: Attribute cruisingRangeElectric_km was error value 0x3FFF. Setting error state instead'
                              ' of 16383 km.', self.getGlobalAddress())
-                
-                if (self.fixAPI 
-                    and round((self.cruisingRangeElectric_km.value or 0)*0.621371) == cruisingRangeElectric_km 
+
+                if (self.fixAPI
+                    and round((self.cruisingRangeElectric_km.value or 0) * 0.621371) == cruisingRangeElectric_km
                     and self.currentSOC_pct.value == int(fromDict['value']['currentSOC_pct'])):
-                    LOG.info('%s: Attribute cruisingRangeElectric_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used', self.getGlobalAddress())
+                    LOG.info('%s: Attribute cruisingRangeElectric_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used',
+                             self.getGlobalAddress())
                 else:
                     self.cruisingRangeElectric_km.setValueWithCarTime(
                         cruisingRangeElectric_km, lastUpdateFromCar=None, fromServer=True)
             else:
                 self.cruisingRangeElectric_km.enabled = False
-            
+
             self.currentSOC_pct.fromDict(fromDict['value'], 'currentSOC_pct')
         else:
             self.currentSOC_pct.enabled = False
