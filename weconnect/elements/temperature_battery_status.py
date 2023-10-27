@@ -2,6 +2,7 @@ import logging
 
 from weconnect.addressable import AddressableAttribute
 from weconnect.elements.generic_status import GenericStatus
+from weconnect.util import kelvinToCelsius
 
 LOG = logging.getLogger("weconnect")
 
@@ -38,5 +39,6 @@ class TemperatureBatteryStatus(GenericStatus):
     def __str__(self):
         string = super().__str__()
         if self.temperatureHvBatteryMin_K.enabled and self.temperatureHvBatteryMax_K.enabled:
-            string += f'\n\tBattery temperature between {self.temperatureHvBatteryMin_K.value} and {self.temperatureHvBatteryMax_K.value}°C'
+            string += f'\n\tBattery temperature between {kelvinToCelsius(self.temperatureHvBatteryMin_K.value)} and' \
+                + f' {kelvinToCelsius(self.temperatureHvBatteryMax_K.value)}°C'
         return string
