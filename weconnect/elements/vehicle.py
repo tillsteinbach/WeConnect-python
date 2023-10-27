@@ -44,6 +44,7 @@ from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.elements.odometer_measurement import OdometerMeasurement
 from weconnect.elements.range_measurements import RangeMeasurements
 from weconnect.elements.readiness_status import ReadinessStatus
+from weconnect.elements.temperature_battery_status import TemperatureBatteryStatus
 from weconnect.elements.charging_profiles import ChargingProfiles
 from weconnect.elements.trip import Trip
 from weconnect.errors import APICompatibilityError, RetrievalError, APIError
@@ -305,7 +306,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'odometerStatus': OdometerMeasurement,
                 'oilLevelStatus': GenericStatus,
                 'measurements': GenericStatus,
-                'temperatureBatteryStatus': GenericStatus,
+                'temperatureBatteryStatus': TemperatureBatteryStatus,
                 'fuelLevelStatus': FuelLevelStatus,
             },
             Domain.BATTERY_SUPPORT: {
