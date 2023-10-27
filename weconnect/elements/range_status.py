@@ -98,7 +98,7 @@ class RangeStatus(GenericStatus):
 
             if (self.parent.fixAPI
                 and round((self.remainingRange_km.value or 0) * 0.621371) == int(fromDict['remainingRange_km'])
-                and self.currentSOC_pct.value == int(fromDict['currentSOC_pct'])):
+                    and self.currentSOC_pct.value == int(fromDict['currentSOC_pct'])):
                 LOG.info('%s: Attribute remainingRange_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used',
                          self.getGlobalAddress())
             else:
