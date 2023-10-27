@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.59.3] - 2023-10-27
+### Fixed
+- Fixes a bug introduced by the range correction
+
 ## [0.59.2] - 2023-10-27
 ### Fixed
 - Fixes a bug in the API that causes incorrect range values for cars using miles instead of km (thanks to user @bendavidson for the contribution)
@@ -796,7 +800,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.3...HEAD
+[0.59.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.3
 [0.59.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.2
 [0.59.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.1
 [0.59.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.0
