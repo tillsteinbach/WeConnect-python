@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 - No unreleased changes so far
 
 ## [0.59.2] - 2023-10-27
+### Fixed
+- Fixes a bug in the API that causes incorrect range values for cars using miles instead of km (thanks to user @bendavidson for the contribution)
+
 ### Added
 - Added attributes for Hv battery temperature
 
