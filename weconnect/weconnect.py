@@ -190,14 +190,17 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
     def update(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,
                selective: Optional[list[Domain]] = None) -> None:
         self.__elapsed.clear()
-        self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force, selective=selective)
-        self.updateChargingStations(force=force)
-        self.updateComplete()
-        self.__session.cookies.clear()  # Clear cookies to have a fresh session afterwards
+        try:
+            self.updateVehicles(updateCapabilities=updateCapabilities, updatePictures=updatePictures, force=force, selective=selective)
+            self.updateChargingStations(force=force)
+        finally:
+            self.updateComplete()
+            self.__session.cookies.clear()  # Clear cookies to have a fresh session afterwards
 
     def updateVehicles(self, updateCapabilities: bool = True, updatePictures: bool = True, force: bool = False,  # noqa: C901
                        selective: Optional[list[Domain]] = None) -> None:
         with self.lock:
+            catchedRetrievalError = None
             url = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles'
             data = self.fetchData(url, force)
             if data is not None:
@@ -218,12 +221,15 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
                                 self.__vehicles[vin].update(fromDict=vehicleDict, updateCapabilities=updateCapabilities, updatePictures=updatePictures,
                                                             selective=selective)
                         except RetrievalError as retrievalError:
+                            catchedRetrievalError = retrievalError
                             LOG.error('Failed to retrieve data for VIN %s: %s', vin, retrievalError)
                     # delete those vins that are not anymore available
                     for vin in [vin for vin in self.__vehicles if vin not in vins]:
                         del self.__vehicles[vin]
 
                     self.__cache[url] = (data, str(datetime.utcnow()))
+            if catchedRetrievalError:
+                raise catchedRetrievalError
 
     def setChargingStationSearchParameters(self, latitude: float, longitude: float, searchRadius: Optional[int] = None, market: Optional[str] = None,
                                            useLocale: Optional[str] = locale.getlocale()[0]) -> None:
