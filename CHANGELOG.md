@@ -805,7 +805,7 @@ Minor fix in observer interface
 Initial release
 
 [unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.4...HEAD
-[0.59.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.4
+[0.59.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.4
 [0.59.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.3
 [0.59.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.2
 [0.59.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.1
