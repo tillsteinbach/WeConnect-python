@@ -47,7 +47,7 @@ from weconnect.elements.readiness_status import ReadinessStatus
 from weconnect.elements.temperature_battery_status import TemperatureBatteryStatus
 from weconnect.elements.charging_profiles import ChargingProfiles
 from weconnect.elements.trip import Trip
-from weconnect.errors import APICompatibilityError, RetrievalError, APIError
+from weconnect.errors import APICompatibilityError, RetrievalError, APIError, TooManyRequestsError
 from weconnect.util import toBool
 from weconnect.weconnect_errors import ErrorEventType
 from weconnect.domain import Domain
@@ -334,6 +334,8 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
         with self.lock:
             url: str = 'https://emea.bff.cariad.digital/vehicle/v1/vehicles/' + self.vin.value + '/selectivestatus?jobs=' + ','.join(jobs)
             data: Optional[Dict[str, Any]] = self.weConnect.fetchData(url, force)
+            if len(data) == 0:
+                LOG.warning('%s: Vehicle data for %s is empty, this can happen when there are too many requests', self.getGlobalAddress(), self.vin.value)
             if data is not None:
                 for domain, keyClassMap in jobKeyClassMap.items():
                     if not updateCapabilities and domain == Domain.USER_CAPABILITIES:
@@ -389,24 +391,27 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         parkingPosition.enabled = False
 
             if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS])):
-                for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
-                    url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'
-                    data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
-                                                                                                                     codes['no_content'],
-                                                                                                                     codes['bad_gateway'],
-                                                                                                                     codes['forbidden']])
-                    if data is not None and 'data' in data:
-                        if tripType.value in self.trips:
-                            self.trips[tripType.value].update(fromDict=data['data'])
-                        else:
-                            self.trips[tripType.value] = Trip(vehicle=self,
-                                                              parent=self.trips,
-                                                              tripType=tripType.value,
-                                                              fromDict=data['data'])
-                    else:
-                        if tripType.value in self.trips:
-                            self.trips[tripType.value].enabled = False
+                try:
+                    for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
+                        url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'
 
+                        data = self.weConnect.fetchData(url, force, allowEmpty=True, allowHttpError=True, allowedErrors=[codes['not_found'],
+                                                                                                                         codes['no_content'],
+                                                                                                                         codes['bad_gateway'],
+                                                                                                                         codes['forbidden']])
+                        if data is not None and 'data' in data:
+                            if tripType.value in self.trips:
+                                self.trips[tripType.value].update(fromDict=data['data'])
+                            else:
+                                self.trips[tripType.value] = Trip(vehicle=self,
+                                                                  parent=self.trips,
+                                                                  tripType=tripType.value,
+                                                                  fromDict=data['data'])
+                        else:
+                            if tripType.value in self.trips:
+                                self.trips[tripType.value].enabled = False
+                except TooManyRequestsError:
+                    LOG.warning('Trips could not be fetched for car %s due to too many requests.', self.vin.value)
         # Controls
         self.controls.update()
 

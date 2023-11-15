@@ -9,11 +9,12 @@ import requests
 from oauthlib.common import UNICODE_ASCII_CHARACTER_SET, generate_nonce, generate_token
 from oauthlib.oauth2.rfc6749.parameters import parse_authorization_code_response, parse_token_response, prepare_grant_uri
 
-from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
 from weconnect.auth.auth_util import addBearerAuthHeader
 from weconnect.errors import AuthentificationError, RetrievalError
+
+from weconnect.elements.helpers.blacklist_retry import BlacklistRetry
 
 
 LOG = logging.getLogger("weconnect")
@@ -64,10 +65,11 @@ class OpenIDSession(requests.Session):
         self._retries = newValue
         if newValue:
             # Retry on internal server error (500)
-            retries = Retry(total=newValue,
-                            backoff_factor=0.1,
-                            status_forcelist=[500],
-                            raise_on_status=False)
+            retries = BlacklistRetry(total=newValue,
+                                     backoff_factor=0.1,
+                                     status_forcelist=[500],
+                                     status_blacklist=[429],
+                                     raise_on_status=False)
             self.mount('https://', HTTPAdapter(max_retries=retries))
 
     @property

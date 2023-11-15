@@ -65,13 +65,13 @@ class Controls(AddressableObject):
                             valueSetter=self.__setAccessControlChange)
                 elif isinstance(status, AuxiliaryHeatingTimer) and not status.error.enabled and self.vehicle.weConnect.spin is not None \
                         and type(self.vehicle.weConnect.spin) is not bool:
-                    if self.accessControl is None:
+                    if self.auxiliaryHeating is None:
                         self.auxiliaryHeating = ChangeableAttribute(
                             localAddress='auxiliaryHeating', parent=self, value=ControlOperation.NONE, valueType=(ControlOperation, int),
                             valueSetter=self.__setAuxiliaryHeatingChange)
                 elif isinstance(status, ActiveVentilationTimer) and not status.error.enabled:
-                    if self.accessControl is None:
-                        self.auxiliaryHeating = ChangeableAttribute(
+                    if self.activeVentilation is None:
+                        self.activeVentilation = ChangeableAttribute(
                             localAddress='activeVentilation', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                             valueSetter=self.__setActiveVentilationChange)
                 elif isinstance(status, ParkingPosition) and not status.error.enabled:
