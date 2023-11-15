@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.59.5] - 2023-11-15
+### Fixed
+- Fixes a bug in activeVentilation and auxiliaryHeating controls
+
+### Changed
+- Do not immediatlyretry on 429 errors
+
 ## [0.59.4] - 2023-10-29
 ### Changed
 - Improves error propagation on 429 errors
@@ -804,7 +811,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.4...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.5...HEAD
+[0.59.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.5
 [0.59.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.4
 [0.59.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.3
 [0.59.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.2
