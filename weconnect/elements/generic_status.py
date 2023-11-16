@@ -173,6 +173,7 @@ class GenericStatus(AddressableObject):
 
         class Status(Enum,):
             SUCCESSFULL = 'successful'
+            ERROR = 'error'
             FAIL = 'fail'
             POLLING_TIMEOUT = 'polling_timeout'
             IN_PROGRESS = 'in_progress'
