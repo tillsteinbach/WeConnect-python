@@ -21,6 +21,7 @@ from weconnect.elements.controls import Controls
 from weconnect.elements.access_status import AccessStatus
 from weconnect.elements.activeventilation_timer import ActiveVentilationTimer
 from weconnect.elements.auxiliaryheating_timer import AuxiliaryHeatingTimer
+from weconnect.elements.auxiliaryheating_status import AuxiliaryHeatingStatus
 from weconnect.elements.battery_status import BatteryStatus
 from weconnect.elements.lv_battery_status import LVBatteryStatus
 from weconnect.elements.battery_support_status import BatterySupportStatus
@@ -270,6 +271,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'windowHeatingStatus': WindowHeatingStatus,
                 'climatisationRequestStatus': GenericRequestStatus,
                 'climatisationSettingsRequestStatus': GenericRequestStatus,
+                'auxiliaryHeatingStatus': AuxiliaryHeatingStatus,
             },
             Domain.CLIMATISATION_TIMERS: {
                 'climatisationTimersStatus': ClimatizationTimer,

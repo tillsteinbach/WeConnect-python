@@ -132,6 +132,8 @@ class Timer(AddressableObject):
             super().__init__(localAddress=localAddress, parent=parent)
             self.startDateTime = AddressableAttribute(
                 localAddress='startDateTime', parent=self, value=None, valueType=datetime)
+            self.startDateTimeLocal = AddressableAttribute(
+                localAddress='startDateTimeLocal', parent=self, value=None, valueType=datetime)
             self.occurringOn = AddressableAttribute(
                 localAddress='occurringOn', parent=self, value=None, valueType=str)
             self.startTime = AddressableAttribute(
@@ -146,6 +148,11 @@ class Timer(AddressableObject):
                 self.startDateTime.setValueWithCarTime(robustTimeParse(fromDict["startDateTime"]), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.startDateTime.enabled = False
+            
+            if 'startDateTimeLocal' in fromDict:
+                self.startDateTimeLocal.setValueWithCarTime(robustTimeParse(fromDict["startDateTimeLocal"]), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.startDateTimeLocal.enabled = False
 
             self.occurringOn.fromDict(fromDict, 'occurringOn')
 
@@ -156,13 +163,15 @@ class Timer(AddressableObject):
                 self.startTime.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['startDateTime', 'occurringOn', 'startTime']}.items():
+                               if key not in ['startDateTime', 'startDateTimeLocal', 'occurringOn', 'startTime']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             returnString = ""
             if self.startDateTime.enabled:
                 returnString += self.startDateTime.value.isoformat()  # pylint: disable=no-member
+            elif self.startDateTimeLocal.enabled:
+                returnString += self.startDateTimeLocal.value.isoformat()  # pylint: disable=no-member
             if self.occurringOn.enabled:
                 returnString += self.occurringOn.value
             if self.startTime.enabled:
