@@ -34,7 +34,7 @@ class BatteryStatus(GenericStatus):
                              ' of 16383 km.', self.getGlobalAddress())
 
                 if (self.fixAPI
-                    and round((self.cruisingRangeElectric_km.value or 0) * 0.621371) == cruisingRangeElectric_km
+                    and round((self.cruisingRangeElectric_km.value or 0) * 0.621371) == cruisingRangeElectric_km and cruisingRangeElectric_km != 0
                         and self.currentSOC_pct.value == int(fromDict['value']['currentSOC_pct'])):
                     LOG.info('%s: Attribute cruisingRangeElectric_km was miscalculated (miles/km) this is a bug in the API and the new value will not be used',
                              self.getGlobalAddress())
