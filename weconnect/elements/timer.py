@@ -148,7 +148,7 @@ class Timer(AddressableObject):
                 self.startDateTime.setValueWithCarTime(robustTimeParse(fromDict["startDateTime"]), lastUpdateFromCar=None, fromServer=True)
             else:
                 self.startDateTime.enabled = False
-            
+
             if 'startDateTimeLocal' in fromDict:
                 self.startDateTimeLocal.setValueWithCarTime(robustTimeParse(fromDict["startDateTimeLocal"]), lastUpdateFromCar=None, fromServer=True)
             else:
