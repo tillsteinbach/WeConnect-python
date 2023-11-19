@@ -31,6 +31,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
         self.isFavorite = AddressableAttribute(localAddress='isFavorite', parent=self, value=None, valueType=bool)
         self.operator = None
         self.isWeChargePartner = AddressableAttribute(localAddress='isWeChargePartner', parent=self, value=None, valueType=bool)
+        self.vwGroupPartners = AddressableList(localAddress='vwGroupPartners', parent=self)
 
         self.fixAPI = fixAPI
 
@@ -108,6 +109,29 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                 self.operator.enabled = False
                 self.operator = None
 
+            if 'vwGroupPartners' in fromDict and fromDict['vwGroupPartners'] is not None:
+                if len(fromDict['vwGroupPartners']) == len(self.vwGroupPartners):
+                    for i, vwGroupPartner in enumerate(fromDict['vwGroupPartners']):
+                        try:
+                            vwGroupPartnerEnum = ChargingStation.VWGROUPPARTNER(vwGroupPartner)
+                        except ValueError:
+                            vwGroupPartnerEnum = ChargingStation.VWGROUPPARTNER.UNKNOWN
+                            LOG.warning('An unsupported vwGroupPartner: %s was provided, please report this as a bug', vwGroupPartner)
+                        self.vwGroupPartners[i].setValueWithCarTime(vwGroupPartnerEnum, lastUpdateFromCar=None, fromServer=True)
+                else:
+                    self.vwGroupPartners.clear()
+                    for vwGroupPartner in fromDict['vwGroupPartners']:
+                        try:
+                            vwGroupPartnerEnum = ChargingStation.VWGROUPPARTNER(vwGroupPartner)
+                        except ValueError:
+                            vwGroupPartnerEnum = ChargingStation.VWGROUPPARTNER.UNKNOWN
+                            LOG.warning('An unsupported vwGroupPartner type: %s was provided, please report this as a bug', authType)
+                        self.vwGroupPartners.append(AddressableAttribute(localAddress=len(self.vwGroupPartners),
+                                                    parent=self.vwGroupPartners, value=vwGroupPartnerEnum, valueType=ChargingStation.VWGROUPPARTNER))
+            else:
+                self.vwGroupPartners.enabled = False
+                self.vwGroupPartners.clear()
+
             for key, value in {key: value for key, value in fromDict.items()
                                if key not in ['id',
                                               'name',
@@ -121,7 +145,8 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
                                               'filteredOut',
                                               'isFavorite',
                                               'isWeChargePartner',
-                                              'cpoiOperatorInfo']}.items():
+                                              'cpoiOperatorInfo',
+                                              'vwGroupPartners']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
     class AUTHTYPE(Enum):
@@ -133,6 +158,13 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
         DCS_REMOTE = 'DCS_REMOTE'
         PCS_REMOTE = 'PCS_REMOTE'
         ELLI_REMOTE = 'ELLI_REMOTE'
+        UNKNOWN = 'UNKNOWN'
+
+    class VWGROUPPARTNER(Enum):
+        PCS = 'pcs'
+        WE_CHARGE = 'we_charge'
+        BOCN = 'bocn'
+        ETRON = 'etron'
         UNKNOWN = 'UNKNOWN'
 
     class Address(AddressableObject):
@@ -382,6 +414,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
         for spot in self.chargingSpots:
             returnString += ''.join(['\t' + line for line in str(spot).splitlines(True)]) + '\n'
         returnString += f'Authentification:    {", ".join([authtype.value.value for authtype in self.authTypes])}\n'
+        returnString += f'VW Group Partners:   {", ".join([vwGroupPartner.value.value for vwGroupPartner in self.vwGroupPartners])}\n'
         returnString += 'Options:             '
         if self.filteredOut.enabled and self.filteredOut.value:
             returnString += 'filtered out; '
