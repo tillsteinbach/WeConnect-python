@@ -622,7 +622,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 if warningLightsStatus.warningLights.enabled:
                     for warningLight in warningLightsStatus.warningLights.values():
                         if warningLight.icon.enabled:
-                            draw = ImageDraw.Draw(imgWithBadges)
+                            draw = ImageDraw.Draw(imgWithBadges.convert("RGBA"))
                             draw.ellipse(((imgWidth - 100), warningLightoffset, (imgWidth - 1), (warningLightoffset + 100)), fill=(0, 0, 0, 200))
                             lightImage = warningLight.icon.value
                             lightImage = lightImage.resize((64, 64), Image.LANCZOS)
