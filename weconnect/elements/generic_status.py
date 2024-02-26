@@ -187,4 +187,5 @@ class GenericStatus(AddressableObject):
             FAIL_CHARGE_PLUG_NOT_CONNECTED = 'fail_charge_plug_not_connected'
             FAIL_PLUG_DISCONNECTED = 'fail_plug_disconnected'
             FAIL_NO_EXTERNAL_POWER = 'fail_no_external_power'
+            FAIL_EXTERNAL_POWER_SUPPLY = 'fail_external_power_supply'
             UNKNOWN = 'unknown status'

@@ -2,7 +2,7 @@ from datetime import datetime, time
 import logging
 
 from weconnect.addressable import AddressableAttribute, AddressableDict, AddressableObject
-from weconnect.elements.enums import UnlockPlugState
+from weconnect.elements.enums import UnlockPlugState, TargetSOCReachable
 from weconnect.elements.generic_settings import GenericSettings
 from weconnect.elements.timer import Timer
 
@@ -20,6 +20,7 @@ class ChargingProfiles(GenericSettings):
     ):
         self.profiles = AddressableDict(localAddress='profiles', parent=self)
         self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None, valueType=datetime)
+        self.nextChargingTimer = None
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):
@@ -42,21 +43,27 @@ class ChargingProfiles(GenericSettings):
                 self.profiles.enabled = False
 
             self.timeInCar.fromDict(fromDict['value'], 'timeInCar')
+            if 'nextChargingTimer' in fromDict['value'] and fromDict['value']['nextChargingTimer'] is not None:
+                self.nextChargingTimer = ChargingProfiles.NextChargingTimer(parent=self, fromDict=fromDict['value']['nextChargingTimer'])
+            else:
+                self.nextChargingTimer = None
         else:
             self.profiles.clear()
             self.profiles.enabled = False
             self.timeInCar.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['profiles', 'timeInCar']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['profiles', 'timeInCar', 'nextChargingTimer']))
 
     def __str__(self):
         string = super().__str__()
         if self.timeInCar.enabled:
             string += f'\n\tTime in Car: {self.timeInCar.value.isoformat()}'  # pylint: disable=no-member
             string += f' (captured at {self.carCapturedTimestamp.value.isoformat()})'  # pylint: disable=no-member
-        string += f'\n\t\tProfiles: {len(self.profiles)} items'
+        string += f'\n\tProfiles: {len(self.profiles)} items'
         for profile in self.profiles.values():
             string += '\n' + ''.join(['\t\t\t' + line for line in str(profile).splitlines(True)])
+        if self.nextChargingTimer is not None:
+            string += f'\n\tNext Charging Timer: {self.nextChargingTimer}'
         return string
 
     class ChargingProfile(AddressableObject):
@@ -221,3 +228,36 @@ class ChargingProfiles(GenericSettings):
                 if self.autoUnlockPlugWhenCharged.enabled:
                     string += f'\n\tAuto Unlock When Charged: {self.autoUnlockPlugWhenCharged.value.value}'
                 return string
+
+    class NextChargingTimer(AddressableObject):
+        def __init__(
+            self,
+            parent,
+            fromDict
+        ):
+            super().__init__(localAddress='nextChargingTimer', parent=parent)
+            self.timer = None
+            self.targetSOCreachable = AddressableAttribute(localAddress='targetSOCreachable', value=None, parent=self, valueType=TargetSOCReachable)
+            if fromDict is not None:
+                self.update(fromDict)
+
+        def update(self, fromDict):
+            LOG.debug('Update nextChargingTimer from dict')
+
+            if 'id' in fromDict and fromDict['id'] < len(self.parent.profiles):
+                self.timer = self.parent.profiles[fromDict['id']]
+
+            self.targetSOCreachable.fromDict(fromDict, 'targetSOCreachable')
+
+            for key, value in {key: value for key, value in fromDict.items() if key not in ['id', 'targetSOCreachable']}.items():
+                LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
+
+        def __str__(self):
+            string = ''
+            if self.timer is not None and self.timer.enabled:
+                string += f'{self.timer}'
+            else:
+                string += 'none'
+            if self.targetSOCreachable.enabled:
+                string += f'\n\tTarget SOC reachable: {self.targetSOCreachable.value.value}'
+            return string

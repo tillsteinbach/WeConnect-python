@@ -39,7 +39,7 @@ class GenericCapability(AddressableObject):
                     statuses.append(GenericCapability.Status(status))
                 except ValueError:
                     statuses.append(GenericCapability.Status(GenericCapability.Status.UNKNOWN))
-                    LOG.warning('An unsupported status: %s was provided, please report this as a bug', status)
+                    LOG.debug('An unsupported status: %s was provided, please report this as a bug', status)
             self.status.setValueWithCarTime(statuses, lastUpdateFromCar=None, fromServer=True)
         else:
             self.status.enabled = False
@@ -81,4 +81,5 @@ class GenericCapability(AddressableObject):
         INSUFFICIENT_RIGHTS = 3003
         CONSENT_MISSING = 3004
         LIMITED_FEATURE = 3005
+        AUTH_APP_CERT_ERROR = 3006
         STATUS_UNSUPPORTED = 4001

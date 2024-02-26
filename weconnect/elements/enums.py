@@ -62,3 +62,9 @@ class EngineType(Enum,):
 class SpinState(Enum,):
     DEFINED = 'DEFINED'
     UNKNOWN = 'unknown spin state'
+
+
+class TargetSOCReachable(Enum,):
+    INVALID = 'invalid'
+    CALCULATING = 'calculating'
+    UNKNOWN = 'unknown'
