@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.0] - 2024-02-26
+### Fixed
+- Fixes a bug in activeVentilation and auxiliaryHeating controls
+- Problem showing error related to miles/km conversion fixed
+- Problem with RGBA conversion fixed
+
+### Added
+- AuxiliaryHeatingStatus added
+- Several new Attributes added
+
+### Changed
+- Updated pillow dependency to 10.2.0, fixing potential security issue
+- Updated several dependencies
+
 ## [0.59.5] - 2023-11-15
 ### Fixed
 - Fixes a bug in activeVentilation and auxiliaryHeating controls
@@ -811,7 +825,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.59.5...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.0...HEAD
+[0.60.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.0
 [0.59.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.5
 [0.59.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.4
 [0.59.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.59.3
