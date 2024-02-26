@@ -210,7 +210,7 @@ class AccessStatus(GenericStatus):
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
-            return f'{self.id}: {self.openState.value.value}'  # pylint: disable=no-member 
+            return f'{self.id}: {self.openState.value.value}'  # pylint: disable=no-member
 
         class OpenState(Enum,):
             OPEN = 'open'
