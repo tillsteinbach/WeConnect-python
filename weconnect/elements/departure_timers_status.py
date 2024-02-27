@@ -172,11 +172,14 @@ class DepartureTimersStatus(GenericStatus):
                 super().__init__(localAddress=localAddress, parent=parent)
                 self.departureTimeLocal = AddressableAttribute(
                     localAddress='departureTimeLocal', parent=self, value=None, valueType=datetime)
+                self.targetTimeLocal = AddressableAttribute(
+                    localAddress='targetTimeLocal', parent=self, value=None, valueType=datetime)
                 self.repetitionDays = AddressableDict(localAddress='repetitionDays', parent=self)
+                self.recurringOn = AddressableDict(localAddress='recurringOn', parent=self)
                 if fromDict is not None:
                     self.update(fromDict)
 
-            def update(self, fromDict):
+            def update(self, fromDict):  # noqa: C901
                 LOG.debug('Update recurring timer from dict')
 
                 if 'departureTimeLocal' in fromDict:
@@ -184,6 +187,12 @@ class DepartureTimersStatus(GenericStatus):
                                                                 lastUpdateFromCar=None, fromServer=True)
                 else:
                     self.departureTimeLocal.enabled = False
+
+                if 'targetTimeLocal' in fromDict:
+                    self.targetTimeLocal.setValueWithCarTime(datetime.strptime(f'{fromDict["targetTimeLocal"]}+00:00', '%H:%M%z'),
+                                                             lastUpdateFromCar=None, fromServer=True)
+                else:
+                    self.targetTimeLocal.enabled = False
 
                 if 'repetitionDays' in fromDict and fromDict['repetitionDays'] is not None:
                     for day in fromDict['repetitionDays']:
@@ -198,14 +207,27 @@ class DepartureTimersStatus(GenericStatus):
                     self.repetitionDays.clear()
                     self.repetitionDays.enabled = False
 
+                if 'recurringOn' in fromDict and fromDict['recurringOn'] is not None:
+                    for day, enabled in fromDict['recurringOn'].items():
+                        if day in self.recurringOn:
+                            self.recurringOn[day].setValueWithCarTime(enabled, lastUpdateFromCar=None, fromServer=True)
+                        else:
+                            self.recurringOn[day] = AddressableAttribute(
+                                localAddress=day, parent=self.recurringOn, value=enabled, valueType=bool)
+                    for day in [day for day in self.recurringOn if day not in fromDict['recurringOn']]:
+                        del self.recurringOn[day]
+                else:
+                    self.recurringOn.clear()
+                    self.recurringOn.enabled = False
+
                 for key, value in {key: value for key, value in fromDict.items()
-                                   if key not in ['departureTimeLocal', 'repetitionDays']}.items():
+                                   if key not in ['departureTimeLocal', 'targetTimeLocal', 'repetitionDays', 'recurringOn']}.items():
                     LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
                 string = f'{self.departureTimeLocal.value.strftime("%H:%M")} on '  # pylint: disable=no-member
-                for day, value in self.repetitionDays.items():
-                    if value:
+                for day, value in self.recurringOn.items():
+                    if value.value:
                         string += day + ' '
                 return string
 

@@ -100,7 +100,8 @@ class Timer(AddressableObject):
                 self.startTime.enabled = False
 
             if 'targetTime' in fromDict:
-                self.targetTime.setValueWithCarTime(datetime.strptime(f'{fromDict["targetTime"]}+00:00', '%H:%M%z'), lastUpdateFromCar=None, fromServer=True)
+                self.targetTime.setValueWithCarTime(datetime.strptime(f'{fromDict["targetTime"]}+00:00', '%H:%M%z'),
+                                                    lastUpdateFromCar=None, fromServer=True)
             else:
                 self.targetTime.enabled = False
 
