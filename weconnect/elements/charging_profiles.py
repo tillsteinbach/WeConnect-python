@@ -244,8 +244,15 @@ class ChargingProfiles(GenericSettings):
         def update(self, fromDict):
             LOG.debug('Update nextChargingTimer from dict')
 
-            if 'id' in fromDict and fromDict['id'] < len(self.parent.profiles):
-                self.timer = self.parent.profiles[fromDict['id']]
+            if 'id' in fromDict and fromDict['id'] is not None:
+                foundTimer = False
+                for profile in self.parent.profiles.values():
+                    if fromDict['id'] in profile.timers:
+                        self.timer = profile.timers[fromDict['id']]
+                        foundTimer = True
+                        break
+                if not foundTimer and self.timer is not None:
+                    self.timer = None
 
             self.targetSOCreachable.fromDict(fromDict, 'targetSOCreachable')
 
