@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
-## [0.60.2] - testing
+## [0.60.2] - 2024-02-28
 ### Fixed
 - Fixes a bug introduced by the new timers attributes
 
