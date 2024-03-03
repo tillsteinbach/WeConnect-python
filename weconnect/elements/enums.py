@@ -67,4 +67,5 @@ class SpinState(Enum,):
 class TargetSOCReachable(Enum,):
     INVALID = 'invalid'
     CALCULATING = 'calculating'
+    NOT_REACHABLE = 'notReachable'
     UNKNOWN = 'unknown'
