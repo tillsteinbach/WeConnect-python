@@ -68,4 +68,5 @@ class TargetSOCReachable(Enum,):
     INVALID = 'invalid'
     CALCULATING = 'calculating'
     NOT_REACHABLE = 'notReachable'
+    REACHABLE = 'reachable'
     UNKNOWN = 'unknown'
