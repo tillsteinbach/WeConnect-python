@@ -137,4 +137,5 @@ class ChargingStatus(GenericStatus):
         OFF = 'off'
         AC = 'ac'
         DC = 'dc'
+        UNSUPPORTED = 'unsupported'
         UNKNOWN = 'unknown charge type'
