@@ -22,7 +22,7 @@ class TemperatureBatteryStatus(GenericStatus):
 
     def update(self, fromDict, ignoreAttributes=None):
         ignoreAttributes = ignoreAttributes or []
-        LOG.debug('Update range status from dict')
+        LOG.debug('Update battery temperature status from dict')
 
         if 'value' in fromDict:
             self.temperatureHvBatteryMin_K.fromDict(fromDict['value'], 'temperatureHvBatteryMin_K')
