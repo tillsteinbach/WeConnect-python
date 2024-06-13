@@ -10,6 +10,8 @@ All notable changes to this project will be documented in this file.
 - ChargeType UNSUPPORTED added
 - TargetSOCReachable reachable, notReachable added
 - Warning light category OTHER added
+- navigationTargetSOC_pct added (Thanks to User @Lake292 for the contribution)
+- TemperatureOutsideStatus added (Thanks to User @Lake292 for the contribution)
 
 ### Changed
 - Updated pillow dependency to 10.3.0
