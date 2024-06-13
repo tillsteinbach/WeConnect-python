@@ -17,6 +17,8 @@ class BatteryStatus(GenericStatus):
     ):
         self.currentSOC_pct = AddressableAttribute(
             localAddress='currentSOC_pct', parent=self, value=None, valueType=int)
+        self.navigationTargetSOC_pct = AddressableAttribute(
+            localAddress='navigationTargetSOC_pct', parent=self, value=None, valueType=int)
         self.cruisingRangeElectric_km = AddressableAttribute(
             localAddress='cruisingRangeElectric_km', value=None, parent=self, valueType=int)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
@@ -45,17 +47,21 @@ class BatteryStatus(GenericStatus):
                 self.cruisingRangeElectric_km.enabled = False
 
             self.currentSOC_pct.fromDict(fromDict['value'], 'currentSOC_pct')
+            self.navigationTargetSOC_pct.fromDict(fromDict['value'], 'navigationTargetSOC_pct')
         else:
             self.currentSOC_pct.enabled = False
             self.cruisingRangeElectric_km.enabled = False
+            self.navigationTargetSOC_pct.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(
-            ignoreAttributes + ['currentSOC_pct', 'cruisingRangeElectric_km']))
+            ignoreAttributes + ['currentSOC_pct', 'navigationTargetSOC_pct', 'cruisingRangeElectric_km']))
 
     def __str__(self):
         string = super().__str__()
         if self.currentSOC_pct.enabled:
             string += f'\n\tCurrent SoC: {self.currentSOC_pct.value}%'
+        if self.navigationTargetSOC_pct.enabled:
+            string += f'\n\tNavigation Target SoC: {self.navigationTargetSOC_pct.value}%'
         if self.cruisingRangeElectric_km.enabled:
             if self.cruisingRangeElectric_km.value is not None:
                 string += f'\n\tRange: {self.cruisingRangeElectric_km.value}km'
