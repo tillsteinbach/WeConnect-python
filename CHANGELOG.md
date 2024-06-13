@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.3] - 2024-06-13
+### Added
+- ChargeType UNSUPPORTED added
+- TargetSOCReachable reachable, notReachable added
+- Warning light category OTHER added
+
+### Changed
+- Updated pillow dependency to 10.3.0
+- Updated requests dependency to 2.32.3
+
 ## [0.60.2] - 2024-02-28
 ### Fixed
 - Fixes a bug introduced by the new timers attributes
@@ -833,7 +843,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.2...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.3...HEAD
+[0.60.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.3
 [0.60.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.2
 [0.60.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.1
 [0.60.0]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.0
