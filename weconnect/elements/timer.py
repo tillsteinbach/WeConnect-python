@@ -203,7 +203,12 @@ class Timer(AddressableObject):
                 self.startTime.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['startDateTime', 'targetDateTime', 'startDateTimeLocal', 'targetDateTimeLocal', 'occurringOn', 'startTime']}.items():
+                               if key not in ['startDateTime',
+                                              'targetDateTime',
+                                              'startDateTimeLocal',
+                                              'targetDateTimeLocal',
+                                              'occurringOn',
+                                              'startTime']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
