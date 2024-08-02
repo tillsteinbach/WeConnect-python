@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.4] - 2024-08-02
+### Added
+- usePrivateCurrentEnabled added
+- maxChargeCurrentAC_A added
+- self.chargingScenario added
+- self.targetDateTimeLocal added
+- ICON_NOT_FOUND added
+
+### Changed
+- Updated pillow dependency to 10.4.0
+
 ## [0.60.3] - 2024-06-13
 ### Added
 - ChargeType UNSUPPORTED added
@@ -845,7 +856,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.3...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.4...HEAD
+[0.60.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.4
 [0.60.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.3
 [0.60.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.2
 [0.60.1]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.1
