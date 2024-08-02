@@ -163,6 +163,8 @@ class Timer(AddressableObject):
                 localAddress='targetDateTime', parent=self, value=None, valueType=datetime)
             self.startDateTimeLocal = AddressableAttribute(
                 localAddress='startDateTimeLocal', parent=self, value=None, valueType=datetime)
+            self.targetDateTimeLocal = AddressableAttribute(
+                localAddress='targetDateTimeLocal', parent=self, value=None, valueType=datetime)
             self.occurringOn = AddressableAttribute(
                 localAddress='occurringOn', parent=self, value=None, valueType=str)
             self.startTime = AddressableAttribute(
@@ -188,6 +190,10 @@ class Timer(AddressableObject):
             else:
                 self.startDateTimeLocal.enabled = False
 
+            if 'targetDateTimeLocal' in fromDict:
+                self.targetDateTimeLocal.setValueWithCarTime(robustTimeParse(fromDict["targetDateTimeLocal"]), lastUpdateFromCar=None, fromServer=True)
+            else:
+                self.targetDateTimeLocal.enabled = False
             self.occurringOn.fromDict(fromDict, 'occurringOn')
 
             if 'startTime' in fromDict:
@@ -197,17 +203,19 @@ class Timer(AddressableObject):
                 self.startTime.enabled = False
 
             for key, value in {key: value for key, value in fromDict.items()
-                               if key not in ['startDateTime', 'targetDateTime', 'startDateTimeLocal', 'occurringOn', 'startTime']}.items():
+                               if key not in ['startDateTime', 'targetDateTime', 'startDateTimeLocal', 'targetDateTimeLocal', 'occurringOn', 'startTime']}.items():
                 LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
         def __str__(self):
             returnString = ""
             if self.startDateTime.enabled:
                 returnString += self.startDateTime.value.isoformat()  # pylint: disable=no-member
-            elif self.targetDateTime.enabled:
-                returnString += self.targetDateTime.value.isoformat()  # pylint: disable=no-member
             elif self.startDateTimeLocal.enabled:
                 returnString += self.startDateTimeLocal.value.isoformat()  # pylint: disable=no-member
+            if self.targetDateTime.enabled:
+                returnString += self.targetDateTime.value.isoformat()  # pylint: disable=no-member
+            elif self.targetDateTimeLocal.enabled:
+                returnString += self.targetDateTimeLocal.value.isoformat()  # pylint: disable=no-member
             if self.occurringOn.enabled:
                 returnString += self.occurringOn.value
             if self.startTime.enabled:
