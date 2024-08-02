@@ -212,6 +212,7 @@ class ChargingProfiles(GenericSettings):
                 self.id = AddressableAttribute(localAddress='id', parent=self, value=None, valueType=int)
                 self.autoUnlockPlugWhenCharged = AddressableAttribute(localAddress='autoUnlockPlugWhenCharged', value=None, parent=self,
                                                                       valueType=UnlockPlugState)
+                self.usePrivateCurrentEnabled = AddressableAttribute(localAddress='usePrivateCurrentEnabled', parent=self, value=None, valueType=bool)
                 if fromDict is not None:
                     self.update(fromDict)
 
@@ -219,14 +220,18 @@ class ChargingProfiles(GenericSettings):
                 LOG.debug('Update preferred time from dict')
 
                 self.autoUnlockPlugWhenCharged.fromDict(fromDict, 'autoUnlockPlugWhenCharged')
+                self.usePrivateCurrentEnabled.fromDict(fromDict, 'usePrivateCurrentEnabled')
 
-                for key, value in {key: value for key, value in fromDict.items() if key not in ['autoUnlockPlugWhenCharged']}.items():
+                for key, value in {key: value for key, value in fromDict.items() if key not in ['autoUnlockPlugWhenCharged',
+                                                                                                'usePrivateCurrentEnabled']}.items():
                     LOG.warning('%s: Unknown attribute %s with value %s', self.getGlobalAddress(), key, value)
 
             def __str__(self):
                 string = ''
                 if self.autoUnlockPlugWhenCharged.enabled:
                     string += f'\n\tAuto Unlock When Charged: {self.autoUnlockPlugWhenCharged.value.value}'
+                if self.usePrivateCurrentEnabled.enabled:
+                    string += f'\n\tUse Private Current: {self.usePrivateCurrentEnabled.value}'
                 return string
 
     class NextChargingTimer(AddressableObject):
