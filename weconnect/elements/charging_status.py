@@ -28,6 +28,7 @@ class ChargingStatus(GenericStatus):
             localAddress='chargeRate_kmph', value=None, parent=self, valueType=float)
         self.chargeType = AddressableAttribute(localAddress='chargeType', value=None, parent=self, valueType=ChargingStatus.ChargeType)
         self.chargingSettings = AddressableAttribute(localAddress='chargingSettings', value=None, parent=self, valueType=str)
+        self.chargingScenario = AddressableAttribute(localAddress='chargingScenario', value=None, parent=self, valueType=ChargingStatus.ChargingScenario)
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
     def update(self, fromDict, ignoreAttributes=None):  # noqa: C901
@@ -69,6 +70,7 @@ class ChargingStatus(GenericStatus):
                 self.chargeRate_kmph.enabled = False
             self.chargeType.fromDict(fromDict['value'], 'chargeType')
             self.chargingSettings.fromDict(fromDict['value'], 'chargingSettings')
+            self.chargingScenario.fromDict(fromDict['value'], 'chargingScenario')
         else:
             self.remainingChargingTimeToComplete_min.enabled = False
             self.chargingState.enabled = False
@@ -77,6 +79,7 @@ class ChargingStatus(GenericStatus):
             self.chargeRate_kmph.enabled = False
             self.chargeType.enabled = False
             self.chargingSettings.enabled = False
+            self.chargingScenario.enabled = False
 
         super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes
                                                             + [
@@ -86,7 +89,8 @@ class ChargingStatus(GenericStatus):
                                                                 'chargePower_kW',
                                                                 'chargeRate_kmph',
                                                                 'chargeType',
-                                                                'chargingSettings'
+                                                                'chargingSettings',
+                                                                'chargingScenario'
                                                             ]))
 
     def __str__(self):
@@ -105,6 +109,8 @@ class ChargingStatus(GenericStatus):
             string += f'\n\tCharge Type: {self.chargeType.value.value}'
         if self.chargingSettings.enabled:
             string += f'\n\tCharging Settings: {self.chargingSettings.value}'
+        if self.chargingScenario.enabled:
+            string += f'\n\tCharging Scenario: {self.chargingScenario.value}'
         return string
 
     class ChargingState(Enum,):
@@ -138,4 +144,8 @@ class ChargingStatus(GenericStatus):
         AC = 'ac'
         DC = 'dc'
         UNSUPPORTED = 'unsupported'
+        UNKNOWN = 'unknown charge type'
+
+    class ChargingScenario(Enum,):
+        OFF = 'off'
         UNKNOWN = 'unknown charge type'
