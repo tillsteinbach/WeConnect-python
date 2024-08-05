@@ -149,4 +149,5 @@ class ChargingStatus(GenericStatus):
     class ChargingScenario(Enum,):
         OFF = 'off'
         IMMEDIATELY_CHARGING_ACTIVE = 'immediatelyChargingActive'
+        ERROR_CHARGING_SYSTEM = 'errorChargingSystem'
         UNKNOWN = 'unknown charging scenario'
