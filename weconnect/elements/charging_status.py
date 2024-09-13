@@ -150,5 +150,8 @@ class ChargingStatus(GenericStatus):
         OFF = 'off'
         IMMEDIATELY_CHARGING_ACTIVE = 'immediatelyChargingActive'
         IMMEDIATELY_CHARGING_FINISHED = 'immediatelyChargingFinished'
+        CHARGING_TO_DEPARTURE_TIME_WAITING = 'chargingToDepartureTimeWaiting'
+        CHARGING_TO_DEPARTURE_TIME_ACTIVE = 'chargingToDepartureTimeActive'
+        OPTIMISED_CHARGING_FINISHED = 'optimisedChargingFinished'
         ERROR_CHARGING_SYSTEM = 'errorChargingSystem'
         UNKNOWN = 'unknown charging scenario'
