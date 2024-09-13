@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.5] - 2024-09-13
+### Added
+- AUTHTYPE PROPRIETARY added
+- ChargingScenarios IMMEDIATELY_CHARGING_ACTIVE, IMMEDIATELY_CHARGING_FINISHED, CHARGING_TO_DEPARTURE_TIME_WAITING, CHARGING_TO_DEPARTURE_TIME_ACTIVE, OPTIMISED_CHARGING_FINISHED, ERROR_CHARGING_SYSTEM added
+- climatisationTemperatureOutside added (for now only error shown due to missing support in cars firmware)
+
 ## [0.60.4] - 2024-08-02
 ### Added
 - usePrivateCurrentEnabled added
@@ -856,7 +862,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.4...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.5...HEAD
+[0.60.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.5
 [0.60.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.4
 [0.60.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.3
 [0.60.2]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.2
