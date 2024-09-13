@@ -1,5 +1,6 @@
 import logging
 import json
+from typing import Optional, Union
 import requests
 
 from weconnect.addressable import AddressableObject, ChangeableAttribute
@@ -7,6 +8,7 @@ from weconnect.elements.control_operation import ControlOperation, AccessControl
 from weconnect.elements.charging_settings import ChargingSettings
 from weconnect.elements.climatization_settings import ClimatizationSettings
 from weconnect.elements.error import Error
+from weconnect.elements.route import Route, Destination
 from weconnect.elements.window_heating_status import WindowHeatingStatus
 from weconnect.elements.access_status import AccessStatus
 from weconnect.elements.parking_position import ParkingPosition
@@ -36,6 +38,7 @@ class Controls(AddressableObject):
         self.honkAndFlashControl = None
         self.auxiliaryHeating = None
         self.activeVentilation = None
+        self.sendDestinations = None
         self.update()
 
     def update(self):  # noqa: C901
@@ -79,6 +82,10 @@ class Controls(AddressableObject):
                         self.honkAndFlashControl = ChangeableAttribute(
                             localAddress='honkAndFlash', parent=self, value=HonkAndFlashControlOperation.NONE, valueType=(HonkAndFlashControlOperation, int),
                             valueSetter=self.__setHonkAndFlashControlChange)
+        if self.sendDestinations is None and 'destinations' in capabilities and not capabilities['destinations'].status.value:
+            self.sendDestinations = ChangeableAttribute(
+                localAddress='destinations', parent=self, value=None, valueType=Optional[Union[Route, Destination]],
+                valueSetter=self.__setDestinationsControlChange)
         if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
             self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                      valueSetter=self.__setWakeupControlChange)
@@ -388,3 +395,40 @@ class Controls(AddressableObject):
                 else:
                     raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
             raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
+
+    def __setDestinationsControlChange(self, value:Optional[Union[Route, Destination]]): # noqa: C901
+        if value is None or (not isinstance(value, Route) and not isinstance(value, Destination)):
+            raise ControlError('Could not control destination, value must be a Route or Destination object')
+
+        if isinstance(value, Destination):
+            value = Route([value])
+
+        if not value.valid:
+            raise ControlError('Could not control destination, value must be a Route object with at least one valid Destination object')
+
+        url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/destinations'
+
+        data = {
+            'destinations': value.to_list()
+        }
+
+        controlResponse = self.vehicle.weConnect.session.put(url, json=data, allow_redirects=True)
+        if controlResponse.status_code != requests.codes['accepted']:
+            errorDict = controlResponse.json()
+            if errorDict is not None and 'error' in errorDict:
+                error = Error(localAddress='error', parent=self, fromDict=errorDict['error'])
+                if error is not None:
+                    message = ''
+                    if error.message.enabled and error.message.value is not None:
+                        message += error.message.value
+                    if error.info.enabled and error.info.value is not None:
+                        message += ' - ' + error.info.value
+                    if error.retry.enabled and error.retry.value is not None:
+                        if error.retry.value:
+                            message += ' - Please retry in a moment'
+                        else:
+                            message += ' - No retry possible'
+                    raise ControlError(f'Could not control destination ({message})')
+                else:
+                    raise ControlError(f'Could not control destination ({controlResponse.status_code})')
+            raise ControlError(f'Could not control destination ({controlResponse.status_code})')
