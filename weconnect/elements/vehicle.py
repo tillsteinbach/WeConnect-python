@@ -16,6 +16,7 @@ from weconnect.addressable import AddressableObject, AddressableAttribute, Addre
 if TYPE_CHECKING:
     from weconnect.weconnect import WeConnect
 from weconnect.elements.generic_capability import GenericCapability
+from weconnect.elements.generic_status import GenericStatus
 from weconnect.elements.generic_request_status import GenericRequestStatus
 from weconnect.elements.controls import Controls
 from weconnect.elements.access_status import AccessStatus
@@ -273,6 +274,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                 'climatisationRequestStatus': GenericRequestStatus,
                 'climatisationSettingsRequestStatus': GenericRequestStatus,
                 'auxiliaryHeatingStatus': AuxiliaryHeatingStatus,
+                'climatisationTemperatureOutside': GenericStatus,
             },
             Domain.CLIMATISATION_TIMERS: {
                 'climatisationTimersStatus': ClimatizationTimer,
