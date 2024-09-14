@@ -396,18 +396,25 @@ class Controls(AddressableObject):
                     raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
             raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
 
-    def __setDestinationsControlChange(self, value:Optional[Union[Route, Destination]]): # noqa: C901
-        if value is None or (not isinstance(value, Route) and not isinstance(value, Destination)):
-            raise ControlError('Could not control destination, value must be a Route or Destination object')
-
-        if isinstance(value, Destination):
-            value = Route([value])
-
-        if not value.valid:
-            raise ControlError('Could not control destination, value must be a Route object with at least one valid Destination object')
+    def __setDestinationsControlChange(self, value: Optional[Union[str, list, dict, Route, Destination]]):  # noqa: C901
+        if value is None:
+            raise ControlError("Could not control destination, value must not be None.")
+        if isinstance(value, Route):
+            # Value is already a Route, no further action needed
+            pass
+        elif isinstance(value, (str, list, dict, Destination)):
+            try:
+                value = Route.from_value(value)
+            except json.JSONDecodeError as err:
+                raise ControlError(f'Could not control destination, invalid JSON string: {str(err)}')
+            except Exception as err:
+                raise ControlError(f'Could not control destination, invalid data: {str(err)}')
+        else:
+            raise ControlError(
+                "Could not control destination, value must be a JSON string, list, dict, Route, or Destination."
+            )
 
         url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/destinations'
-
         data = {
             'destinations': value.to_list()
         }
