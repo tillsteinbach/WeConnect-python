@@ -84,8 +84,12 @@ class Controls(AddressableObject):
                             valueSetter=self.__setHonkAndFlashControlChange)
         if self.sendDestinations is None and 'destinations' in capabilities and not capabilities['destinations'].status.value:
             self.sendDestinations = ChangeableAttribute(
-                localAddress='destinations', parent=self, value=None, valueType=Optional[Union[Route, Destination]],
-                valueSetter=self.__setDestinationsControlChange)
+                localAddress="destinations",
+                parent=self,
+                value=None,
+                valueType=Optional[Union[str, list, dict, Route, Destination]],
+                valueSetter=self.__setDestinationsControlChange,
+            )
         if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
             self.wakeupControl = ChangeableAttribute(localAddress='wakeup', parent=self, value=ControlOperation.NONE, valueType=ControlOperation,
                                                      valueSetter=self.__setWakeupControlChange)
