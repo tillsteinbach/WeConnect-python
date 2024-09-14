@@ -1,5 +1,5 @@
-import pytest
 import json
+import pytest
 from weconnect.elements.route import Address, GeoCoordinate, Destination, Route
 
 

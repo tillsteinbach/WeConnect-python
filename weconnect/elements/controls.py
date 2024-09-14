@@ -411,7 +411,7 @@ class Controls(AddressableObject):
                 value = Route.from_value(value)
             except json.JSONDecodeError as err:
                 raise ControlError(f'Could not control destination, invalid JSON string: {str(err)}')
-            except Exception as err:
+            except (TypeError, ValueError) as err:
                 raise ControlError(f'Could not control destination, invalid data: {str(err)}')
         else:
             raise ControlError(
