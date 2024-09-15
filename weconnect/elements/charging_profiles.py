@@ -20,6 +20,7 @@ class ChargingProfiles(GenericSettings):
     ):
         self.profiles = AddressableDict(localAddress='profiles', parent=self)
         self.timeInCar = AddressableAttribute(localAddress='timeInCar', parent=self, value=None, valueType=datetime)
+        self.vehiclePositionedInProfileID = AddressableAttribute(localAddress='vehiclePositionedInProfileID', parent=self, value=None, valueType=int)
         self.nextChargingTimer = None
         super().__init__(vehicle=vehicle, parent=parent, statusId=statusId, fromDict=fromDict, fixAPI=fixAPI)
 
@@ -43,6 +44,7 @@ class ChargingProfiles(GenericSettings):
                 self.profiles.enabled = False
 
             self.timeInCar.fromDict(fromDict['value'], 'timeInCar')
+            self.vehiclePositionedInProfileID.fromDict(fromDict['value'], 'vehiclePositionedInProfileID')
             if 'nextChargingTimer' in fromDict['value'] and fromDict['value']['nextChargingTimer'] is not None:
                 self.nextChargingTimer = ChargingProfiles.NextChargingTimer(parent=self, fromDict=fromDict['value']['nextChargingTimer'])
             else:
@@ -51,8 +53,9 @@ class ChargingProfiles(GenericSettings):
             self.profiles.clear()
             self.profiles.enabled = False
             self.timeInCar.enabled = False
+            self.vehiclePositionedInProfileID.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['profiles', 'timeInCar', 'nextChargingTimer']))
+        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes + ['profiles', 'timeInCar', 'nextChargingTimer', 'vehiclePositionedInProfileID']))
 
     def __str__(self):
         string = super().__str__()
@@ -62,6 +65,8 @@ class ChargingProfiles(GenericSettings):
         string += f'\n\tProfiles: {len(self.profiles)} items'
         for profile in self.profiles.values():
             string += '\n' + ''.join(['\t\t\t' + line for line in str(profile).splitlines(True)])
+        if self.vehiclePositionedInProfileID is not None:
+            string += f'\n\tVehicle Positioned In Profile ID: {self.vehiclePositionedInProfileID}'
         if self.nextChargingTimer is not None:
             string += f'\n\tNext Charging Timer: {self.nextChargingTimer}'
         return string
