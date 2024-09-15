@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Dict, List
 from dataclasses import dataclass
 import json
 
@@ -10,7 +10,7 @@ class Address:
     zipCode: str
     city: str
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> Dict[str, str]:
         return {
             "country": self.country,
             "street": self.street,
@@ -32,7 +32,7 @@ class GeoCoordinate:
                 "Latitude must be between -90 and 90 degrees, and longitude between -180 and 180 degrees."
             )
 
-    def to_dict(self) -> dict[str, float]:
+    def to_dict(self) -> Dict[str, float]:
         return {
             "latitude": self.latitude,
             "longitude": self.longitude,
@@ -64,8 +64,8 @@ class Destination:
         self.address = address
         self.poiProvider = poiProvider or "unknown"
 
-    def to_dict(self) -> dict[str, Any]:
-        data: dict[str, Any] = {
+    def to_dict(self) -> Dict[str, Any]:
+        data: Dict[str, Any] = {
             "geoCoordinate": self.geoCoordinate.to_dict(),
             "destinationName": self.name,
             "poiProvider": self.poiProvider,
@@ -96,7 +96,7 @@ class Destination:
 
 
 class Route:
-    def __init__(self, destinations: Union[list[Destination], Destination] = []):
+    def __init__(self, destinations: Union[List[Destination], Destination] = []):
         if isinstance(destinations, Destination):
             destinations = [destinations]
         elif (
@@ -108,7 +108,7 @@ class Route:
 
         self.destinations = destinations
 
-    def to_list(self) -> list[dict[str, Any]]:
+    def to_list(self) -> List[Dict[str, Any]]:
         route = []
         for i, destination in enumerate(self.destinations):
             data = destination.to_dict()
