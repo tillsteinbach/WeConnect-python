@@ -24,7 +24,7 @@ class GeoCoordinate:
     latitude: float
     longitude: float
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not isinstance(self.latitude, float) or not isinstance(self.longitude, float):
             raise TypeError("Latitude and longitude must be floats")
         if not (-90.0 <= self.latitude <= 90.0 and -180.0 <= self.longitude <= 180.0):
@@ -46,7 +46,7 @@ class Destination:
         name: Optional[str] = None,
         address: Optional[Address] = None,
         poiProvider: Optional[str] = None,
-    ):
+    ) -> None:
         """
         A single destination on a route.
 
@@ -78,25 +78,28 @@ class Destination:
         return data
 
     @classmethod
-    def from_dict(cls, dest_dict):
+    def from_dict(cls, dest_dict: Dict[str, Any]) -> "Destination":
+        geoCoordinate: Optional[GeoCoordinate] = None
+        address: Optional[Address] = None
+
         if "geoCoordinate" in dest_dict:
-            dest_dict["geoCoordinate"] = GeoCoordinate(**dest_dict["geoCoordinate"])
+            geoCoordinate = GeoCoordinate(**dest_dict["geoCoordinate"])
         else:
             raise ValueError("geoCoordinate is required in destination data")
 
         if "address" in dest_dict:
-            dest_dict["address"] = Address(**dest_dict["address"])
+            address = Address(**dest_dict["address"])
 
         return cls(
-            geoCoordinate=dest_dict["geoCoordinate"],
+            geoCoordinate=geoCoordinate,
             name=dest_dict.get("name", "Destination"),
-            address=dest_dict.get("address"),
+            address=address,
             poiProvider=dest_dict.get("poiProvider", "unknown"),
         )
 
 
 class Route:
-    def __init__(self, destinations: Union[List[Destination], Destination] = []):
+    def __init__(self, destinations: Union[List[Destination], Destination] = []) -> None:
         if isinstance(destinations, Destination):
             destinations = [destinations]
         elif (
@@ -119,7 +122,7 @@ class Route:
         return route
 
     @classmethod
-    def from_collection(cls, route_list: Union[list, dict]):
+    def from_collection(cls, route_list: Union[list, dict]) -> "Route":
         """
         Create a route from a dict or list of dicts containing destinations.
 
@@ -153,7 +156,7 @@ class Route:
         if isinstance(route_list, dict):
             route_list = [route_list]
 
-        destinations = []
+        destinations: List[Destination] = []
 
         for dest in route_list:
             if isinstance(dest, Destination):
