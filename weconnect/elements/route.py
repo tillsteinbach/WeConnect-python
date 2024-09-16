@@ -25,7 +25,9 @@ class GeoCoordinate:
     longitude: float
 
     def __post_init__(self) -> None:
-        if not isinstance(self.latitude, float) or not isinstance(self.longitude, float):
+        if not isinstance(self.latitude, float) or not isinstance(
+            self.longitude, float
+        ):
             raise TypeError("Latitude and longitude must be floats")
         if not (-90.0 <= self.latitude <= 90.0 and -180.0 <= self.longitude <= 180.0):
             raise ValueError(
@@ -57,7 +59,7 @@ class Destination:
             poiProvider (str): The source of the location (Optional, defaults to "unknown").
         """
         if not isinstance(geoCoordinate, GeoCoordinate):
-            raise ValueError('geoCoordinate is required')
+            raise ValueError("geoCoordinate is required")
 
         self.geoCoordinate = geoCoordinate
         self.name = name or "Destination"
@@ -99,7 +101,9 @@ class Destination:
 
 
 class Route:
-    def __init__(self, destinations: Union[List[Destination], Destination] = []) -> None:
+    def __init__(
+        self, destinations: Union[List[Destination], Destination] = []
+    ) -> None:
         if isinstance(destinations, Destination):
             destinations = [destinations]
         elif (
@@ -107,7 +111,9 @@ class Route:
             or not isinstance(destinations, list)
             or not all(isinstance(dest, Destination) for dest in destinations)
         ):
-            raise TypeError("destinations must be a single Destination or a list of Destination objects.")
+            raise TypeError(
+                "destinations must be a single Destination or a list of Destination objects."
+            )
 
         self.destinations = destinations
 

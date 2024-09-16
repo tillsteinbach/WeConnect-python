@@ -401,14 +401,15 @@ class Controls(AddressableObject):
             raise ControlError(f'Could not control honkandflash ({controlResponse.status_code})')
 
     def __setDestinationsControlChange(self, value: Optional[Union[str, list, dict, Route, Destination]]):  # noqa: C901
+        route = None
         if value is None:
             raise ControlError("Could not control destination, value must not be None.")
         if isinstance(value, Route):
             # Value is already a Route, no further action needed
-            pass
+            route = value
         elif isinstance(value, (str, list, dict, Destination)):
             try:
-                value = Route.from_value(value)
+                route = Route.from_value(value)
             except json.JSONDecodeError as err:
                 raise ControlError(f'Could not control destination, invalid JSON string: {str(err)}')
             except (TypeError, ValueError) as err:
@@ -420,7 +421,7 @@ class Controls(AddressableObject):
 
         url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/destinations'
         data = {
-            'destinations': value.to_list()
+            'destinations': route.to_list()
         }
 
         controlResponse = self.vehicle.weConnect.session.put(url, json=data, allow_redirects=True)
