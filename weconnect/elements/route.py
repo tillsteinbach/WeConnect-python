@@ -128,7 +128,7 @@ class Route:
         return route
 
     @classmethod
-    def from_collection(cls, route_list: Union[list, dict]) -> "Route":
+    def from_collection(cls, collection: Union[list, dict]) -> "Route":
         """
         Create a route from a dict or list of dicts containing destinations.
 
@@ -159,16 +159,16 @@ class Route:
                 },
             ])
         """
-        if isinstance(route_list, dict):
-            route_list = [route_list]
-
         destinations: List[Destination] = []
 
-        for dest in route_list:
-            if isinstance(dest, Destination):
-                destinations.append(dest)
-            else:
-                destinations.append(Destination.from_dict(dest))
+        if isinstance(collection, dict):
+            destinations.append(Destination.from_dict(collection))
+        else:
+            for dest in collection:
+                if isinstance(dest, Destination):
+                    destinations.append(dest)
+                else:
+                    destinations.append(Destination.from_dict(dest))
 
         return cls(destinations)
 
