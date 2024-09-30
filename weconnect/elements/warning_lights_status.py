@@ -156,6 +156,7 @@ class WarningLightsStatus(GenericStatus):
             LIGHTING = 'LIGHTING'
             TIRE = 'TIRE'
             ENGINE = 'ENGINE'
+            ASSISTANCE = 'ASSISTANCE'
             OTHER = 'OTHER'
             UNKNOWN = 'unknown category'
 
