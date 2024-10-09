@@ -86,8 +86,8 @@ class Controls(AddressableObject):
             self.sendDestinations = ChangeableAttribute(
                 localAddress="destinations",
                 parent=self,
-                value=None,
-                valueType=Optional[Union[str, list, dict, Route, Destination]],
+                value='[]',
+                valueType=(str, list, dict, Route, Destination),
                 valueSetter=self.__setDestinationsControlChange,
             )
         if self.wakeupControl is None and 'vehicleWakeUpTrigger' in capabilities and not capabilities['vehicleWakeUpTrigger'].status.value:
