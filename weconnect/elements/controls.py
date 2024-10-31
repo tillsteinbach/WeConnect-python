@@ -246,9 +246,7 @@ class Controls(AddressableObject):
 
         url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/auxiliaryheating/{control.value}'
 
-        data = {}
-        data['spin'] = spin
-        data['duration_min'] = duration
+        data = {'spin': spin, 'duration_min': duration}
 
         controlResponse = self.vehicle.weConnect.session.post(url, json=data, allow_redirects=True)
         if controlResponse.status_code != requests.codes['ok']:
@@ -317,8 +315,7 @@ class Controls(AddressableObject):
 
         url = f'https://emea.bff.cariad.digital/vehicle/v1/vehicles/{self.vehicle.vin.value}/access/{control.value}'
 
-        data = {}
-        data['spin'] = spin
+        data = {'spin': spin}
         controlResponse = self.vehicle.weConnect.session.post(url, json=data, allow_redirects=True)
         if controlResponse.status_code != requests.codes['ok']:
             errorDict = controlResponse.json()
@@ -361,10 +358,7 @@ class Controls(AddressableObject):
                 or self.vehicle.domains['parking']['parkingPosition'].latitude.value is None:
             raise ControlError('Could not control honkandflash due to unavailability of parking position of the vehicle')
 
-        data = {}
-        data['duration_s'] = duration
-        data['mode'] = mode
-        data['userPosition'] = {}
+        data = {'duration_s': duration, 'mode': mode, 'userPosition': {}}
         data['userPosition']['latitude'] = self.vehicle.domains['parking']['parkingPosition'].latitude.value
         data['userPosition']['longitude'] = self.vehicle.domains['parking']['parkingPosition'].longitude.value
 

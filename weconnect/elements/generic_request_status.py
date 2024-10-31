@@ -43,7 +43,7 @@ class GenericRequestStatus(GenericStatus):
         return string
 
     class Status(Enum,):
-        SUCCESSFULL = 'successful'
+        SUCCESSFUL = 'successful'
         ERROR = 'error'
         FAIL = 'fail'
         POLLING_TIMEOUT = 'polling_timeout'

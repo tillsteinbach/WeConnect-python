@@ -52,7 +52,7 @@ class GenericStatus(AddressableObject):
                 carCapturedTimestamp: Optional[datetime] = robustTimeParse(fromDict['value']['carCapturedTimestamp'])
                 if self.fixAPI and carCapturedTimestamp is not None:
                     # Looks like for some cars the calculation of the carCapturedTimestamp does not account for the timezone
-                    # Unfortunatly it is unknown what the timezone of the car is. So the best we can do is substract 30
+                    # Unfortunately it is unknown what the timezone of the car is. So the best we can do is subtract 30
                     # minutes as long as the timestamp is in the future. This will create false results when the query
                     # interval is large
                     fixed: timedelta = timedelta(hours=0, minutes=0)
@@ -60,7 +60,7 @@ class GenericStatus(AddressableObject):
                         carCapturedTimestamp -= timedelta(hours=0, minutes=30)
                         fixed -= timedelta(hours=0, minutes=30)
                     if fixed > timedelta(hours=0, minutes=0):
-                        LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Substracted %s to fix this.'
+                        LOG.warning('%s: Attribute carCapturedTimestamp was in the future. Subtracted %s to fix this.'
                                     ' This is a problem of the weconnect API and might be fixed in the future',
                                     self.getGlobalAddress(), fixed)
                     if carCapturedTimestamp == datetime(year=2000, month=1, day=1, hour=0, minute=0, second=0,
@@ -172,7 +172,7 @@ class GenericStatus(AddressableObject):
             return returnValue
 
         class Status(Enum,):
-            SUCCESSFULL = 'successful'
+            SUCCESSFUL = 'successful'
             ERROR = 'error'
             FAIL = 'fail'
             POLLING_TIMEOUT = 'polling_timeout'

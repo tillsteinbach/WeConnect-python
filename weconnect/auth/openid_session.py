@@ -79,7 +79,7 @@ class OpenIDSession(requests.Session):
     @token.setter
     def token(self, newToken):
         if newToken is not None:
-            # If new token e.g. after refresh is missing expires_in we assume it is the same than before
+            # If new token e.g. after refresh is missing expires_in we assume it is the same as before
             if 'expires_in' not in newToken:
                 if self._token is not None and 'expires_in' in self._token:
                     newToken['expires_in'] = self._token['expires_in']
@@ -226,17 +226,17 @@ class OpenIDSession(requests.Session):
 
         if token is None:
             if access_type == AccessType.ID:
-                if not (self.idToken):
+                if not self.idToken:
                     raise MissingTokenError(description="Missing id token.")
                 token = self.idToken
             elif access_type == AccessType.REFRESH:
-                if not (self.refreshToken):
+                if not self.refreshToken:
                     raise MissingTokenError(description="Missing refresh token.")
                 token = self.refreshToken
             else:
                 if not self.authorized:
                     self.login()
-                if not (self.accessToken):
+                if not self.accessToken:
                     raise MissingTokenError(description="Missing access token.")
                 if self.expired:
                     raise TokenExpiredError()
@@ -244,4 +244,4 @@ class OpenIDSession(requests.Session):
 
         headers = addBearerAuthHeader(token, headers)
 
-        return (uri, headers, body)
+        return uri, headers, body

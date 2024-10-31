@@ -97,7 +97,7 @@ class ChargingProfiles(GenericSettings):
                 self.id.fromDict(fromDict, 'id')
                 self.localAddress = str(self.id.value)
             else:
-                LOG.error('Charging Proile is missing id attribute')
+                LOG.error('Charging Profile is missing id attribute')
 
             self.name.fromDict(fromDict, 'name')
             self.maxChargingCurrent.fromDict(fromDict, 'maxChargingCurrent')
