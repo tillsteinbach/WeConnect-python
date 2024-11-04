@@ -148,6 +148,7 @@ class ChargingStatus(GenericStatus):
 
     class ChargingScenario(Enum,):
         OFF = 'off'
+        INITIALIZATION_CHARGING_COMMUNICATION = 'initializationChargingCommunication'
         IMMEDIATELY_CHARGING_ACTIVE = 'immediatelyChargingActive'
         IMMEDIATELY_CHARGING_FINISHED = 'immediatelyChargingFinished'
         CHARGING_TO_DEPARTURE_TIME_WAITING = 'chargingToDepartureTimeWaiting'
