@@ -14,7 +14,7 @@ from weconnect.auth.my_cupra_session import MyCupraSession
 LOG = logging.getLogger("weconnect")
 
 
-class SessionUser():
+class SessionUser:
     def __init__(self, username: str, password: str) -> None:
         self.username = username
         self.password = password
@@ -32,7 +32,7 @@ class Service(Enum):
         return self.value
 
 
-class SessionManager():
+class SessionManager:
     def __init__(self, tokenstorefile=None) -> None:
         if tokenstorefile is not None:
             try:
@@ -48,8 +48,8 @@ class SessionManager():
             self.tokenstore = {}
         self.sessions = {}
 
-    def generateHash(service: Service, sessionuser: SessionUser) -> str:
-        hashstr = service.value + str(sessionuser)
+    def generateHash(self: Service, sessionuser: SessionUser) -> str:
+        hashstr = self.value + str(sessionuser)
         return hashlib.sha512(hashstr.encode()).hexdigest()
 
     def getSession(self, service: Service, sessionuser: SessionUser) -> Session:
