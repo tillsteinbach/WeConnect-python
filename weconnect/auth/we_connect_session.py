@@ -252,7 +252,7 @@ class WeConnectSession(VWWebSession):
                 consentURL = afterLoginUrl
             if 'terms-and-conditions' in afterLoginUrl:
                 raise AuthentificationError('It seems like you need to accept the terms and conditions for the Volkswagen service.'
-                                                f' Try to visit the URL "https://identity.vwgroup.io/{afterLoginUrl}" or log into the Volkswagen smartphone app')
+                                            f' Try to visit the URL "https://identity.vwgroup.io/{afterLoginUrl}" or log into the Volkswagen smartphone app')
             afterLoginResponse = self.get(afterLoginUrl, allow_redirects=False, access_type=AccessType.NONE)
             if afterLoginResponse.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
