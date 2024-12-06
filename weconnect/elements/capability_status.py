@@ -39,7 +39,7 @@ class CapabilityStatus(GenericStatus):
             self.capabilities.clear()
             self.capabilities.enabled = False
 
-        super().update(fromDict=fromDict, ignoreAttributes=(ignoreAttributes))
+        super().update(fromDict=fromDict, ignoreAttributes=ignoreAttributes)
 
     def __str__(self):
         string = super().__str__()

@@ -40,5 +40,5 @@ class ChargingCareSettings(GenericSettings):
     def __str__(self):
         string = super().__str__()
         if self.batteryCareMode.enabled:
-            string += f'\n\tBattery Care Mode: {self.batteryCareMode.value.value}'  # pylint: disable=no-member # this is a fales positive
+            string += f'\n\tBattery Care Mode: {self.batteryCareMode.value.value}'  # pylint: disable=no-member # this is a false positive
         return string
