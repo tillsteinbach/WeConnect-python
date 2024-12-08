@@ -163,5 +163,6 @@ class WarningLightsStatus(GenericStatus):
         class IconColor(Enum,):
             YELLOW = 'Yellow'
             RED = 'Red'
+            WHITE = 'White'
             ICON_NOT_FOUND = 'ICON_NOT_FOUND'
             UNKNOWN = 'unknown color'
