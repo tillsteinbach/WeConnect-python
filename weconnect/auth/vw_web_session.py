@@ -48,7 +48,7 @@ class VWWebSession(OpenIDSession):
 
         # Get password form
         passwordForm = self._get_password_form(
-            f'https://identity.vwgroup.io{emailForm.target}',
+            f'https://identity.vwgroup.io/{emailForm.target}',
             emailForm.data
         )
 
@@ -67,8 +67,8 @@ class VWWebSession(OpenIDSession):
             if url.startswith(self.redirect_uri):
                 break
 
-            if not url.startswith('https://identity.vwgroup.io'):
-                url = f'https://identity.vwgroup.io{url}'
+            if not url.startswith('https://identity.vwgroup.io/'):
+                url = f'https://identity.vwgroup.io/{url}'
 
             if 'terms-and-conditions' in url:
                 url = self._handle_consent_form(url)
