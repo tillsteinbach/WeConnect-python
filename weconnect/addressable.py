@@ -26,7 +26,7 @@ except ImportError:
 LOG: logging.Logger = logging.getLogger("weconnect")
 
 
-class AddressableLeaf():
+class AddressableLeaf:
     def __init__(
         self,
         localAddress: str,
@@ -268,7 +268,7 @@ class AddressableAttribute(AddressableLeaf, Generic[T]):
                         htmlfile.write('<pre/></body></html>')
                     else:
                         htmlfile.write(str(self))
-            elif filename.endswith(('.json')):
+            elif filename.endswith('.json'):
                 with open(filename, mode='w', encoding='utf8') as textfile:
                     if SUPPORT_IMAGES and SUPPORT_ASCII_IMAGES and isinstance(self.value, Image.Image):
                         raise ValueError('Attribute is an image and cannot be converted to json')
@@ -540,7 +540,7 @@ class AddressableObject(AddressableLeaf):
         elif filename.endswith(('.htm', '.HTM', '.html', '.HTML')):
             with open(filename, mode='w', encoding='utf8'):
                 raise ValueError('Object cannot be saved as HTML')
-        elif filename.endswith(('.json')):
+        elif filename.endswith('.json'):
             with open(filename, mode='w', encoding='utf8') as textfile:
                 textfile.write(self.toJSON() + '\n')
         elif filename.endswith(('.png', '.PNG')):

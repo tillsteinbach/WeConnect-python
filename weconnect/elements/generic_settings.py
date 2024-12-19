@@ -23,10 +23,10 @@ class GenericSettings(GenericStatus):
             settingsDict = dict()
             for child in self.getLeafChildren():
                 if isinstance(child, ChangeableAttribute) and not isinstance(child, AliasChangeableAttribute):
-                    if isinstance(child.value, Enum):  # pylint: disable=no-member # this is a fales positive
-                        settingsDict[child.getLocalAddress()] = child.value.value  # pylint: disable=no-member # this is a fales positive
+                    if isinstance(child.value, Enum):  # pylint: disable=no-member # this is a false positive
+                        settingsDict[child.getLocalAddress()] = child.value.value  # pylint: disable=no-member # this is a false positive
                     else:
-                        settingsDict[child.getLocalAddress()] = child.value  # pylint: disable=no-member # this is a fales positive
+                        settingsDict[child.getLocalAddress()] = child.value  # pylint: disable=no-member # this is a false positive
             data = json.dumps(settingsDict)
             putResponse = self.vehicle.weConnect.session.put(url, data=data, allow_redirects=True)
             if putResponse.status_code != requests.codes['ok']:

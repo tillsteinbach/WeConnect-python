@@ -59,7 +59,7 @@ def test_AddressableLeafGetObservers():
     for observerEntry, observer in zip(observerEntries, observers):
         assert observerEntry[0] == observer
 
-    # Now request only a subset of registred observers
+    # Now request only a subset of registered observers
     observerEntries = addressableLeaf.getObserverEntries(flags=addressable.AddressableLeaf.ObserverEvent.VALUE_CHANGED)
     assert len(observerEntries) == 2
 
@@ -95,7 +95,7 @@ def test_AddressableLeafParents():
     assert addressableLeaf.enabled is True
 
     recursiveChildren = parentAddressableLeaf.getRecursiveChildren()
-    assert len(recursiveChildren) == 2  # This is two as it is the oarent as well as the child
+    assert len(recursiveChildren) == 2  # This is two as it is the parent as well as the child
     leafChildren = parentAddressableLeaf.getLeafChildren()
     assert len(leafChildren) == 1
 
@@ -111,19 +111,19 @@ def test_AddressableLeafAdresses():
     addressableLeaf = addressable.AddressableLeaf(localAddress='child', parent=parentAddressableLeaf)
 
     getterAddress = addressableLeaf.localAddress
-    localAdress = addressableLeaf.getLocalAddress()
-    globalAdress = addressableLeaf.getGlobalAddress()
+    localAddress = addressableLeaf.getLocalAddress()
+    globalAddress = addressableLeaf.getGlobalAddress()
 
-    assert getterAddress == localAdress
-    assert localAdress == 'child'
-    assert globalAdress == 'parent/child'
+    assert getterAddress == localAddress
+    assert localAddress == 'child'
+    assert globalAddress == 'parent/child'
 
     addressableLeaf.localAddress = 'newChild'
 
-    localAdress = addressableLeaf.getLocalAddress()
-    globalAdress = addressableLeaf.getGlobalAddress()
-    assert localAdress == 'newChild'
-    assert globalAdress == 'parent/newChild'
+    localAddress = addressableLeaf.getLocalAddress()
+    globalAddress = addressableLeaf.getGlobalAddress()
+    assert localAddress == 'newChild'
+    assert globalAddress == 'parent/newChild'
 
 
 def test_AddressableLeafParent():
@@ -163,7 +163,7 @@ def test_AddressableByAddressString():
     assert root.getByAddressString('/') == root
 
 
-def test_AdressableAttribute():
+def test_AddressableAttribute():
     attribute = addressable.AddressableAttribute(localAddress='test', parent=None, value=None, valueType=str, lastUpdateFromCar=None)
     assert attribute.value is None
 
@@ -174,7 +174,7 @@ def test_AdressableAttribute():
         attribute.value = 'newValue'
 
 
-def test_AdressableObjectLeafChildren():
+def test_AddressableObjectLeafChildren():
     addressableObject = addressable.AddressableObject(localAddress='parent', parent=None)
     childAddressableLeaf1 = addressable.AddressableAttribute(localAddress='child1', parent=addressableObject, value=None, valueType=str, lastUpdateFromCar=None)
     childAddressableLeaf2 = addressable.AddressableAttribute(localAddress='child2', parent=addressableObject, value=None, valueType=str, lastUpdateFromCar=None)

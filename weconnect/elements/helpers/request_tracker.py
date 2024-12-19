@@ -27,7 +27,7 @@ class RequestTracker:
     def trackRequest(self, id: str, domain: Domain, minTime: int, maxTime: int) -> None:
         minDate = datetime.now() + timedelta(seconds=minTime)
         maxDate = datetime.now() + timedelta(seconds=maxTime)
-        LOG.debug('Track requests for id %s in %s at lesat until %s, at most until %s every 5 seconds', id, domain.value, minDate, maxDate)
+        LOG.debug('Track requests for id %s in %s at least until %s, at most until %s every 5 seconds', id, domain.value, minDate, maxDate)
         if domain not in self.requests:
             self.requests[domain] = [(id, minDate, maxDate)]
         else:
