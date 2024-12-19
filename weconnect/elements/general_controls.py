@@ -33,8 +33,7 @@ class GeneralControls(AddressableObject):
 
         url = 'https://emea.bff.cariad.digital/vehicle/v1/spin/verify'
 
-        data = {}
-        data['spin'] = value
+        data = {'spin': value}
         controlResponse = self.parent.session.post(url, json=data, allow_redirects=True)
         if controlResponse.status_code != requests.codes['no_content']:
             dataDict = controlResponse.json()

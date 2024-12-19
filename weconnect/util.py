@@ -82,7 +82,7 @@ def kelvinToCelsius(value):
     return value - 273.15
 
 
-def farenheitToKelvin(value):
+def fahreneitToKelvin(value):
     return 273.5 + ((value - 32.0) * (5.0 / 9.0))
 
 

@@ -92,7 +92,7 @@ class WeChargeSession(VWWebSession):
             elif loginFormResponse.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
             else:
-                raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                raise APICompatibilityError('Retrieving credentials page was not successful,'
                                             f' status code: {loginFormResponse.status_code}')
         # Find login form on page to obtain inputs
         emailFormRegex = r'<form.+id=\"emailPasswordForm\".*action=\"(?P<formAction>[^\"]+)\"[^>]*>' \
@@ -127,7 +127,7 @@ class WeChargeSession(VWWebSession):
         if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
             if login2Response.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
-            raise AuthentificationError('Retrieving credentials page was not successfull,'
+            raise AuthentificationError('Retrieving credentials page was not successful,'
                                         f' status code: {login2Response.status_code}')
 
         credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \
@@ -243,8 +243,8 @@ class WeChargeSession(VWWebSession):
             loginHeadersForm['accept'] = 'application/json'
             loginHeadersForm["x-api-key"] = "yabajourasW9N8sm+9F/oP=="
 
-            urlParams = [(('redirect_uri', self.redirect_uri)),
-                         (('code', self.token["code"]))]
+            urlParams = [('redirect_uri', self.redirect_uri),
+                         ('code', self.token["code"])]
             token_url = add_params_to_uri(token_url, urlParams)
 
             tokenResponse = self.get(token_url, headers=loginHeadersForm, allow_redirects=False, access_type=AccessType.ID)
@@ -280,8 +280,8 @@ class WeChargeSession(VWWebSession):
         if headers is None:
             headers = self.headers
 
-        urlParams = [(('redirect_uri', self.redirect_uri)),
-                     (('refresh_token', refresh_token))]
+        urlParams = [('redirect_uri', self.redirect_uri),
+                     ('refresh_token', refresh_token)]
 
         token_url = add_params_to_uri(token_url, urlParams)
 
@@ -317,8 +317,8 @@ class WeChargeSession(VWWebSession):
         uri, headers, body = super(WeChargeSession, self).addToken(uri, body=body, headers=headers, access_type=access_type, **kwargs)
 
         if access_type == AccessType.ACCESS:
-            if not (self.wcAccessToken):
+            if not self.wcAccessToken:
                 raise ValueError("Missing wc access token.")
             headers['wc_access_token'] = self.wcAccessToken
 
-        return (uri, headers, body)
+        return uri, headers, body

@@ -395,7 +395,7 @@ class Vehicle(AddressableObject):  # pylint: disable=too-many-instance-attribute
                         parkingPosition.carCapturedTimestamp.enabled = False
                         parkingPosition.enabled = False
 
-            if (selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS])):
+            if selective is None or any(x in selective for x in [Domain.ALL, Domain.ALL_CAPABLE, Domain.TRIPS]):
                 try:
                     for tripType in [tripType for tripType in Trip.TripType if tripType != Trip.TripType.UNKNOWN]:
                         url = 'https://emea.bff.cariad.digital/vehicle/v1/trips/' + self.vin.value + '/' + tripType.value.lower() + '/last'

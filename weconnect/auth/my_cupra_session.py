@@ -81,7 +81,7 @@ class MyCupraSession(VWWebSession):
             elif loginFormResponse.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
             else:
-                raise APICompatibilityError('Retrieving credentials page was not successfull,'
+                raise APICompatibilityError('Retrieving credentials page was not successful,'
                                             f' status code: {loginFormResponse.status_code}')
 
         # Find login form on page to obtain inputs
@@ -117,7 +117,7 @@ class MyCupraSession(VWWebSession):
         if login2Response.status_code != requests.codes['ok']:  # pylint: disable=E1101
             if login2Response.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
-            raise APICompatibilityError('Retrieving credentials page was not successfull,'
+            raise APICompatibilityError('Retrieving credentials page was not successful,'
                                         f' status code: {login2Response.status_code}')
 
         credentialsTemplateRegex = r'<script>\s+window\._IDK\s+=\s+\{\s' \

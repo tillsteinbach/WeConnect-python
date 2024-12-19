@@ -46,7 +46,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         selective: Optional[list[Domain]] = None,
         forceReloginAfter: Optional[int] = None
     ) -> None:
-        """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
+        """Initialize WeConnect interface. If loginOnInit is true the user will be tried to log in.
            If loginOnInit is true also an initial fetch of data is performed.
 
         Args:

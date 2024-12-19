@@ -4,10 +4,10 @@ from weconnect import weconnect
 
 
 def main():
-    """ Simple example showing how to retrieve all vehciles from the account """
+    """ Simple example showing how to retrieve all vehicles from the account """
     parser = argparse.ArgumentParser(
-        prog='allVehciles',
-        description='Example retrieving all vehciles in the account')
+        prog='allVehicles',
+        description='Example retrieving all vehicles in the account')
     parser.add_argument('-u', '--username', help='Username of Volkswagen id', required=True)
     parser.add_argument('-p', '--password', help='Password of Volkswagen id', required=True)
 
