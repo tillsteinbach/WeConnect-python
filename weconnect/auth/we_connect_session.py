@@ -248,8 +248,8 @@ class WeConnectSession(VWWebSession):
 
         consentURL = None
         while True:
-            if 'consent' in afterLoginUrl:
-                consentURL = afterLoginUrl
+            # if 'consent' in afterLoginUrl:
+            #     consentURL = afterLoginUrl
             if 'terms-and-conditions' in afterLoginUrl:
                 raise AuthentificationError('It seems like you need to accept the terms and conditions for the Volkswagen service.'
                                             f' Try to visit the URL "https://identity.vwgroup.io/{afterLoginUrl}" or log into the Volkswagen smartphone app')
