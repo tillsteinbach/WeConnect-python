@@ -44,7 +44,8 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         numRetries: int = 3,
         timeout: bool = None,
         selective: Optional[list[Domain]] = None,
-        forceReloginAfter: Optional[int] = None
+        forceReloginAfter: Optional[int] = None,
+        acceptTermsOnLogin: Optional[bool] = False,
     ) -> None:
         """Initialize WeConnect interface. If loginOnInit is true the user will be tried to login.
            If loginOnInit is true also an initial fetch of data is performed.
@@ -109,6 +110,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.__session.timeout = timeout
         self.__session.retries = numRetries
         self.__session.forceReloginAfter = forceReloginAfter
+        self.__session.acceptTermsOnLogin = acceptTermsOnLogin
 
         if loginOnInit:
             self.__session.login()

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from urllib3.util.retry import Retry
-from urllib.parse import parse_qsl, urlparse, urlsplit
+from urllib.parse import parse_qsl, urlparse, urlsplit, urljoin
 
 
 import requests
@@ -13,9 +13,10 @@ from weconnect.errors import APICompatibilityError, AuthentificationError, Retri
 
 
 class VWWebSession(OpenIDSession):
-    def __init__(self, sessionuser, **kwargs):
+    def __init__(self, sessionuser, acceptTermsOnLogin=False, **kwargs):
         super(VWWebSession, self).__init__(**kwargs)
         self.sessionuser = sessionuser
+        self.acceptTermsOnLogin = acceptTermsOnLogin
 
         # Set up the web session
         retries = Retry(
@@ -48,7 +49,7 @@ class VWWebSession(OpenIDSession):
 
         # Get password form
         passwordForm = self._get_password_form(
-            f'https://identity.vwgroup.io/{emailForm.target}',
+            urljoin('https://identity.vwgroup.io', emailForm.target),
             emailForm.data
         )
 
@@ -67,11 +68,14 @@ class VWWebSession(OpenIDSession):
             if url.startswith(self.redirect_uri):
                 break
 
-            if not url.startswith('https://identity.vwgroup.io/'):
-                url = f'https://identity.vwgroup.io/{url}'
+            url = urljoin('https://identity.vwgroup.io', url)
 
             if 'terms-and-conditions' in url:
-                url = self._handle_consent_form(url)
+                if self.acceptTermsOnLogin:
+                    url = self._handle_consent_form(url)
+                else:
+                    raise AuthentificationError(f'It seems like you need to accept the terms and conditions. '
+                                                f'Try to visit the URL "{url}" or log into smartphone app.')
 
             response = self.websession.get(url, allow_redirects=False)
             if response.status_code == requests.codes['internal_server_error']:
@@ -97,7 +101,7 @@ class VWWebSession(OpenIDSession):
                 url = response.headers['Location']
                 continue
 
-            raise APICompatibilityError(f'Retrieving credentials page was not successful, '
+            raise APICompatibilityError(f'Retrieving login page was not successful, '
                                         f'status code: {response.status_code}')
 
         # Find login form on page to obtain inputs
@@ -105,7 +109,7 @@ class VWWebSession(OpenIDSession):
         emailForm.feed(response.text)
 
         if not emailForm.target or not all(x in emailForm.data for x in ['_csrf', 'relayState', 'hmac', 'email']):
-            raise APICompatibilityError('Could not find all required input fields in login page')
+            raise APICompatibilityError('Could not find all required input fields on login page')
 
         return emailForm
 
@@ -120,7 +124,7 @@ class VWWebSession(OpenIDSession):
         credentialsForm.feed(response.text)
 
         if not credentialsForm.target or not all(x in credentialsForm.data for x in ['relayState', 'hmac', '_csrf']):
-            raise APICompatibilityError('Could not find all required input fields in login page')
+            raise APICompatibilityError('Could not find all required input fields on credentials page')
 
         if credentialsForm.data.get('error', None) is not None:
             if credentialsForm.data['error'] == 'validator.email.invalid':
