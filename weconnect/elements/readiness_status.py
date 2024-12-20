@@ -95,8 +95,10 @@ class ReadinessStatus(GenericStatus):
             return returnString
 
         class BatteryPowerLevel(Enum):
+            ACCESS = 'access'
             COMFORT = 'comfort'
             EMERGENCY = 'emergency'
+            LOCATION = 'location'
             OFF = 'off'
             UNKNOWN = 'unknown battery power level'
 

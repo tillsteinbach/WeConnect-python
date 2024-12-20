@@ -248,16 +248,19 @@ class WeConnectSession(VWWebSession):
 
         consentURL = None
         while True:
-            if 'consent' in afterLoginUrl:
-                consentURL = afterLoginUrl
+            # if 'consent' in afterLoginUrl:
+            #     consentURL = afterLoginUrl
+            if 'terms-and-conditions' in afterLoginUrl:
+                raise AuthentificationError('It seems like you need to accept the terms and conditions for the Volkswagen service.'
+                                            f' Try to visit the URL "https://identity.vwgroup.io/{afterLoginUrl}" or log into the Volkswagen smartphone app')
             afterLoginResponse = self.get(afterLoginUrl, allow_redirects=False, access_type=AccessType.NONE)
             if afterLoginResponse.status_code == requests.codes['internal_server_error']:
                 raise RetrievalError('Temporary server error during login')
 
             if 'Location' not in afterLoginResponse.headers:
                 if consentURL is not None:
-                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the WeConnect ID service.'
-                                                f' Try to visit the URL "{consentURL}" or log into the WeConnect ID smartphone app')
+                    raise AuthentificationError('It seems like you need to accept the terms and conditions for the Volkswagen service.'
+                                                f' Try to visit the URL "{consentURL}" or log into the Volkswagen smartphone app')
                 raise APICompatibilityError('No Location for forwarding in response headers')
 
             afterLoginUrl = afterLoginResponse.headers['Location']

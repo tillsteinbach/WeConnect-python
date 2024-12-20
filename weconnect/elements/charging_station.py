@@ -159,6 +159,7 @@ class ChargingStation(AddressableObject):  # pylint: disable=too-many-instance-a
         PCS_REMOTE = 'PCS_REMOTE'
         ELLI_REMOTE = 'ELLI_REMOTE'
         PROPRIETARY = 'PROPRIETARY'
+        PLUG_AND_CHARGE = "PLUG_AND_CHARGE"
         UNKNOWN = 'UNKNOWN'
 
     class VWGROUPPARTNER(Enum):

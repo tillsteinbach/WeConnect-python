@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.7] - 2024-12-19
+### Fixed
+- Fix for reoccuring consent requests
+
+### Added
+- Warning light color white
+
+## [0.60.6] - 2024-12-06
+### Fixed
+- Fixed error message when new terms and conditions need to be accepted
+
 ## [0.60.5] - 2024-09-13
 ### Added
 - AUTHTYPE PROPRIETARY added
@@ -862,7 +873,9 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.5...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.7...HEAD
+[0.60.7]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.7
+[0.60.6]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.6
 [0.60.5]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.5
 [0.60.4]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.4
 [0.60.3]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.3
