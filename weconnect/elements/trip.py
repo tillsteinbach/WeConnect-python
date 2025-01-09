@@ -34,7 +34,7 @@ class Trip(AddressableObject):  # pylint: disable=too-many-instance-attributes
         self.averageSpeed_kmph = AddressableAttribute(localAddress='averageSpeed_kmph', parent=self, value=None, valueType=int)
         self.averageAuxConsumption = AddressableAttribute(localAddress='averageAuxConsumption', parent=self, value=None, valueType=float)
         self.averageRecuperation = AddressableAttribute(localAddress='averageRecuperation', parent=self, value=None, valueType=float)
-        self.totalAuxConsumption_Kwh  = AddressableAttribute(localAddress='totalAuxConsumption_Kwh', parent=self, value=None, valueType=float)
+        self.totalAuxConsumption_Kwh = AddressableAttribute(localAddress='totalAuxConsumption_Kwh', parent=self, value=None, valueType=float)
         self.totalElectricConsumption_kwh = AddressableAttribute(localAddress='totalElectricConsumption_kwh', parent=self, value=None, valueType=float)
 
         self.fixAPI = fixAPI
@@ -114,7 +114,7 @@ class Trip(AddressableObject):  # pylint: disable=too-many-instance-attributes
         if self.averageAuxConsumption.enabled:
             returnString += f'Average Aux Consumption: {self.averageAuxConsumption.value}\n'
         if self.averageRecuperation.enabled:
-            returnString += f'Average Recuperation: {self.averageRecuperation.value}\n'        
+            returnString += f'Average Recuperation: {self.averageRecuperation.value}\n'
         if self.totalAuxConsumption_Kwh.enabled:
             returnString += f'Total Aux Consumption: {self.totalAuxConsumption_Kwh}'
         if self.totalElectricConsumption_kwh.enabled:
