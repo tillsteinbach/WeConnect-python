@@ -42,6 +42,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         updateCapabilities: bool = True,
         updatePictures: bool = True,
         numRetries: int = 3,
+        servicetype=Service.WE_CONNECT, # make service-type controllable by caller. Defaulting to VW WeConnect
         timeout: bool = None,
         selective: Optional[list[Domain]] = None,
         forceReloginAfter: Optional[int] = None,
@@ -105,7 +106,7 @@ class WeConnect(AddressableObject):  # pylint: disable=too-many-instance-attribu
         self.tokenfile = tokenfile
 
         self.__manager = SessionManager(tokenstorefile=tokenfile)
-        self.__session = self.__manager.getSession(Service.WE_CONNECT, SessionUser(username=username, password=password))
+        self.__session = self.__manager.getSession(servicetype, SessionUser(username=username, password=password))
         self.__session.proxies.update(self.proxystring)
         self.__session.timeout = timeout
         self.__session.retries = numRetries
