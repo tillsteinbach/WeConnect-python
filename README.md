@@ -1,6 +1,11 @@
-
-
 # WeConnect-python
+## WARNING:
+:warning: :warning: :warning:
+
+**WeConnect-python will reach end of life this year. It will be repalced by [CarConnectivity](https://github.com/tillsteinbach/CarConnectivity) which will provide equal functionality but for more brands such as Volkswagen, Skoda, Seat, Cupra. Developers should start to check if moving to [CarConnectivity](https://github.com/tillsteinbach/CarConnectivity) is an option.**
+
+:warning: :warning: :warning:
+
 [![GitHub sourcecode](https://img.shields.io/badge/Source-GitHub-green)](https://github.com/tillsteinbach/WeConnect-python/)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/tillsteinbach/WeConnect-python)](https://github.com/tillsteinbach/WeConnect-python/releases/latest)
 [![GitHub](https://img.shields.io/github/license/tillsteinbach/WeConnect-python)](https://github.com/tillsteinbach/WeConnect-python/blob/master/LICENSE)
