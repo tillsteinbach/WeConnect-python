@@ -2,7 +2,6 @@ import argparse
 
 from weconnect import weconnect
 
-
 def main():
     """ Simple example showing how to retrieve all vehciles from the account """
     parser = argparse.ArgumentParser(
@@ -10,11 +9,20 @@ def main():
         description='Example retrieving all vehciles in the account')
     parser.add_argument('-u', '--username', help='Username of Volkswagen id', required=True)
     parser.add_argument('-p', '--password', help='Password of Volkswagen id', required=True)
+    parser.add_argument('-s', '--servicetype', help='The type of service to be used.', required=False)
 
     args = parser.parse_args()
 
     print('#  Initialize WeConnect')
-    weConnect = weconnect.WeConnect(username=args.username, password=args.password, updateAfterLogin=False, loginOnInit=False)
+    if args.servicetype is not None:
+        # switching to user defined servicetype (e.g. "MyCupra")
+        print("Selected servicetype is: " + str(args.servicetype))
+        stype=weconnect.Service(args.servicetype)
+        weConnect = weconnect.WeConnect(username=args.username, password=args.password, updateAfterLogin=False, loginOnInit=False, servicetype=stype)    
+    else:
+        # using default servicetype ("WeConnect")
+        weConnect = weconnect.WeConnect(username=args.username, password=args.password, updateAfterLogin=False, loginOnInit=False)
+
     print('#  Login')
     weConnect.login()
     print('#  update')
