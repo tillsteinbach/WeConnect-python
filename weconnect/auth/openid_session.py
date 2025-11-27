@@ -1,5 +1,7 @@
 from enum import Enum, auto
 import time
+from datetime import datetime, timezone
+import jwt
 import logging
 from oauthlib.oauth2.rfc6749.errors import InsecureTransportError, TokenExpiredError, MissingTokenError
 from oauthlib.oauth2.rfc6749.utils import is_secure_transport
@@ -84,7 +86,21 @@ class OpenIDSession(requests.Session):
                 if self._token is not None and 'expires_in' in self._token:
                     newToken['expires_in'] = self._token['expires_in']
                 else:
-                    newToken['expires_in'] = 3600
+                    if 'id_token' in newToken:
+                        try:
+                            meta_data = jwt.decode(newToken['id_token'], options={"verify_signature": False})
+                            if 'exp' in meta_data:
+                                newToken['expires_at'] = meta_data['exp']
+                                expires_at = datetime.fromtimestamp(meta_data['exp'], tz=timezone.utc)
+                                newToken['expires_in'] = (expires_at - datetime.now(tz=timezone.utc)).total_seconds()
+                            else:
+                                newToken['expires_in'] = 3600
+                        except jwt.exceptions.DecodeError:
+                            # Invalid JWT token, use default expiration
+                            LOG.debug("Invalid JWT token provided, using default expiration")
+                            newToken['expires_in'] = 3600
+                    else:
+                        newToken['expires_in'] = 3600
             # It expires_in is set and expires_at is not set we calculate expires_at from expires_in using the current time
             if 'expires_in' in newToken and 'expires_at' not in newToken:
                 newToken['expires_at'] = time.time() + int(newToken.get('expires_in'))
@@ -198,8 +214,21 @@ class OpenIDSession(requests.Session):
                 self.accessToken = None
                 try:
                     self.refresh()
-                except AuthentificationError:
-                    self.login()
+                except AuthentificationError as authError:
+                    # Check if this is a "Server requests new authorization" error
+                    if 'Server requests new authorization' in str(authError):
+                        LOG.warning('Server requests new authorization - clearing tokens and forcing re-login')
+                        # Clear all tokens to force fresh login
+                        if hasattr(self, 'clear_tokens'):
+                            self.clearTokens()
+                        else:
+                            # Fallback for base class
+                            self.token = None
+                            self.access_token = None
+                            self.refresh_token = None
+                            self.id_token = None
+                        LOG.info('Authentication failed during refresh - attempting new login')
+                        self.login()
                 except TokenExpiredError:
                     self.login()
                 except MissingTokenError:
