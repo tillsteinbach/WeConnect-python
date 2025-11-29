@@ -224,9 +224,9 @@ class OpenIDSession(requests.Session):
                         else:
                             # Fallback for base class
                             self.token = None
-                            self.access_token = None
-                            self.refresh_token = None
-                            self.id_token = None
+                            self.accessToken = None
+                            self.refreshToken = None
+                            self.idToken = None
                         LOG.info('Authentication failed during refresh - attempting new login')
                         self.login()
                 except TokenExpiredError:

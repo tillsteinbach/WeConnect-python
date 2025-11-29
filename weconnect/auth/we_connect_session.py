@@ -191,7 +191,7 @@ class WeConnectSession(VWWebSession):
 
         # First try to get from the current token property, then fall back to stored token
         if refresh_token is None:
-            refresh_token = self.refresh_token
+            refresh_token = self.refreshToken
             # If still None, try to get from the token dict directly
             if refresh_token is None and self.token is not None:
                 refresh_token = self.token.get('refresh_token')

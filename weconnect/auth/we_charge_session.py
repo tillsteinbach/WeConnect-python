@@ -93,7 +93,7 @@ class WeChargeSession(VWWebSession):
         if not is_secure_transport(token_url):
             raise InsecureTransportError()
 
-        refresh_token = refresh_token or self.refresh_token
+        refresh_token = refresh_token or self.refreshToken
         if refresh_token is None:
             raise ValueError("Missing refresh token.")
 
