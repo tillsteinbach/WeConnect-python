@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.9] - 2025-11-29
+### Fixed
+- Fixes login due to changes in the login form
+
 ## [0.60.8] - 2025-01-08
 ### Fixed
 - Fixes web authentication for some users
@@ -878,7 +882,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.8...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.9...HEAD
+[0.60.9]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.9
 [0.60.8]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.8
 [0.60.7]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.7
 [0.60.6]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.6
