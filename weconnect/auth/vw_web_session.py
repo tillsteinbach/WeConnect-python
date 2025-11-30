@@ -279,7 +279,7 @@ class VWWebSession(OpenIDSession):
             str: The redirect URL after successful authentication.
             
         Raises:
-            AuthenticationError: If authentication fails.
+            AuthentificationError: If authentication fails.
             APICompatibilityError: If there are issues with the authentication flow.
         """
         import re
@@ -334,7 +334,7 @@ class VWWebSession(OpenIDSession):
         response = self.websession.post(login_url, data=login_form, allow_redirects=False)
 
         if response.status_code not in (requests.codes['found'], requests.codes['see_other']):
-            raise AuthenticationError(f'Login failed with status code: {response.status_code}')
+            raise AuthentificationError(f'Login failed with status code: {response.status_code}')
 
         if 'Location' not in response.headers:
             raise APICompatibilityError('No Location header in login response')

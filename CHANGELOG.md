@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 - No unreleased changes so far
 
+## [0.60.11] - 2025-11-30
+### Fixed
+- Fixes typo from backporting AuthentificationError/AuthenticationError
+
 ## [0.60.10] - 2025-11-29
 ### Fixed
 - Fixes refresh token handling that was broken in 0.60.9 due to typo when backporting changes
@@ -886,7 +890,8 @@ Minor fix in observer interface
 ## [0.1.0] - 2021-05-26
 Initial release
 
-[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.10...HEAD
+[unreleased]: https://github.com/tillsteinbach/WeConnect-python/compare/v0.60.11...HEAD
+[0.60.11]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.11
 [0.60.10]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.10
 [0.60.9]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.9
 [0.60.8]: https://github.com/tillsteinbach/WeConnect-python/releases/tag/v0.60.8

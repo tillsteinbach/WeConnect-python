@@ -197,7 +197,7 @@ class WeConnectSession(VWWebSession):
                 refresh_token = self.token.get('refresh_token')
 
         if not refresh_token:
-            raise AuthenticationError('No refresh token available. Please log in again.')
+            raise AuthentificationError('No refresh token available. Please log in again.')
 
         # Create headers matching the examples format
         tHeaders = {
